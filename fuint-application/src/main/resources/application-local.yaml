@@ -1,0 +1,120 @@
+spring:
+  # 数据库配置
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/fuint-food?useUnicode=true&characterEncoding=UTF8&useSSL=false
+    username: root
+    password: xV89YihPK
+  # Redis配置
+  redis:
+    database: 2
+    host: 127.0.0.1
+    password: 8zqtwB848EX
+    pool:
+      max-active: -1
+      max-idle: 8
+      max-wait: -1
+      min-idle: 0
+    port: 6379
+    timeout: 0
+  session:
+    redis:
+      namespace: fuint
+    store-type: redis
+
+################ MyBatisPlus配置 ######################
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+################ 微信订阅模板消息配置 ######################
+weixin:
+  # 公众号配置
+  official:
+    appId: wxf4327ef05c27a0
+    appSecret: 1f55e8749332234d9a074873d8e6a3
+  # 微信订阅模板
+  subMessage:
+    balanceChange: '[{''key'':''amount'', ''name'':''变动金额''},{''key'':''time'', ''name'':''变动时间''},{''key'':''tips'',''name'':''温馨提示''}]'
+    couponArrival: '[{''key'':''name'', ''name'':''卡券名称''},{''key'':''amount'', ''name'':''金额''},{''key'':''tips'',''name'':''温馨提示''}]'
+    couponConfirm: '[{''key'':''name'', ''name'':''卡券名称''},{''key'':''time'', ''name'':''核销时间''}]'
+    couponExpire: '[{''key'':''name'', ''name'':''卡券名称''}, {''key'':''expireTime'',''name'':''到期时间''},{''key'':''tips'', ''name'':''温馨提示''}]'
+    deliverGoods: '[{''key'':''receiver'', ''name'':''收货人''}, {''key'':''orderSn'',''name'':''订单号''}, {''key'':''expressCompany'', ''name'':''快递公司''}, {''key'':''expressNo'',''name'':''快递单号''}]'
+    orderCreated: '[{''key'':''time'', ''name'':''订单时间''},{''key'':''orderSn'', ''name'':''订单号''},{''key'':''remark'',''name'':''备注信息''}]'
+    pointChange: '[{''key'':''amount'', ''name'':''变动数量''},{''key'':''time'', ''name'':''变动时间''},{''key'':''remark'',''name'':''备注信息''}]'
+    takeFood: '[{''key'':''code'', ''name'':''取餐码''},{''key'':''merchant'', ''name'':''取餐门店''},{''key'':''address'',''name'':''商户地址''},{''key'':''time'',''name'':''下单时间''}]'
+################## 微信支付配置 ##########################
+wxpay:
+  apiV2: fuyuan20201030yanhe9999999999999
+  appId: wx73ca0532f7418cea
+  appSecret: 820e548548cc6330031712fa2b958c17
+  certPath: /usr/local/fuint/cert/apiclient_cert.p12
+  domain: https://cyhy.aitecc.com
+  mchId: 1636980848
+
+################## 支付宝支付相关配置 ######################
+alipay:
+  appId: 应用编号
+  domain: https://cyhy.aitecc.com/clientApi/pay/aliPayCallback
+  privateKey: 应用私钥
+  publicKey: 支付宝公钥（通过应用公钥上传到支付宝开放平台换取支付宝公钥）
+  serverUrl: https://openapi.alipay.com/gateway.do
+
+aliyun:
+  oss:
+    accessKeyId: LTAI4GJMjVhBa212rQJLnPZtt
+    accessKeySecret: eGVBL30u53456gXd7XODlwYKWTaGT
+    bucketName: fuint-application
+    domain: https://fuint-application.oss-cn-shenzhen.aliyuncs.com
+    endpoint: https://oss-cn-shenzhen.aliyuncs.com
+    folder: uploads
+    mode: 0
+  ################## 阿里云短信配置 #######################
+  sms:
+    accessKeyId: LTAI4GJMjV123oXsrQJLnPZt
+    accessKeySecret: eGVBL30u5Ypj234d7XODlwYKWTaGT
+    # 短信接口模式[0-关闭 1-打开]
+    mode: 0
+    # 阿里云短信签名
+    signName: 延禾技术
+
+################## 定时脚本配置 #########################
+# 分佣提成计算
+commission:
+  job:
+    switch: 1
+    time: 0 0/1 * * * ?
+# 卡券到期处理
+couponExpire:
+  job:
+    switch: 1
+    time: 0 0/1 * * * ?
+# 定时发送消息
+message:
+  job:
+    switch: 1
+    time: 0 0/1 * * * ?
+# 订单超时取消
+orderCancel:
+  job:
+    switch: 1
+    time: 0 0/1 * * * ?
+################## 本地图片上传配置 #########################
+
+images:
+  path: /static/uploadImages/
+  # 上传图片本地地址
+  root: /www/project/food/file
+  upload:
+    # 上传图片允许的大小（单位：MB）
+    maxSize: 5
+    # 上传图片服务器域名
+    url: https://cyhy.aitecc.com
+
+# 系统名称
+system:
+  name: Aite餐饮会员系统
+# 前端h5地址
+website:
+  url: https://cyhy.aitecc.com/food/
