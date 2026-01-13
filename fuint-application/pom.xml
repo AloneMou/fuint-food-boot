@@ -20,7 +20,7 @@
     <dependencies>
         <dependency>
             <groupId>com.fuint</groupId>
-            <artifactId>fuint-framework</artifactId>
+            <artifactId>fuint-common</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>

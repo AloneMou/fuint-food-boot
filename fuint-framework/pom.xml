@@ -7,23 +7,21 @@
         <groupId>com.fuint</groupId>
         <version>1.0.0</version>
     </parent>
+    <packaging>pom</packaging>
+    <modules>
+        <module>fuint-common</module>
+        <module>fuint-spring-boot-starter-protection</module>
+        <module>fuint-spring-boot-starter-redis</module>
+        <module>fuint-spring-boot-starter-web</module>
+    </modules>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>fuint-framework</artifactId>
     <version>1.0.0</version>
-    <packaging>jar</packaging>
+<!--    <packaging>jar</packaging>-->
 
     <dependencies>
-        <dependency>
-            <groupId>com.fuint</groupId>
-            <artifactId>fuint-utils</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fuint</groupId>
-            <artifactId>fuint-repository</artifactId>
-            <version>1.0.0</version>
-        </dependency>
+
     </dependencies>
 
     <build>
