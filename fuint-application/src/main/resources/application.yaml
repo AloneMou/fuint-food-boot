@@ -7,7 +7,7 @@ server:
 
 spring:
   profiles:
-    active: prod
+    active: local
   cache:
     ehcache:
       config: classpath:ehcache.xml

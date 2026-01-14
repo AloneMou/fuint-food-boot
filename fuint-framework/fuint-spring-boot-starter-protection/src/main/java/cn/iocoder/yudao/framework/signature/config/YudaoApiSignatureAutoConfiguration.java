@@ -3,7 +3,8 @@ package cn.iocoder.yudao.framework.signature.config;
 import cn.iocoder.yudao.framework.redis.config.YudaoRedisAutoConfiguration;
 import cn.iocoder.yudao.framework.signature.core.aop.ApiSignatureAspect;
 import cn.iocoder.yudao.framework.signature.core.redis.ApiSignatureRedisDAO;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
@@ -12,7 +13,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
  *
  * @author Zhougang
  */
-@AutoConfiguration(after = YudaoRedisAutoConfiguration.class)
+@EnableAutoConfiguration
+@AutoConfigureAfter(YudaoRedisAutoConfiguration.class)
 public class YudaoApiSignatureAutoConfiguration {
 
     @Bean

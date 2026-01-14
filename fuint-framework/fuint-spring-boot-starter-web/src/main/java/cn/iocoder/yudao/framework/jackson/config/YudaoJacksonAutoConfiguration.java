@@ -12,16 +12,20 @@ import com.fuint.framework.util.json.databind.NumberSerializer;
 import com.fuint.framework.util.json.databind.TimestampLocalDateTimeDeserializer;
 import com.fuint.framework.util.json.databind.TimestampLocalDateTimeSerializer;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-@AutoConfiguration(after = JacksonAutoConfiguration.class)
+@Configuration
+@EnableAutoConfiguration
+@AutoConfigureAfter(JacksonAutoConfiguration.class)
 @Slf4j
 public class YudaoJacksonAutoConfiguration {
 

@@ -2,13 +2,12 @@ package cn.iocoder.yudao.framework.redis.config;
 
 import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.redis.core.TimeoutRedisCacheManager;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.data.redis.cache.BatchStrategies;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheWriter;
@@ -24,7 +23,7 @@ import static cn.iocoder.yudao.framework.redis.config.YudaoRedisAutoConfiguratio
 /**
  * Cache 配置类，基于 Redis 实现
  */
-@AutoConfiguration
+@Configuration
 @EnableConfigurationProperties({CacheProperties.class, YudaoCacheProperties.class})
 @EnableCaching
 public class YudaoCacheAutoConfiguration {
@@ -69,12 +68,11 @@ public class YudaoCacheAutoConfiguration {
 
     @Bean
     public RedisCacheManager redisCacheManager(RedisTemplate<String, Object> redisTemplate,
-                                               RedisCacheConfiguration redisCacheConfiguration,
-                                               YudaoCacheProperties yudaoCacheProperties) {
+                                               RedisCacheConfiguration redisCacheConfiguration) {
         // 创建 RedisCacheWriter 对象
         RedisConnectionFactory connectionFactory = Objects.requireNonNull(redisTemplate.getConnectionFactory());
-        RedisCacheWriter cacheWriter = RedisCacheWriter.nonLockingRedisCacheWriter(connectionFactory,
-                BatchStrategies.scan(yudaoCacheProperties.getRedisScanBatchSize()));
+        RedisCacheWriter cacheWriter =
+                RedisCacheWriter.nonLockingRedisCacheWriter(connectionFactory);
         // 创建 TenantRedisCacheManager 对象
         return new TimeoutRedisCacheManager(cacheWriter, redisCacheConfiguration);
     }

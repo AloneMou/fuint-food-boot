@@ -24,6 +24,21 @@
             <version>1.0.0</version>
         </dependency>
         <dependency>
+            <groupId>com.fuint</groupId>
+            <artifactId>fuint-spring-boot-starter-protection</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fuint</groupId>
+            <artifactId>fuint-spring-boot-starter-redis</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fuint</groupId>
+            <artifactId>fuint-spring-boot-starter-web</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
             <groupId>io.sentry</groupId>
             <artifactId>sentry-logback</artifactId>
             <version>1.2.0</version>

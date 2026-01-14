@@ -6,14 +6,17 @@ import cn.iocoder.yudao.framework.idempotent.core.keyresolver.impl.ExpressionIde
 import cn.iocoder.yudao.framework.idempotent.core.keyresolver.IdempotentKeyResolver;
 import cn.iocoder.yudao.framework.idempotent.core.keyresolver.impl.UserIdempotentKeyResolver;
 import cn.iocoder.yudao.framework.idempotent.core.redis.IdempotentRedisDAO;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
+
 import cn.iocoder.yudao.framework.redis.config.YudaoRedisAutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.util.List;
 
-@AutoConfiguration(after = YudaoRedisAutoConfiguration.class)
+@EnableAutoConfiguration
+@AutoConfigureAfter(YudaoRedisAutoConfiguration.class)
 public class YudaoIdempotentConfiguration {
 
     @Bean

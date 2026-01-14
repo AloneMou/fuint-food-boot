@@ -54,14 +54,14 @@ public class RedisConfig extends CachingConfigurerSupport {
         return jackson2JsonRedisSerializer;
     }
 
-    @Bean
-    RedisTemplate<String, Object> redisTemplate(Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer) {
-        RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory);
-        redisTemplate.setDefaultSerializer(jackson2JsonRedisSerializer);
-        StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
-        redisTemplate.setKeySerializer(stringRedisSerializer);
-        redisTemplate.setHashKeySerializer(stringRedisSerializer);
-        return redisTemplate;
-    }
+//    @Bean
+//    RedisTemplate<String, Object> redisTemplate(Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer) {
+//        RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
+//        redisTemplate.setConnectionFactory(redisConnectionFactory);
+//        redisTemplate.setDefaultSerializer(jackson2JsonRedisSerializer);
+//        StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
+//        redisTemplate.setKeySerializer(stringRedisSerializer);
+//        redisTemplate.setHashKeySerializer(stringRedisSerializer);
+//        return redisTemplate;
+//    }
 }

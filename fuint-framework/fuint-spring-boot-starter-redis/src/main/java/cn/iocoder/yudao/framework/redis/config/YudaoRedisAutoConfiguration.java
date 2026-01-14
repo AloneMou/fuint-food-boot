@@ -4,8 +4,10 @@ import cn.hutool.core.util.ReflectUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.redisson.spring.starter.RedissonAutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
@@ -13,7 +15,9 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 /**
  * Redis 配置类
  */
-@AutoConfiguration(before = RedissonAutoConfiguration.class) // 目的：使用自己定义的 RedisTemplate Bean
+@Configuration
+@EnableAutoConfiguration
+@AutoConfigureBefore(RedissonAutoConfiguration.class)
 public class YudaoRedisAutoConfiguration {
 
     /**
