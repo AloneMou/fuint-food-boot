@@ -31,7 +31,7 @@
         <mysql.version>8.0.25</mysql.version>
         <mybatis-plus.version>3.1.0</mybatis-plus.version>
 
-        <redisson.version>3.52.0</redisson.version>
+        <redisson.version>3.16.6</redisson.version>
         <!-- 服务保障相关 -->
         <lock4j.version>2.2.7</lock4j.version>
         <guava.version>33.5.0-jre</guava.version>
@@ -188,18 +188,19 @@
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-starter-actuator</artifactId>
                     </exclusion>
-                    <exclusion>
-                        <groupId>org.redisson</groupId>
-                        <!-- 使用 redisson-spring-data-27 替代，解决 Tuple NoClassDefFoundError 报错 -->
-                        <artifactId>redisson-spring-data-35</artifactId>
-                    </exclusion>
+<!--                    <exclusion>-->
+<!--                        <groupId>org.redisson</groupId>-->
+<!--                        &lt;!&ndash; 使用 redisson-spring-data-27 替代，解决 Tuple NoClassDefFoundError 报错 &ndash;&gt;-->
+<!--                        <artifactId>redisson-spring-data-35</artifactId>-->
+<!--                    </exclusion>-->
                 </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.redisson</groupId>
-                <artifactId>redisson-spring-data-27</artifactId>
+                <artifactId>redisson-spring-data-25</artifactId>
                 <version>${redisson.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>lock4j-redisson-spring-boot-starter</artifactId>

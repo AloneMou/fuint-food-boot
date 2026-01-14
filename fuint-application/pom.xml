@@ -30,11 +30,6 @@
         </dependency>
         <dependency>
             <groupId>com.fuint</groupId>
-            <artifactId>fuint-spring-boot-starter-redis</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fuint</groupId>
             <artifactId>fuint-spring-boot-starter-web</artifactId>
             <version>1.0.0</version>
         </dependency>

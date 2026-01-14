@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.signature.core.redis.ApiSignatureRedisDAO;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 /**
@@ -13,7 +14,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
  *
  * @author Zhougang
  */
-@EnableAutoConfiguration
+@Configuration
 @AutoConfigureAfter(YudaoRedisAutoConfiguration.class)
 public class YudaoApiSignatureAutoConfiguration {
 

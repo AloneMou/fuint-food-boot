@@ -9,10 +9,11 @@ import org.redisson.api.RedissonClient;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
-@EnableAutoConfiguration
+@Configuration
 @AutoConfigureAfter(YudaoRedisAutoConfiguration.class)
 public class YudaoRateLimiterConfiguration {
 

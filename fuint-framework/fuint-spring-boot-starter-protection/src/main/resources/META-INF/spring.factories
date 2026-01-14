@@ -1,5 +1,5 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-cn.iocoder.yudao.framework.signature.config.YudaoApiSignatureAutoConfiguration\
-cn.iocoder.yudao.framework.ratelimiter.config.YudaoRateLimiterConfiguration\
-cn.iocoder.yudao.framework.lock4j.config.YudaoLock4jConfiguration\
+cn.iocoder.yudao.framework.signature.config.YudaoApiSignatureAutoConfiguration,\
+cn.iocoder.yudao.framework.ratelimiter.config.YudaoRateLimiterConfiguration,\
+cn.iocoder.yudao.framework.lock4j.config.YudaoLock4jConfiguration,\
 cn.iocoder.yudao.framework.idempotent.config.YudaoIdempotentConfiguration

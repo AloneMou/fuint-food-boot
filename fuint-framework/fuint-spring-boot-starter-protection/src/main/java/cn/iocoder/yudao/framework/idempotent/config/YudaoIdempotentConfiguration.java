@@ -11,11 +11,12 @@ import cn.iocoder.yudao.framework.redis.config.YudaoRedisAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.util.List;
 
-@EnableAutoConfiguration
+@Configuration
 @AutoConfigureAfter(YudaoRedisAutoConfiguration.class)
 public class YudaoIdempotentConfiguration {
 

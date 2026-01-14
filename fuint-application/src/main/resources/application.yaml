@@ -6,6 +6,8 @@ server:
   port: 6003
 
 spring:
+  autoconfigure:
+    exclude: org.redisson.spring.cache.RedissonCacheStatisticsAutoConfiguration
   profiles:
     active: local
   cache:

@@ -16,7 +16,6 @@ import org.springframework.data.redis.serializer.RedisSerializer;
  * Redis 配置类
  */
 @Configuration
-@EnableAutoConfiguration
 @AutoConfigureBefore(RedissonAutoConfiguration.class)
 public class YudaoRedisAutoConfiguration {
 

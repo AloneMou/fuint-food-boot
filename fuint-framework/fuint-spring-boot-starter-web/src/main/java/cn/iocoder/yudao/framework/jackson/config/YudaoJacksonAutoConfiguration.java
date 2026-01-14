@@ -24,7 +24,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Configuration
-@EnableAutoConfiguration
 @AutoConfigureAfter(JacksonAutoConfiguration.class)
 @Slf4j
 public class YudaoJacksonAutoConfiguration {

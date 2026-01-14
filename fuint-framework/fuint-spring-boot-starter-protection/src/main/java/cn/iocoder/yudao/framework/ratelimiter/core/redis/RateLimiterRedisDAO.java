@@ -17,7 +17,7 @@ public class RateLimiterRedisDAO {
 
     /**
      * 限流操作
-     *
+     * <p>
      * KEY 格式：rate_limiter:%s // 参数为 uuid
      * VALUE 格式：String
      * 过期时间：不固定
@@ -45,9 +45,9 @@ public class RateLimiterRedisDAO {
         // 1. 如果不存在，设置 rate 速率
         RateLimiterConfig config = rateLimiter.getConfig();
         if (config == null) {
-            rateLimiter.trySetRate(RateType.OVERALL, count, duration);
+            rateLimiter.trySetRate(RateType.OVERALL, count, duration.getSeconds(), RateIntervalUnit.SECONDS);
             // 原因参见 https://t.zsxq.com/lcR0W
-            rateLimiter.expire(duration);
+            rateLimiter.expire(duration.getSeconds(), TimeUnit.SECONDS);
             return rateLimiter;
         }
         // 2. 如果存在，并且配置相同，则直接返回
@@ -57,9 +57,9 @@ public class RateLimiterRedisDAO {
             return rateLimiter;
         }
         // 3. 如果存在，并且配置不同，则进行新建
-        rateLimiter.setRate(RateType.OVERALL, count, duration);
+        rateLimiter.setRate(RateType.OVERALL, count, duration.getSeconds(), RateIntervalUnit.SECONDS);
         // 原因参见 https://t.zsxq.com/lcR0W
-        rateLimiter.expire(duration);
+        rateLimiter.expire(duration.getSeconds(), TimeUnit.SECONDS);
         return rateLimiter;
     }
 
