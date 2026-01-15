@@ -126,7 +126,7 @@ public class ApiSignatureAspect {
     /**
      * 构建签名字符串
      * <p>
-     * 格式为 = 请求参数 + 请求体 + 请求头 + 密钥
+     * 格式为 =  请求头 + 密钥
      *
      * @param signature signature
      * @param request   request
@@ -134,12 +134,8 @@ public class ApiSignatureAspect {
      * @return 签名字符串
      */
     private String buildSignatureString(ApiSignature signature, HttpServletRequest request, String appSecret) {
-        SortedMap<String, String> parameterMap = getRequestParameterMap(request); // 请求头
         SortedMap<String, String> headerMap = getRequestHeaderMap(signature, request); // 请求参数
-        String requestBody = StrUtil.nullToDefault(ServletUtils.getBody(request), ""); // 请求体
-        return MapUtil.join(parameterMap, "&", "=")
-                + requestBody
-                + MapUtil.join(headerMap, "&", "=")
+        return MapUtil.join(headerMap, "&", "=")
                 + appSecret;
     }
 

@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRate
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.DefaultRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ServerNodeRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.UserRateLimiterKeyResolver;
+import com.fuint.framework.exception.enums.GlobalErrorCodeConstants;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -39,7 +40,7 @@ public @interface RateLimiter {
     /**
      * 提示信息，请求过快的提示
      *
-//     * @see GlobalErrorCodeConstants#TOO_MANY_REQUESTS
+     * @see GlobalErrorCodeConstants#TOO_MANY_REQUESTS
      */
     String message() default ""; // 为空时，使用 TOO_MANY_REQUESTS 错误提示
 

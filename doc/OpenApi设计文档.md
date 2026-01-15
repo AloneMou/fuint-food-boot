@@ -64,7 +64,7 @@
 - **JWT / API Key 使用方式**
 
   - Header 中：
-    - `Authorization: Bearer <access_token>`
+    - `Authorization: Bearer <a ccess_token>`
     - 或 `X-API-Key: <api_key>`
   - 所有业务 API 均需携带上述至少一种认证凭证。
 

@@ -12,7 +12,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 /**
  * 安全中心配置
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -59,8 +59,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(
                         "/clientApi/**",
                         "/backendApi/**",
-                        "/merchantApi/**"
-                        ).anonymous()
+                        "/merchantApi/**",
+                        "/api/**"
+                ).anonymous()
                 .antMatchers(
                         HttpMethod.GET,
                         "/",
