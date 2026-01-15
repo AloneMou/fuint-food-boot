@@ -6,6 +6,8 @@ import com.fuint.common.dto.GoodsTopDto;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.openapi.v1.goods.product.vo.MtGoodsCreateReqVO;
+import com.fuint.openapi.v1.goods.product.vo.MtGoodsUpdateReqVO;
 import com.fuint.repository.bean.GoodsTopBean;
 import com.fuint.repository.model.MtGoods;
 import com.fuint.repository.model.MtGoodsSku;
@@ -19,7 +21,7 @@ import java.util.Map;
 
 /**
  * 商品业务接口
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -28,7 +30,7 @@ public interface GoodsService {
     /**
      * 分页查询商品列表
      *
-     * @param  paginationRequest
+     * @param paginationRequest
      * @return
      */
     PaginationResponse<GoodsDto> queryGoodsListByPagination(PaginationRequest paginationRequest) throws BusinessCheckException;
@@ -36,56 +38,56 @@ public interface GoodsService {
     /**
      * 保存商品
      *
-     * @param  reqDto
-     * @throws BusinessCheckException
+     * @param reqDto
      * @return
+     * @throws BusinessCheckException
      */
     MtGoods saveGoods(MtGoods reqDto) throws BusinessCheckException;
 
     /**
      * 根据ID获取商品信息
      *
-     * @param  id 商品ID
-     * @throws BusinessCheckException
+     * @param id 商品ID
      * @return
+     * @throws BusinessCheckException
      */
     MtGoods queryGoodsById(Integer id) throws BusinessCheckException;
 
     /**
      * 根据编码获取商品信息
      *
-     * @param  merchantId
-     * @param  goodsNo
-     * @throws BusinessCheckException
+     * @param merchantId
+     * @param goodsNo
      * @return
+     * @throws BusinessCheckException
      */
     MtGoods queryGoodsByGoodsNo(Integer merchantId, String goodsNo) throws BusinessCheckException;
 
     /**
      * 根据条码获取sku信息
      *
-     * @param  skuNo skuNo
-     * @throws BusinessCheckException
+     * @param skuNo skuNo
      * @return
-     * */
+     * @throws BusinessCheckException
+     */
     MtGoodsSku getSkuInfoBySkuNo(String skuNo) throws BusinessCheckException;
 
     /**
      * 根据ID获取商品详情
      *
-     * @param  id
-     * @throws BusinessCheckException
+     * @param id
      * @return
+     * @throws BusinessCheckException
      */
     GoodsDto getGoodsDetail(Integer id, boolean getDeleteSpec) throws InvocationTargetException, IllegalAccessException;
 
     /**
      * 根据ID删除
      *
-     * @param  id       ID
-     * @param  operator 操作人
-     * @throws BusinessCheckException
+     * @param id       ID
+     * @param operator 操作人
      * @return
+     * @throws BusinessCheckException
      */
     void deleteGoods(Integer id, String operator) throws BusinessCheckException;
 
@@ -98,7 +100,7 @@ public interface GoodsService {
      * @param page
      * @param pageSize
      * @return
-     * */
+     */
     Map<String, Object> getStoreGoodsList(Integer storeId, String keyword, Integer cateId, Integer page, Integer pageSize) throws BusinessCheckException;
 
     /**
@@ -106,7 +108,7 @@ public interface GoodsService {
      *
      * @param skuId
      * @return
-     * */
+     */
     List<GoodsSpecValueDto> getSpecListBySkuId(Integer skuId) throws BusinessCheckException;
 
     /**
@@ -114,7 +116,7 @@ public interface GoodsService {
      *
      * @param specId
      * @return
-     * */
+     */
     MtGoodsSpec getSpecDetail(Integer specId);
 
     /**
@@ -122,7 +124,7 @@ public interface GoodsService {
      *
      * @param goodsId 商品ID
      * @return
-     * */
+     */
     Boolean updateInitSale(Integer goodsId);
 
     /**
@@ -137,17 +139,34 @@ public interface GoodsService {
      * 获取商品销售排行榜
      *
      * @param merchantId 商户ID
-     * @param storeId 店铺ID
-     * @param startTime 开始时间
-     * @param endTime 结束时间
+     * @param storeId    店铺ID
+     * @param startTime  开始时间
+     * @param endTime    结束时间
      * @return
-     * */
+     */
     List<GoodsTopDto> getGoodsSaleTopList(Integer merchantId, Integer storeId, Date startTime, Date endTime);
 
     /**
      * 获取店铺商品销售排行榜
+     *
      * @param reqVO 筛选条件
      * @return 排行记录
      */
-    List<GoodsTopBean>  getGoodsSaleTopListByStore(GoodsStatisticsReqVO reqVO);
+    List<GoodsTopBean> getGoodsSaleTopListByStore(GoodsStatisticsReqVO reqVO);
+
+
+    /**
+     * 创建商品
+     *
+     * @param mtGoods 商品信息
+     * @return 商品ID
+     */
+    Integer createGoods(MtGoodsCreateReqVO mtGoods);
+
+    /**
+     * 更新商品
+     *
+     * @param updateReqVO 商品信息
+     */
+    void updateGoods(MtGoodsUpdateReqVO updateReqVO) throws BusinessCheckException;
 }

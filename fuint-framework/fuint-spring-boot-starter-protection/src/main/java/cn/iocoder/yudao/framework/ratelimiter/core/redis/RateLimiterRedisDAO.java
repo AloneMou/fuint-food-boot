@@ -2,8 +2,11 @@ package cn.iocoder.yudao.framework.ratelimiter.core.redis;
 
 import lombok.AllArgsConstructor;
 import org.redisson.api.*;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -25,42 +28,40 @@ public class RateLimiterRedisDAO {
     private static final String RATE_LIMITER = "rate_limiter:%s";
 
     private final RedissonClient redissonClient;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private static final DefaultRedisScript<Long> RATE_LIMIT_SCRIPT;
+
+    static {
+        RATE_LIMIT_SCRIPT = new DefaultRedisScript<>();
+        RATE_LIMIT_SCRIPT.setResultType(Long.class);
+        RATE_LIMIT_SCRIPT.setScriptText(
+                "local current = redis.call('incr', KEYS[1]);" +
+                        "if current == 1 then redis.call('expire', KEYS[1], ARGV[2]); end;" +
+                        "if current > tonumber(ARGV[1]) then return 0; end;" +
+                        "return 1;"
+        );
+    }
 
     public Boolean tryAcquire(String key, int count, int time, TimeUnit timeUnit) {
-        // 1. 获得 RRateLimiter，并设置 rate 速率
-        RRateLimiter rateLimiter = getRRateLimiter(key, count, time, timeUnit);
-        // 2. 尝试获取 1 个
-        return rateLimiter.tryAcquire();
+        String redisKey = formatKey(key);
+        long seconds = Math.max(1, timeUnit.toSeconds(time));
+
+        try {
+            Long result = redisTemplate.execute(
+                    RATE_LIMIT_SCRIPT,
+                    Collections.singletonList(redisKey),
+                    count,
+                    seconds
+            );
+            return result != null && result == 1;
+        } catch (Exception e) {
+            // Redis 异常 fail-open
+            return true;
+        }
     }
 
     private static String formatKey(String key) {
         return String.format(RATE_LIMITER, key);
-    }
-
-    private RRateLimiter getRRateLimiter(String key, long count, int time, TimeUnit timeUnit) {
-        String redisKey = formatKey(key);
-        RRateLimiter rateLimiter = redissonClient.getRateLimiter(redisKey);
-        long rateInterval = timeUnit.toSeconds(time);
-        Duration duration = Duration.ofSeconds(rateInterval);
-        // 1. 如果不存在，设置 rate 速率
-        RateLimiterConfig config = rateLimiter.getConfig();
-        if (config == null) {
-            rateLimiter.trySetRate(RateType.OVERALL, count, duration.getSeconds(), RateIntervalUnit.SECONDS);
-            // 原因参见 https://t.zsxq.com/lcR0W
-            rateLimiter.expire(duration.getSeconds(), TimeUnit.SECONDS);
-            return rateLimiter;
-        }
-        // 2. 如果存在，并且配置相同，则直接返回
-        if (config.getRateType() == RateType.OVERALL
-                && Objects.equals(config.getRate(), count)
-                && Objects.equals(config.getRateInterval(), TimeUnit.SECONDS.toMillis(rateInterval))) {
-            return rateLimiter;
-        }
-        // 3. 如果存在，并且配置不同，则进行新建
-        rateLimiter.setRate(RateType.OVERALL, count, duration.getSeconds(), RateIntervalUnit.SECONDS);
-        // 原因参见 https://t.zsxq.com/lcR0W
-        rateLimiter.expire(duration.getSeconds(), TimeUnit.SECONDS);
-        return rateLimiter;
     }
 
 }

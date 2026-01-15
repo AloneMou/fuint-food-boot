@@ -8,6 +8,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.DigestUtil;
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import cn.iocoder.yudao.framework.signature.core.redis.ApiSignatureRedisDAO;
+import cn.iocoder.yudao.framework.signature.core.service.ApiSignatureService;
 import com.fuint.framework.exception.ServiceException;
 import com.fuint.framework.exception.enums.GlobalErrorCodeConstants;
 import com.fuint.framework.util.servlet.ServletUtils;
@@ -37,6 +38,7 @@ import static com.fuint.framework.exception.enums.GlobalErrorCodeConstants.BAD_R
 public class ApiSignatureAspect {
 
     private final ApiSignatureRedisDAO signatureRedisDAO;
+    private final ApiSignatureService signatureService;
 
     @Before("@annotation(signature)")
     public void beforePointCut(JoinPoint joinPoint, ApiSignature signature) {
@@ -97,6 +99,9 @@ public class ApiSignatureAspect {
         String appId = request.getHeader(signature.appId());
         if (StrUtil.isBlank(appId)) {
             return false;
+        }
+        if (signatureService.checkIpWhiteList(appId, ServletUtils.getClientIP(request))) {
+
         }
         String timestamp = request.getHeader(signature.timestamp());
         if (StrUtil.isBlank(timestamp)) {

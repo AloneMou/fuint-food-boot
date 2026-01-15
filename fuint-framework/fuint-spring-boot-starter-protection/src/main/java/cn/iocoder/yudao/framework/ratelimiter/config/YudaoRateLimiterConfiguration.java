@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.List;
 
@@ -24,8 +25,8 @@ public class YudaoRateLimiterConfiguration {
 
     @Bean
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
-    public RateLimiterRedisDAO rateLimiterRedisDAO(RedissonClient redissonClient) {
-        return new RateLimiterRedisDAO(redissonClient);
+    public RateLimiterRedisDAO rateLimiterRedisDAO(RedissonClient redissonClient, RedisTemplate<String,Object> redisTemplate) {
+        return new RateLimiterRedisDAO(redissonClient,redisTemplate);
     }
 
     // ========== 各种 RateLimiterRedisDAO Bean ==========

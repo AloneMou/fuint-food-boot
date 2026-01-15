@@ -1,6 +1,7 @@
 package com.fuint.repository.model.app;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModel;
@@ -10,6 +11,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Foot-Fuint-Backend-master
@@ -36,6 +38,9 @@ public class MtApp implements Serializable {
     @ApiModelProperty("应用密钥")
     private String appSecret;
 
+    @ApiModelProperty("请求白名单/IP")
+    private String whiteList;
+
     @ApiModelProperty("应用名称")
     private String appName;
 
@@ -43,7 +48,7 @@ public class MtApp implements Serializable {
     private String callbackUrl;
 
     @ApiModelProperty("应用状态")
-    private Integer status;
+    private String status;
 
     @ApiModelProperty("创建时间")
     private Date createTime;

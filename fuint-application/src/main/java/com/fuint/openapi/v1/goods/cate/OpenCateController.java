@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.fuint.openapi.enums.GoodsCateErrorCodeConstants.GOODS_CATE_NOT_FOUND;
+
 /**
  * 商品分类管理controller
  * <p>
@@ -82,7 +84,7 @@ public class OpenCateController extends BaseController {
         // 检查分类是否存在
         MtGoodsCate existCate = cateService.queryCateById(updateReqVO.getId());
         if (existCate == null) {
-            return CommonResult.error(404, "商品分类不存在");
+            return CommonResult.error(GOODS_CATE_NOT_FOUND);
         }
 
         cateService.updateCate(mtGoodsCate);
@@ -100,7 +102,7 @@ public class OpenCateController extends BaseController {
         // 检查分类是否存在
         MtGoodsCate existCate = cateService.queryCateById(id);
         if (existCate == null) {
-            return CommonResult.error(404, "商品分类不存在");
+            return CommonResult.error(GOODS_CATE_NOT_FOUND);
         }
 
         cateService.deleteCate(id, "openapi");
@@ -110,15 +112,15 @@ public class OpenCateController extends BaseController {
 
     @ApiOperation(value = "获取商品分类详情", notes = "根据ID获取商品分类详细信息")
     @GetMapping(value = "/detail/{id}")
-    @ApiSignature
-    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+//    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class, count = 2)
     public CommonResult<MtGoodsCateRespVO> getCateDetail(
             @ApiParam(value = "分类ID", required = true, example = "1")
             @PathVariable("id") Integer id) throws BusinessCheckException {
 
         MtGoodsCate mtCate = cateService.queryCateById(id);
         if (mtCate == null) {
-            return CommonResult.error(404, "商品分类不存在");
+            return CommonResult.error(GOODS_CATE_NOT_FOUND);
         }
 
         MtGoodsCateRespVO respVO = BeanUtils.toBean(mtCate, MtGoodsCateRespVO.class);
@@ -136,7 +138,7 @@ public class OpenCateController extends BaseController {
 
     @ApiOperation(value = "分页查询商品分类列表", notes = "支持按名称、状态、店铺等条件分页查询")
     @GetMapping(value = "/page")
-    @ApiSignature
+//    @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<MtGoodsCatePageRespVO> getCatePage(@Valid MtGoodsCatePageReqVO pageReqVO) throws BusinessCheckException {
 
@@ -199,9 +201,9 @@ public class OpenCateController extends BaseController {
 
     @ApiOperation(value = "获取所有启用的商品分类列表", notes = "获取所有状态为启用的商品分类，不分页")
     @GetMapping(value = "/list")
-    @ApiSignature
+//    @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<List<MtGoodsCateRespVO>> getCateList(
+    public CommonResult<List<MtGoodsCateListRespVO>> getCateList(
             @ApiParam(value = "商户ID", example = "1") @RequestParam(required = false) Integer merchantId,
             @ApiParam(value = "店铺ID", example = "1") @RequestParam(required = false) Integer storeId) throws BusinessCheckException {
 
@@ -217,9 +219,9 @@ public class OpenCateController extends BaseController {
         List<MtGoodsCate> cateList = cateService.queryCateListByParams(params);
 
         // 转换为响应VO
-        List<MtGoodsCateRespVO> respList = new java.util.ArrayList<>();
+        List<MtGoodsCateListRespVO> respList = new java.util.ArrayList<>();
         for (MtGoodsCate cate : cateList) {
-            MtGoodsCateRespVO vo = BeanUtils.toBean(cate, MtGoodsCateRespVO.class);
+            MtGoodsCateListRespVO vo = BeanUtils.toBean(cate, MtGoodsCateListRespVO.class);
             // 设置店铺名称
             if (cate.getStoreId() != null && cate.getStoreId() > 0) {
                 MtStore storeInfo = storeService.queryStoreById(cate.getStoreId());
@@ -243,7 +245,7 @@ public class OpenCateController extends BaseController {
      */
     @ApiOperation(value = "更新商品分类状态", notes = "更新指定商品分类的状态")
     @PutMapping(value = "/status/{id}")
-    @ApiSignature
+//    @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> updateCateStatus(
             @ApiParam(value = "分类ID", required = true, example = "1") @PathVariable("id") Integer id,
@@ -252,7 +254,7 @@ public class OpenCateController extends BaseController {
         // 检查分类是否存在
         MtGoodsCate existCate = cateService.queryCateById(id);
         if (existCate == null) {
-            return CommonResult.error(404, "商品分类不存在");
+            return CommonResult.error(GOODS_CATE_NOT_FOUND);
         }
 
         // 更新状态

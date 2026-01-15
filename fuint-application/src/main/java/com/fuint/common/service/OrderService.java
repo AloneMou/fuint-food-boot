@@ -255,4 +255,21 @@ public interface OrderService extends IService<MtOrder> {
      * @return boolean
      */
     boolean sendTakeFoodRemind(OrderDto orderDto)throws BusinessCheckException;
+
+    /**
+     * 订单预创建（实时算价）
+     * 不实际创建订单，仅进行价格试算和优惠券匹配
+     *
+     * @param merchantId 商户ID
+     * @param userId 用户ID
+     * @param cartList 购物车列表
+     * @param userCouponId 指定使用的用户优惠券ID（为0时自动匹配最优券）
+     * @param usePoint 使用积分数量
+     * @param platform 平台
+     * @param orderMode 订单模式
+     * @param storeId 店铺ID
+     * @throws BusinessCheckException
+     * @return 订单预创建结果（包含价格信息和可用优惠券列表）
+     */
+    Map<String, Object> preCreateOrder(Integer merchantId, Integer userId, List<MtCart> cartList, Integer userCouponId, Integer usePoint, String platform, String orderMode, Integer storeId) throws BusinessCheckException;
 }

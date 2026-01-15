@@ -2254,4 +2254,145 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
 
         return true;
     }
+
+    /**
+     * 订单预创建（实时算价）
+     * 不实际创建订单，仅进行价格试算和优惠券匹配
+     *
+     * @param merchantId    商户ID
+     * @param userId        用户ID
+     * @param cartList      购物车列表
+     * @param userCouponId  指定使用的用户优惠券ID（为0时自动匹配最优券）
+     * @param usePoint      使用积分数量
+     * @param platform      平台
+     * @param orderMode     订单模式
+     * @param storeId       店铺ID
+     * @return 订单预创建结果（包含价格信息和可用优惠券列表）
+     * @throws BusinessCheckException
+     */
+    @Override
+    public Map<String, Object> preCreateOrder(Integer merchantId, Integer userId, List<MtCart> cartList, Integer userCouponId, Integer usePoint, String platform, String orderMode, Integer storeId) throws BusinessCheckException {
+        Map<String, Object> result = new HashMap<>();
+
+        // 获取用户信息
+        MtUser userInfo = memberService.queryMemberById(userId);
+        if (userInfo == null) {
+            throw new BusinessCheckException("用户不存在");
+        }
+
+        // 检查购物车是否为空
+        if (cartList == null || cartList.isEmpty()) {
+            throw new BusinessCheckException("购物车为空");
+        }
+
+        // 计算商品总价和购物车详情
+        boolean isUsePoint = (usePoint != null && usePoint > 0);
+        Map<String, Object> cartData = calculateCartGoods(merchantId, userId, cartList, 0, isUsePoint, platform, orderMode);
+
+        BigDecimal totalPrice = new BigDecimal(cartData.get("totalPrice").toString());
+        BigDecimal deliveryFee = new BigDecimal(cartData.get("deliveryFee").toString());
+        List<CouponDto> couponList = (List<CouponDto>) cartData.get("couponList");
+        Integer myPoint = Integer.parseInt(cartData.get("myPoint").toString());
+        Integer calculatedUsePoint = Integer.parseInt(cartData.get("usePoint").toString());
+        BigDecimal usePointAmount = new BigDecimal(cartData.get("usePointAmount").toString());
+
+        // 处理优惠券列表，构建可用优惠券列表
+        List<Map<String, Object>> availableCoupons = new ArrayList<>();
+        Integer bestCouponId = null;
+        BigDecimal maxCouponAmount = BigDecimal.ZERO;
+
+        if (couponList != null && !couponList.isEmpty()) {
+            for (CouponDto coupon : couponList) {
+                Map<String, Object> couponInfo = new HashMap<>();
+                couponInfo.put("userCouponId", coupon.getUserCouponId());
+                couponInfo.put("couponId", coupon.getId());
+                couponInfo.put("couponName", coupon.getName());
+                couponInfo.put("couponType", coupon.getType());
+                couponInfo.put("discountAmount", coupon.getAmount());
+                couponInfo.put("description", coupon.getDescription());
+                couponInfo.put("effectiveDate", coupon.getEffectiveDate());
+
+                // 判断是否可用
+                String usable = UserCouponStatusEnum.UNUSED.getKey().equals(coupon.getStatus()) ? "A" : "N";
+                couponInfo.put("usable", usable);
+
+                // 储值卡余额
+                if (CouponTypeEnum.PRESTORE.getKey().equals(coupon.getType())) {
+                    couponInfo.put("balance", coupon.getAmount());
+                }
+
+                // 是否选中
+                boolean selected = false;
+                if (userCouponId != null && userCouponId.equals(coupon.getUserCouponId())) {
+                    selected = true;
+                }
+                couponInfo.put("selected", selected);
+
+                // 查找最优优惠券（金额最大且可用）
+                if ("A".equals(usable) && coupon.getAmount() != null) {
+                    if (coupon.getAmount().compareTo(maxCouponAmount) > 0) {
+                        maxCouponAmount = coupon.getAmount();
+                        bestCouponId = coupon.getUserCouponId();
+                    }
+                }
+
+                availableCoupons.add(couponInfo);
+            }
+        }
+
+        // 如果未指定优惠券，自动选择最优优惠券
+        Integer selectedCouponId = null;
+        BigDecimal couponAmount = BigDecimal.ZERO;
+
+        if (userCouponId != null && userCouponId > 0) {
+            // 使用指定的优惠券
+            selectedCouponId = userCouponId;
+            // 重新计算使用该优惠券后的价格
+            Map<String, Object> recalculateData = calculateCartGoods(merchantId, userId, cartList, userCouponId, isUsePoint, platform, orderMode);
+            couponAmount = new BigDecimal(recalculateData.get("couponAmount").toString());
+            calculatedUsePoint = Integer.parseInt(recalculateData.get("usePoint").toString());
+            usePointAmount = new BigDecimal(recalculateData.get("usePointAmount").toString());
+        } else if (bestCouponId != null) {
+            // 自动选择最优优惠券
+            selectedCouponId = bestCouponId;
+            // 重新计算使用最优优惠券后的价格
+            Map<String, Object> recalculateData = calculateCartGoods(merchantId, userId, cartList, bestCouponId, isUsePoint, platform, orderMode);
+            couponAmount = new BigDecimal(recalculateData.get("couponAmount").toString());
+            calculatedUsePoint = Integer.parseInt(recalculateData.get("usePoint").toString());
+            usePointAmount = new BigDecimal(recalculateData.get("usePointAmount").toString());
+
+            // 标记选中的优惠券
+            for (Map<String, Object> coupon : availableCoupons) {
+                if (bestCouponId.equals(coupon.get("userCouponId"))) {
+                    coupon.put("selected", true);
+                }
+            }
+        }
+
+        // 计算最终金额
+        BigDecimal totalAmount = totalPrice;
+        BigDecimal discountAmount = couponAmount;
+        BigDecimal pointDiscountAmount = usePointAmount;
+
+        // 应付金额 = 商品总额 - 优惠金额 - 积分抵扣金额 + 配送费
+        BigDecimal payableAmount = totalAmount.subtract(discountAmount).subtract(pointDiscountAmount).add(deliveryFee);
+        if (payableAmount.compareTo(BigDecimal.ZERO) < 0) {
+            payableAmount = BigDecimal.ZERO;
+        }
+
+        // 构建返回结果
+        result.put("totalAmount", totalAmount);
+        result.put("discountAmount", discountAmount);
+        result.put("pointAmount", pointDiscountAmount);
+        result.put("deliveryFee", deliveryFee);
+        result.put("payableAmount", payableAmount);
+        result.put("usePoint", calculatedUsePoint);
+        result.put("availablePoint", myPoint);
+        result.put("availableCoupons", availableCoupons);
+        result.put("selectedCouponId", selectedCouponId);
+        result.put("goodsList", cartData.get("list"));
+        result.put("calculateTime", new Date());
+
+        return result;
+    }
 }

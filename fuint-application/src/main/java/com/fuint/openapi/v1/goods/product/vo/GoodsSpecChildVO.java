@@ -22,4 +22,5 @@ public class GoodsSpecChildVO {
 
     @ApiModelProperty(value = "是否选中", example = "true")
     private Boolean checked;
+
 }

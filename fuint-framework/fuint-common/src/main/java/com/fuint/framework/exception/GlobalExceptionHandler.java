@@ -1,6 +1,8 @@
 package com.fuint.framework.exception;
 
+import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.web.ResponseObject;
+import org.apache.poi.ss.formula.functions.T;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.validation.BindException;
@@ -10,11 +12,12 @@ import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
 import javax.servlet.http.HttpServletRequest;
 
 /**
  * 全局异常处理器
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -91,7 +94,7 @@ public class GlobalExceptionHandler {
     public ResponseObject handleBindException(BindException e) {
         log.error(e.getMessage(), e);
         String message = e.getAllErrors().get(0).getDefaultMessage();
-        return new ResponseObject(201,message, null);
+        return new ResponseObject(201, message, null);
     }
 
     /**
@@ -101,6 +104,16 @@ public class GlobalExceptionHandler {
     public Object handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         log.error(e.getMessage(), e);
         String message = e.getBindingResult().getFieldError().getDefaultMessage();
-        return new ResponseObject(201,message, null);
+        return new ResponseObject(201, message, null);
     }
+
+    /**
+     * 自定义验证异常
+     */
+    @ExceptionHandler(ServiceException.class)
+    public CommonResult<?> handleException(ServiceException e) {
+        log.error(e.getMessage(), e);
+        return CommonResult.error(e);
+    }
+
 }

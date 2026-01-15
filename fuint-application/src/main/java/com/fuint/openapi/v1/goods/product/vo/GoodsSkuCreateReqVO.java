@@ -1,35 +1,26 @@
 package com.fuint.openapi.v1.goods.product.vo;
 
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
- * 商品SKU VO
+ * Foot-Fuint-Backend-master
  *
- * Created by FSQ
- * CopyRight https://www.fuint.cn
+ * @author mjw
+ * @since 2026/1/15 23:30
  */
 @Data
-@ApiModel(value = "商品SKU VO")
-public class GoodsSkuVO {
-
-    @ApiModelProperty(value = "SKU ID", example = "1")
-    private Integer id;
+public class GoodsSkuCreateReqVO {
 
     @ApiModelProperty(value = "SKU编码", example = "SKU001")
     private String skuNo;
 
-    @ApiModelProperty(value = "商品ID", example = "1")
-    private Integer goodsId;
-
-    @ApiModelProperty(value = "规格ID集合，用-分隔", example = "1-2-3")
-    private String specIds;
-
     @ApiModelProperty(value = "规格名称，用^分隔", example = "冰^500ml^40")
-    private String specName;
+    private List<Spec> specLs;
+
 
     @ApiModelProperty(value = "SKU图片", example = "https://example.com/sku.jpg")
     private String logo;
@@ -46,6 +37,13 @@ public class GoodsSkuVO {
     @ApiModelProperty(value = "库存", example = "100")
     private Integer stock;
 
-    @ApiModelProperty(value = "状态：A-正常；D-删除", example = "A")
-    private String status;
+    @Data
+    public static class Spec {
+
+        @ApiModelProperty(value = "规格名称", example = "冰")
+        private String name;
+
+        @ApiModelProperty(value = "规格值", example = "500ml")
+        private String value;
+    }
 }

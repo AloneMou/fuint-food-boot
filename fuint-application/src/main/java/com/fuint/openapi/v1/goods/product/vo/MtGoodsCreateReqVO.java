@@ -45,6 +45,7 @@ public class MtGoodsCreateReqVO {
     @ApiModelProperty(value = "商品图片列表", example = "[\"https://example.com/image1.jpg\"]")
     private List<String> images;
 
+    @NotNull(message = "商品LOGO不能为空")
     @ApiModelProperty(value = "商品LOGO（第一张图片）", example = "https://example.com/logo.jpg")
     private String logo;
 
@@ -80,14 +81,14 @@ public class MtGoodsCreateReqVO {
     private Integer serviceTime;
 
     @ApiModelProperty(value = "可用优惠券ID列表，逗号分隔", example = "1,2,3")
-    private String couponIds;
+    private List<Integer> couponIds;
 
     @ApiModelProperty(value = "排序", example = "100")
     private Integer sort;
 
     @ApiModelProperty(value = "商品规格列表")
-    private List<GoodsSpecItemVO> specData;
+    private List<GoodsSpecItemCreateReqVO> specData;
 
     @ApiModelProperty(value = "商品SKU列表")
-    private List<GoodsSkuVO> skuData;
+    private List<GoodsSkuCreateReqVO> skuData;
 }
