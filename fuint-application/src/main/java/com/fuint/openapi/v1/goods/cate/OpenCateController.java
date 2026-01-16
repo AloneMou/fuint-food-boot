@@ -113,7 +113,7 @@ public class OpenCateController extends BaseController {
     @ApiOperation(value = "获取商品分类详情", notes = "根据ID获取商品分类详细信息")
     @GetMapping(value = "/detail/{id}")
     @ApiSignature
-    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class, count = 2)
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<MtGoodsCateRespVO> getCateDetail(
             @ApiParam(value = "分类ID", required = true, example = "1")
             @PathVariable("id") Integer id) throws BusinessCheckException {
