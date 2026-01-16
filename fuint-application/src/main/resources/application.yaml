@@ -3,7 +3,7 @@ multipart:
   max-request-size: 20mb
 
 server:
-  port: 6003
+  port: 7800
 
 spring:
   autoconfigure:
