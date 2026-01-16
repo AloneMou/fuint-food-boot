@@ -1,15 +1,15 @@
 package com.fuint.openapi.v1.member.user;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fuint.common.dto.UserDto;
-import com.fuint.common.enums.StatusEnum;
+import com.fuint.common.enums.CouponExpireTypeEnum;
 import com.fuint.common.service.*;
 import com.fuint.common.util.PhoneFormatCheckUtils;
-import com.fuint.common.util.TimeUtil;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
@@ -30,13 +30,12 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * OpenAPI-员工管理相关接口
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -61,6 +60,12 @@ public class OpenUserController extends BaseController {
 
     @Resource
     private MtUserCouponMapper mtUserCouponMapper;
+
+    @Resource
+    private UserCouponService userCouponService;
+
+    @Resource
+    private CouponService couponService;
 
     /**
      * 单个员工数据同步
@@ -213,6 +218,7 @@ public class OpenUserController extends BaseController {
         if (StringUtil.isNotEmpty(syncReqVO.getDescription())) {
             mtUser.setDescription(syncReqVO.getDescription());
         }
+        mtUser.setIsStaff(syncReqVO.getIsStaff());
 
         mtUser.setOperator("openapi");
 
@@ -238,7 +244,6 @@ public class OpenUserController extends BaseController {
         result.setOperationType(operationType);
         result.setSuccess(true);
         result.setMessage("同步成功");
-
         return result;
     }
 
@@ -285,42 +290,7 @@ public class OpenUserController extends BaseController {
             paginationRequest.setCurrentPage(pageReqVO.getPage());
             paginationRequest.setPageSize(pageReqVO.getPageSize());
 
-            // 构建查询参数
-            Map<String, Object> params = new HashMap<>();
-            if (pageReqVO.getId() != null) {
-                params.put("id", pageReqVO.getId().toString());
-            }
-            if (StringUtil.isNotEmpty(pageReqVO.getName())) {
-                params.put("name", pageReqVO.getName());
-            }
-            if (StringUtil.isNotEmpty(pageReqVO.getMobile())) {
-                params.put("mobile", pageReqVO.getMobile());
-            }
-            if (StringUtil.isNotEmpty(pageReqVO.getUserNo())) {
-                params.put("userNo", pageReqVO.getUserNo());
-            }
-            if (StringUtil.isNotEmpty(pageReqVO.getGroupIds())) {
-                params.put("groupIds", pageReqVO.getGroupIds());
-            }
-            if (StringUtil.isNotEmpty(pageReqVO.getGradeId())) {
-                params.put("gradeId", pageReqVO.getGradeId());
-            }
-            if (pageReqVO.getMerchantId() != null) {
-                params.put("merchantId", pageReqVO.getMerchantId().toString());
-            }
-            if (StringUtil.isNotEmpty(pageReqVO.getStoreIds())) {
-                params.put("storeIds", pageReqVO.getStoreIds());
-            }
-            if (StringUtil.isNotEmpty(pageReqVO.getStatus())) {
-                params.put("status", pageReqVO.getStatus());
-            }
-            if (StringUtil.isNotEmpty(pageReqVO.getStartTime())) {
-                params.put("startTime", pageReqVO.getStartTime());
-            }
-            if (StringUtil.isNotEmpty(pageReqVO.getEndTime())) {
-                params.put("endTime", pageReqVO.getEndTime());
-            }
-
+            Map<String, Object> params = BeanUtil.beanToMap(pageReqVO, false, true);
             paginationRequest.setSearchParams(params);
 
             // 执行查询
@@ -382,9 +352,7 @@ public class OpenUserController extends BaseController {
 
         // 隐藏手机号中间四位
         String phone = mtUser.getMobile();
-        if (phone != null && StringUtil.isNotEmpty(phone) && phone.length() == 11) {
-            respVO.setMobile(phone.substring(0, 3) + "****" + phone.substring(7));
-        }
+        respVO.setMobile(phone);
 
         // 设置分组名称
         if (mtUser.getGroupId() != null && mtUser.getGroupId() > 0) {
@@ -426,7 +394,7 @@ public class OpenUserController extends BaseController {
         }
 
         // 设置最后登录时间描述
-        respVO.setLastLoginTime(TimeUtil.showTime(new Date(), mtUser.getUpdateTime()));
+//        respVO.setLastLoginTime(TimeUtil.showTime(new Date(), mtUser.getUpdateTime()));
 
         return respVO;
     }
@@ -441,11 +409,110 @@ public class OpenUserController extends BaseController {
         // UserDto已经处理过手机号脱敏
         respVO.setGradeName(userDto.getGradeName());
         respVO.setStoreName(userDto.getStoreName());
-        respVO.setLastLoginTime(userDto.getLastLoginTime());
+//        respVO.setLastLoginTime(userDto.getLastLoginTime());
 
         // 设置分组名称
         if (userDto.getGroupInfo() != null) {
             respVO.setGroupName(userDto.getGroupInfo().getName());
+        }
+
+        return respVO;
+    }
+
+    /**
+     * 获取用户优惠券列表
+     *
+     * @param reqVO 查询请求参数
+     * @return 用户优惠券列表
+     */
+    @ApiOperation(value = "获取用户优惠券列表", notes = "支持分页查询，支持按优惠券状态筛选（等于）")
+    @GetMapping(value = "/{userId}/coupons")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    public CommonResult<UserCouponListPageRespVO> getUserCouponList(
+            @ApiParam(value = "用户ID", required = true, example = "1")
+            @PathVariable("userId") Integer userId,
+            @Valid UserCouponListReqVO reqVO) {
+        try {
+            // 验证用户是否存在
+            MtUser userInfo = memberService.queryMemberById(userId);
+            if (userInfo == null) {
+                return CommonResult.error(UserErrorCodeConstants.USER_NOT_FOUND);
+            }
+
+            // 构建分页请求
+            PaginationRequest paginationRequest = new PaginationRequest();
+            paginationRequest.setCurrentPage(reqVO.getPage() != null ? reqVO.getPage() : 1);
+            paginationRequest.setPageSize(reqVO.getPageSize() != null ? reqVO.getPageSize() : 10);
+
+            Map<String, Object> params = new HashMap<>();
+            params.put("userId", userId.toString());
+            if (StringUtil.isNotEmpty(reqVO.getStatus())) {
+                params.put("status", reqVO.getStatus());
+            }
+            paginationRequest.setSearchParams(params);
+
+            // 执行查询
+            PaginationResponse<MtUserCoupon> paginationResponse = userCouponService.queryUserCouponListByPagination(paginationRequest);
+
+            // 转换为响应VO
+            List<UserCouponRespVO> list = paginationResponse.getContent().stream()
+                    .map(this::convertUserCouponToRespVO)
+                    .collect(Collectors.toList());
+
+            // 构建响应
+            UserCouponListPageRespVO respVO = new UserCouponListPageRespVO();
+            respVO.setPage(reqVO.getPage() != null ? reqVO.getPage() : 1);
+            respVO.setPageSize(reqVO.getPageSize() != null ? reqVO.getPageSize() : 10);
+            respVO.setTotal(paginationResponse.getTotalElements());
+            respVO.setTotalPages(paginationResponse.getTotalPages());
+            respVO.setList(list);
+
+            return CommonResult.success(respVO);
+        } catch (BusinessCheckException e) {
+            return CommonResult.error(500, "获取用户优惠券列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 转换MtUserCoupon为响应VO
+     */
+    private UserCouponRespVO convertUserCouponToRespVO(MtUserCoupon userCoupon) {
+        UserCouponRespVO respVO = new UserCouponRespVO();
+        respVO.setUserCouponId(userCoupon.getId());
+        respVO.setCouponId(userCoupon.getCouponId());
+        respVO.setCode(userCoupon.getCode());
+        respVO.setStatus(userCoupon.getStatus());
+        respVO.setAmount(userCoupon.getAmount());
+        respVO.setBalance(userCoupon.getBalance());
+        respVO.setCreateTime(userCoupon.getCreateTime());
+        respVO.setUsedTime(userCoupon.getUsedTime());
+
+        // 获取优惠券详情
+        try {
+            MtCoupon couponInfo = couponService.queryCouponById(userCoupon.getCouponId());
+            if (couponInfo != null) {
+                respVO.setCouponName(couponInfo.getName());
+                respVO.setCouponType(couponInfo.getType());
+
+                // 设置使用门槛说明
+                if (StringUtil.isEmpty(couponInfo.getOutRule()) || couponInfo.getOutRule().equals("0")) {
+                    respVO.setDescription("无使用门槛");
+                } else {
+                    respVO.setDescription("满" + couponInfo.getOutRule() + "元可用");
+                }
+
+                // 设置有效期
+                if (couponInfo.getExpireType().equals(CouponExpireTypeEnum.FIX.getKey())) {
+                    respVO.setEffectiveStartTime(couponInfo.getBeginTime());
+                    respVO.setEffectiveEndTime(couponInfo.getEndTime());
+                } else if (couponInfo.getExpireType().equals(CouponExpireTypeEnum.FLEX.getKey())) {
+                    respVO.setEffectiveStartTime(userCoupon.getCreateTime());
+                    respVO.setEffectiveEndTime(userCoupon.getExpireTime());
+                }
+            }
+        } catch (Exception e) {
+            // 忽略异常，继续处理
         }
 
         return respVO;

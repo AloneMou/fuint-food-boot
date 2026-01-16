@@ -65,4 +65,8 @@ public class MtUserSyncReqVO {
 
     @ApiModelProperty(value = "备注信息", example = "员工备注")
     private String description;
+
+    @ApiModelProperty(value = "是否员工",example = "Y")
+    private String isStaff;
+
 }

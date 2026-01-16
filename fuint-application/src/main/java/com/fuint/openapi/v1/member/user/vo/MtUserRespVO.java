@@ -72,8 +72,8 @@ public class MtUserRespVO {
     @ApiModelProperty(value = "积分", example = "100")
     private Integer point;
 
-    @ApiModelProperty(value = "来源渠道", example = "backend_add")
-    private String source;
+//    @ApiModelProperty(value = "来源渠道", example = "backend_add")
+//    private String source;
 
     @ApiModelProperty(value = "状态：A-激活；N-禁用；D-删除", example = "A")
     private String status;
@@ -97,9 +97,12 @@ public class MtUserRespVO {
     @ApiModelProperty(value = "会员结束时间", example = "2025-01-01 00:00:00")
     private Date endTime;
 
-    @ApiModelProperty(value = "最后操作人", example = "openapi")
-    private String operator;
+    @ApiModelProperty(value = "是否员工",example = "Y")
+    private String isStaff;
 
-    @ApiModelProperty(value = "最后登录时间描述", example = "2小时前")
-    private String lastLoginTime;
+//    @ApiModelProperty(value = "最后操作人", example = "openapi")
+//    private String operator;
+
+//    @ApiModelProperty(value = "最后登录时间描述", example = "2小时前")
+//    private String lastLoginTime;
 }

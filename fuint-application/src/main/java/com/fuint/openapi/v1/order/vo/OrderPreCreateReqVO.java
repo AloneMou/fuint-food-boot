@@ -1,12 +1,11 @@
 package com.fuint.openapi.v1.order.vo;
 
+import com.fuint.common.enums.OrderTypeEnum;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -30,22 +29,22 @@ public class OrderPreCreateReqVO {
     private Integer storeId;
 
     @ApiModelProperty(value = "订单类型：googs-商品订单；payment-付款订单", example = "googs")
-    private String type;
+    private OrderTypeEnum type;
 
     @ApiModelProperty(value = "订单商品列表")
     private List<OrderGoodsItemVO> items;
 
-    @ApiModelProperty(value = "购物车ID列表，逗号分隔", example = "1,2,3")
-    private String cartIds;
+//    @ApiModelProperty(value = "购物车ID列表，逗号分隔", example = "1,2,3")
+//    private String cartIds;
 
-    @ApiModelProperty(value = "商品ID（立即购买）", example = "1")
-    private Integer goodsId;
-
-    @ApiModelProperty(value = "商品SKU ID（立即购买）", example = "1")
-    private Integer skuId;
-
-    @ApiModelProperty(value = "购买数量（立即购买）", example = "1")
-    private Integer buyNum;
+//    @ApiModelProperty(value = "商品ID（立即购买）", example = "1")
+//    private Integer goodsId;
+//
+//    @ApiModelProperty(value = "商品SKU ID（立即购买）", example = "1")
+//    private Integer skuId;
+//
+//    @ApiModelProperty(value = "购买数量（立即购买）", example = "1")
+//    private Integer buyNum;
 
     @ApiModelProperty(value = "用户优惠券ID（指定使用的优惠券）", example = "1")
     private Integer userCouponId;

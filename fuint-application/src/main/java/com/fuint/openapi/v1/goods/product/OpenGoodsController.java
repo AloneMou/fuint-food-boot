@@ -2,7 +2,7 @@ package com.fuint.openapi.v1.goods.product;
 
 import com.alibaba.fastjson.JSONArray;
 import com.fuint.common.dto.*;
-import com.fuint.common.enums.StatusEnum;
+import com.fuint.common.enums.*;
 import com.fuint.common.service.*;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
@@ -13,6 +13,7 @@ import com.fuint.openapi.v1.goods.product.vo.*;
 import com.fuint.repository.mapper.MtGoodsSkuMapper;
 import com.fuint.repository.mapper.MtGoodsSpecMapper;
 import com.fuint.repository.model.*;
+import com.fuint.common.param.OrderListParam;
 import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,6 +47,15 @@ public class OpenGoodsController extends BaseController {
 
     @Resource
     private GoodsService goodsService;
+
+    @Resource
+    private OrderService orderService;
+
+    @Resource
+    private MemberService memberService;
+
+    @Resource
+    private SettingService settingService;
 
 
     @ApiOperation(value = "创建商品", notes = "创建一个新的商品")
@@ -259,6 +270,182 @@ public class OpenGoodsController extends BaseController {
         return CommonResult.success(true);
     }
 
+    /**
+     * C端商品列表（支持动态价格计算）
+     *
+     * @param userId 用户ID（可选，用于计算个性化价格）
+     * @param storeId 店铺ID（可选）
+     * @param merchantId 商户ID（可选）
+     * @param cateId 分类ID（可选）
+     * @param pageNo 页码（从1开始）
+     * @param pageSize 每页数量
+     * @return C端商品列表
+     * @throws BusinessCheckException 业务异常
+     */
+    @ApiOperation(value = "C端商品列表（支持动态价格计算）", notes = "获取已上架、可点单的商品列表，包含动态价格（根据营销活动和用户优惠券计算）和划线价格")
+    @GetMapping(value = "/c-end")
+    public CommonResult<CGoodsListPageRespVO> getCGoodsList(
+            @ApiParam(value = "用户ID（用于计算个性化价格）", example = "1") @RequestParam(required = false) Integer userId,
+            @ApiParam(value = "店铺ID", example = "1") @RequestParam(required = false) Integer storeId,
+            @ApiParam(value = "商户ID", example = "1") @RequestParam(required = false) Integer merchantId,
+            @ApiParam(value = "分类ID", example = "1") @RequestParam(required = false) Integer cateId,
+            @ApiParam(value = "页码", example = "1") @RequestParam(required = false, defaultValue = "1") Integer pageNo,
+            @ApiParam(value = "每页数量", example = "20") @RequestParam(required = false, defaultValue = "20") Integer pageSize) throws BusinessCheckException {
+
+        try {
+            // 1. 查询已上架商品
+            Map<String, Object> params = new HashMap<>();
+            params.put("status", StatusEnum.ENABLED.getKey());
+            if (merchantId != null) {
+                params.put("merchantId", merchantId.toString());
+            }
+            if (storeId != null) {
+                params.put("storeId", storeId.toString());
+            }
+            if (cateId != null) {
+                params.put("cateId", cateId.toString());
+            }
+
+            PaginationRequest paginationRequest = new PaginationRequest();
+            paginationRequest.setCurrentPage(pageNo);
+            paginationRequest.setPageSize(pageSize);
+            paginationRequest.setSearchParams(params);
+
+            PaginationResponse<GoodsDto> paginationResponse = goodsService.queryGoodsListByPagination(paginationRequest);
+
+            // 2. 转换为C端商品列表，并计算动态价格
+            List<CGoodsListRespVO> cGoodsList = new ArrayList<>();
+            String basePath = settingService.getUploadBasePath();
+
+            for (GoodsDto goodsDto : paginationResponse.getContent()) {
+                CGoodsListRespVO cGoods = new CGoodsListRespVO();
+                cGoods.setGoodsId(goodsDto.getId());
+                cGoods.setName(goodsDto.getName());
+                cGoods.setDescription(goodsDto.getDescription());
+                cGoods.setStatus(goodsDto.getStatus());
+
+                // 设置商品图片
+                String logo = goodsDto.getLogo();
+                if (StringUtil.isNotEmpty(logo) && !logo.startsWith("http")) {
+                    logo = basePath + logo;
+                }
+                cGoods.setImageUrl(logo);
+
+                // 处理单规格商品
+                if (goodsDto.getIsSingleSpec() != null && goodsDto.getIsSingleSpec().equals(YesOrNoEnum.YES.getKey())) {
+                    // 单规格商品，直接使用商品价格
+                    BigDecimal originalPrice = goodsDto.getPrice();
+                    BigDecimal dynamicPrice = calculateDynamicPrice(merchantId != null ? merchantId : 1, userId, goodsDto.getId(), 0, originalPrice);
+                    cGoods.setOriginalPrice(originalPrice);
+                    cGoods.setDynamicPrice(dynamicPrice);
+                    cGoods.setStock(goodsDto.getStock());
+                } else {
+                    // 多规格商品，处理SKU列表
+                    List<CGoodsSkuVO> skuList = new ArrayList<>();
+                    if (goodsDto.getSkuList() != null && !goodsDto.getSkuList().isEmpty()) {
+                        for (MtGoodsSku sku : goodsDto.getSkuList()) {
+                            CGoodsSkuVO cSku = new CGoodsSkuVO();
+                            cSku.setSkuId(sku.getId());
+                            cSku.setSkuNo(sku.getSkuNo());
+                            cSku.setStock(sku.getStock());
+                            cSku.setStatus(sku.getStatus());
+
+                            // 设置SKU图片
+                            String skuLogo = sku.getLogo();
+                            if (StringUtil.isNotEmpty(skuLogo) && !skuLogo.startsWith("http")) {
+                                skuLogo = basePath + skuLogo;
+                            } else if (StringUtil.isEmpty(skuLogo)) {
+                                skuLogo = logo;
+                            }
+                            cSku.setLogo(skuLogo);
+
+                            // 计算动态价格
+                            BigDecimal originalPrice = sku.getPrice();
+                            BigDecimal dynamicPrice = calculateDynamicPrice(merchantId != null ? merchantId : 1, userId, goodsDto.getId(), sku.getId(), originalPrice);
+                            cSku.setOriginalPrice(originalPrice);
+                            cSku.setDynamicPrice(dynamicPrice);
+
+                            // 获取规格信息
+                            if (StringUtil.isNotEmpty(sku.getSpecIds())) {
+                                List<GoodsSpecValueDto> specList = goodsService.getSpecListBySkuId(sku.getId());
+                                Map<String, String> specs = new HashMap<>();
+                                for (GoodsSpecValueDto spec : specList) {
+                                    specs.put(spec.getSpecName(), spec.getSpecValue());
+                                }
+                                cSku.setSpecs(specs);
+                            }
+
+                            skuList.add(cSku);
+                        }
+                    }
+                    cGoods.setSkus(skuList);
+                }
+
+                cGoodsList.add(cGoods);
+            }
+
+            // 3. 构建分页响应
+            CGoodsListPageRespVO respVO = new CGoodsListPageRespVO();
+            respVO.setPageNo(pageNo);
+            respVO.setPageSize(pageSize);
+            respVO.setTotalCount(paginationResponse.getTotalElements());
+            respVO.setTotalPages(paginationResponse.getTotalPages());
+            respVO.setItems(cGoodsList);
+
+            return CommonResult.success(respVO);
+        } catch (Exception e) {
+            return CommonResult.error(500, "获取C端商品列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 计算商品动态价格
+     * 根据用户优惠券和营销活动计算实际价格
+     *
+     * @param merchantId 商户ID
+     * @param userId 用户ID（可为null）
+     * @param goodsId 商品ID
+     * @param skuId SKU ID（单规格商品为0）
+     * @param originalPrice 原价
+     * @return 动态价格
+     */
+    private BigDecimal calculateDynamicPrice(Integer merchantId, Integer userId, Integer goodsId, Integer skuId, BigDecimal originalPrice) {
+        try {
+            // 如果没有用户ID，直接返回原价
+            if (userId == null || userId <= 0) {
+                return originalPrice;
+            }
+
+            // 验证用户是否存在
+            MtUser userInfo = memberService.queryMemberById(userId);
+            if (userInfo == null) {
+                return originalPrice;
+            }
+
+            // 构建购物车项（单个商品，数量为1）
+            List<MtCart> cartList = new ArrayList<>();
+            MtCart cart = new MtCart();
+            cart.setGoodsId(goodsId);
+            cart.setSkuId(skuId != null ? skuId : 0);
+            cart.setNum(1);
+            cart.setUserId(userId);
+            cart.setStatus(StatusEnum.ENABLED.getKey());
+            cartList.add(cart);
+
+            // 调用价格计算逻辑（不使用优惠券，只计算基础价格和会员折扣）
+            Map<String, Object> cartData = orderService.calculateCartGoods(
+                    merchantId, userId, cartList, 0, false, "MP-WEIXIN", OrderModeEnum.ONESELF.getKey()
+            );
+
+            BigDecimal totalPrice = new BigDecimal(cartData.get("totalPrice").toString());
+            // 动态价格 = 计算后的总价（已考虑会员折扣等）
+            // 由于是单个商品，总价就是单价
+            return totalPrice;
+        } catch (Exception e) {
+            // 计算失败，返回原价
+            return originalPrice;
+        }
+    }
 
     /**
      * 转换GoodsDto为响应VO

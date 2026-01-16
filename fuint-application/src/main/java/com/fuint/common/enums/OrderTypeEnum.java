@@ -7,7 +7,7 @@ package com.fuint.common.enums;
  * CopyRight https://www.fuint.cn
  */
 public enum OrderTypeEnum {
-    GOOGS("goods", "商品订单"),
+    GOODS("goods", "商品订单"),
     PAYMENT("payment", "付款订单"),
     RECHARGE("recharge", "充值订单"),
     PRESTORE("prestore", "储值卡订单"),
