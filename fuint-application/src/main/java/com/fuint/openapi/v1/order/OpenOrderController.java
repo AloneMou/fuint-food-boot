@@ -1,5 +1,8 @@
 package com.fuint.openapi.v1.order;
 
+import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
+import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
+import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -88,6 +91,8 @@ public class OpenOrderController extends BaseController {
      */
     @ApiOperation(value = "订单预创建（实时算价）", notes = "不实际创建订单，仅进行价格试算和优惠券匹配")
     @PostMapping(value = "/pre-create")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<OrderPreCreateRespVO> preCreateOrder(@Valid @RequestBody OrderPreCreateReqVO reqVO) throws BusinessCheckException {
 
         // 验证用户是否存在
@@ -235,6 +240,8 @@ public class OpenOrderController extends BaseController {
      */
     @ApiOperation(value = "创建订单", notes = "验证价格并创建订单")
     @PostMapping(value = "/create")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<UserOrderDto> createOrder(@Valid @RequestBody OrderCreateReqVO reqVO) throws BusinessCheckException {
         // 1. 验证用户是否存在
         MtUser userInfo = memberService.queryMemberById(reqVO.getUserId());
@@ -307,6 +314,8 @@ public class OpenOrderController extends BaseController {
      */
     @ApiOperation(value = "取消订单", notes = "取消订单，若已支付则自动退款")
     @PostMapping(value = "/cancel")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> cancelOrder(@Valid @RequestBody OrderCancelReqVO reqVO) throws BusinessCheckException {
         MtOrder order = orderService.getOrderInfo(reqVO.getOrderId());
         if (order == null) {
@@ -341,6 +350,8 @@ public class OpenOrderController extends BaseController {
      */
     @ApiOperation(value = "支付订单", notes = "支付成功，并发送订单支付成功事件回调")
     @PostMapping(value = "/pay")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> payOrder(@Valid @RequestBody OrderPayReqVO reqVO) throws BusinessCheckException {
         MtOrder order = orderService.getOrderInfo(reqVO.getOrderId());
         if (order == null) {
@@ -373,6 +384,8 @@ public class OpenOrderController extends BaseController {
      */
     @ApiOperation(value = "订单退款", notes = "触发退款逻辑,退款成功修改订单支付状态为已退款")
     @PostMapping(value = "/refund")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> refundOrder(@Valid @RequestBody OrderRefundReqVO reqVO) throws BusinessCheckException {
         AccountInfo accountInfo = new AccountInfo();
         accountInfo.setAccountName("OpenApi-System");
@@ -402,6 +415,8 @@ public class OpenOrderController extends BaseController {
      */
     @ApiOperation(value = "订单详情", notes = "包含订单与订单商品所有信息，预计等待时间，前有多少杯咖啡")
     @GetMapping(value = "/detail/{id}")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Map<String, Object>> getOrderDetail(@PathVariable("id") Integer id) throws BusinessCheckException {
         UserOrderDto orderDto = orderService.getOrderById(id);
         if (orderDto == null) {
@@ -443,6 +458,8 @@ public class OpenOrderController extends BaseController {
      */
     @ApiOperation(value = "订单列表", notes = "支持多条件分页查询")
     @GetMapping(value = "/list")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<PaginationResponse<UserOrderDto>> getOrderList(@Valid OrderListReqVO reqVO) throws BusinessCheckException {
         OrderListParam param = new OrderListParam();
         param.setUserId(reqVO.getUserId());
@@ -469,6 +486,8 @@ public class OpenOrderController extends BaseController {
      */
     @ApiOperation(value = "订单维度评价", notes = "支持订单维度NPS打分评价（0-10分）")
     @PostMapping(value = "/evaluate")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> evaluateOrder(@Valid @RequestBody OrderEvaluateReqVO reqVO) {
         MtUserAction action = new MtUserAction();
         action.setUserId(0); // 暂时未知，或者从订单获取
@@ -503,6 +522,8 @@ public class OpenOrderController extends BaseController {
      */
     @ApiOperation(value = "订单评价拉取", notes = "支持分页拉取，时间范围筛选，商品sku范围筛选")
     @GetMapping(value = "/evaluations")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<PaginationResponse<MtUserAction>> getEvaluations(@Valid EvaluationListReqVO reqVO) {
         PageHelper.startPage(reqVO.getPage(), reqVO.getPageSize());
         
@@ -565,6 +586,8 @@ public class OpenOrderController extends BaseController {
      */
     @ApiOperation(value = "标记订单可取餐", notes = "标记订单商品可取餐，并发送可取餐状态通知回调")
     @PostMapping(value = "/ready/{orderId}")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> markOrderReady(
             @ApiParam(value = "订单ID", required = true, example = "1")
             @PathVariable("orderId") Integer orderId) throws BusinessCheckException {

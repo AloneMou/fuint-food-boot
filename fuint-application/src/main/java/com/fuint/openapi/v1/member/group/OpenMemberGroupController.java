@@ -1,5 +1,8 @@
 package com.fuint.openapi.v1.member.group;
 
+import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
+import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
+import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.fuint.common.Constants;
 import com.fuint.common.dto.MemberGroupDto;
 import com.fuint.common.dto.UserGroupDto;
@@ -51,6 +54,8 @@ public class OpenMemberGroupController extends BaseController {
      */
     @ApiOperation(value = "创建会员分组", notes = "创建一个新的会员分组")
     @PostMapping(value = "/create")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Integer> createMemberGroup(@Valid @RequestBody MtMemberGroupCreateReqVO createReqVO) throws BusinessCheckException {
         MemberGroupDto memberGroupDto = BeanUtils.toBean(createReqVO, MemberGroupDto.class);
         
@@ -80,6 +85,8 @@ public class OpenMemberGroupController extends BaseController {
      */
     @ApiOperation(value = "更新会员分组", notes = "根据ID更新会员分组信息")
     @PutMapping(value = "/update")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> updateMemberGroup(@Valid @RequestBody MtMemberGroupUpdateReqVO updateReqVO) throws BusinessCheckException {
         // 检查分组是否存在
         MtUserGroup existGroup = memberGroupService.queryMemberGroupById(updateReqVO.getId());
@@ -103,6 +110,8 @@ public class OpenMemberGroupController extends BaseController {
      */
     @ApiOperation(value = "删除会员分组", notes = "根据ID删除会员分组（逻辑删除）")
     @DeleteMapping(value = "/delete/{id}")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> deleteMemberGroup(
             @ApiParam(value = "分组ID", required = true, example = "1")
             @PathVariable("id") Integer id) throws BusinessCheckException {
@@ -126,6 +135,8 @@ public class OpenMemberGroupController extends BaseController {
      */
     @ApiOperation(value = "获取会员分组详情", notes = "根据ID获取会员分组详细信息")
     @GetMapping(value = "/detail/{id}")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<MtMemberGroupRespVO> getMemberGroupDetail(
             @ApiParam(value = "分组ID", required = true, example = "1")
             @PathVariable("id") Integer id) throws BusinessCheckException {
@@ -149,6 +160,8 @@ public class OpenMemberGroupController extends BaseController {
      */
     @ApiOperation(value = "分页查询会员分组列表", notes = "支持按名称、状态等条件分页查询")
     @GetMapping(value = "/page")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<MtMemberGroupPageRespVO> getMemberGroupPage(@Valid MtMemberGroupPageReqVO pageReqVO) throws BusinessCheckException {
         
         // 构建分页请求
@@ -206,6 +219,8 @@ public class OpenMemberGroupController extends BaseController {
      */
     @ApiOperation(value = "获取所有启用的会员分组列表", notes = "获取所有状态为启用的会员分组，不分页")
     @GetMapping(value = "/list")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<List<MtMemberGroupRespVO>> getMemberGroupList(
             @ApiParam(value = "商户ID", example = "1") @RequestParam(required = false) Integer merchantId,
             @ApiParam(value = "店铺ID", example = "1") @RequestParam(required = false) Integer storeId) throws BusinessCheckException {
@@ -244,6 +259,8 @@ public class OpenMemberGroupController extends BaseController {
      */
     @ApiOperation(value = "更新会员分组状态", notes = "更新指定会员分组的状态")
     @PatchMapping(value = "/status/{id}")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> updateMemberGroupStatus(
             @ApiParam(value = "分组ID", required = true, example = "1") @PathVariable("id") Integer id,
             @ApiParam(value = "状态：A-正常；N-禁用；D-删除", required = true, example = "A") @RequestParam String status) throws BusinessCheckException {

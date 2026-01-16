@@ -1,5 +1,8 @@
 package com.fuint.openapi.v1.goods.product;
 
+import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
+import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
+import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.alibaba.fastjson.JSONArray;
 import com.fuint.common.dto.*;
 import com.fuint.common.enums.*;
@@ -60,6 +63,8 @@ public class OpenGoodsController extends BaseController {
 
     @ApiOperation(value = "创建商品", notes = "创建一个新的商品")
     @PostMapping(value = "/create")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Integer> createGoods(@Valid @RequestBody MtGoodsCreateReqVO createReqVO) throws BusinessCheckException {
         Integer goodsId = goodsService.createGoods(createReqVO);
         return CommonResult.success(goodsId);
@@ -74,6 +79,8 @@ public class OpenGoodsController extends BaseController {
      */
     @ApiOperation(value = "更新商品", notes = "根据ID更新商品信息")
     @PutMapping(value = "/update")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> updateGoods(@Valid @RequestBody MtGoodsUpdateReqVO updateReqVO) throws BusinessCheckException {
         goodsService.updateGoods(updateReqVO);
         return CommonResult.success(true);
@@ -88,6 +95,8 @@ public class OpenGoodsController extends BaseController {
      */
     @ApiOperation(value = "删除商品", notes = "根据ID删除商品（逻辑删除）")
     @DeleteMapping(value = "/delete/{id}")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> deleteGoods(
             @ApiParam(value = "商品ID", required = true, example = "1")
             @PathVariable("id") Integer id) throws BusinessCheckException {
@@ -111,6 +120,8 @@ public class OpenGoodsController extends BaseController {
      */
     @ApiOperation(value = "获取商品详情", notes = "根据ID获取商品详细信息，包括规格和SKU")
     @GetMapping(value = "/detail/{id}")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<MtGoodsRespVO> getGoodsDetail(
             @ApiParam(value = "商品ID", required = true, example = "1")
             @PathVariable("id") Integer id) {
@@ -138,6 +149,8 @@ public class OpenGoodsController extends BaseController {
      */
     @ApiOperation(value = "分页查询商品列表", notes = "支持按名称、编码、类型、分类、状态等条件分页查询")
     @GetMapping(value = "/page")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<MtGoodsPageRespVO> getGoodsPage(@Valid MtGoodsPageReqVO pageReqVO) throws BusinessCheckException {
 
         // 构建分页请求
@@ -208,6 +221,8 @@ public class OpenGoodsController extends BaseController {
      */
     @ApiOperation(value = "获取所有启用的商品列表", notes = "获取所有状态为启用的商品，不分页")
     @GetMapping(value = "/list")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<List<MtGoodsRespVO>> getGoodsList(
             @ApiParam(value = "商户ID", example = "1") @RequestParam(required = false) Integer merchantId,
             @ApiParam(value = "店铺ID", example = "1") @RequestParam(required = false) Integer storeId,
@@ -250,6 +265,8 @@ public class OpenGoodsController extends BaseController {
      */
     @ApiOperation(value = "更新商品状态", notes = "更新指定商品的状态")
     @PatchMapping(value = "/status/{id}")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> updateGoodsStatus(
             @ApiParam(value = "商品ID", required = true, example = "1") @PathVariable("id") Integer id,
             @ApiParam(value = "状态：A-正常；D-删除", required = true, example = "A") @RequestParam String status) throws BusinessCheckException {
@@ -284,6 +301,8 @@ public class OpenGoodsController extends BaseController {
      */
     @ApiOperation(value = "C端商品列表（支持动态价格计算）", notes = "获取已上架、可点单的商品列表，包含动态价格（根据营销活动和用户优惠券计算）和划线价格")
     @GetMapping(value = "/c-end")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<CGoodsListPageRespVO> getCGoodsList(
             @ApiParam(value = "用户ID（用于计算个性化价格）", example = "1") @RequestParam(required = false) Integer userId,
             @ApiParam(value = "店铺ID", example = "1") @RequestParam(required = false) Integer storeId,
