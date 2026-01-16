@@ -1,5 +1,7 @@
 package com.fuint.openapi.v1.goods.product;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
@@ -17,15 +19,28 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.pojo.CommonResult;
+import com.fuint.framework.util.object.BeanUtils;
+import com.fuint.framework.util.object.ObjectUtils;
 import com.fuint.framework.web.BaseController;
-import com.fuint.openapi.v1.goods.product.vo.*;
-import com.fuint.repository.mapper.MtGoodsSkuMapper;
-import com.fuint.repository.mapper.MtGoodsSpecMapper;
+import com.fuint.openapi.v1.goods.product.vo.model.CGoodsSkuVO;
+import com.fuint.openapi.v1.goods.product.vo.model.GoodsSkuVO;
+import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecChildVO;
+import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecItemVO;
+import com.fuint.openapi.v1.goods.product.vo.request.CGoodsListPageReqVO;
+import com.fuint.openapi.v1.goods.product.vo.request.MtGoodsCreateReqVO;
+import com.fuint.openapi.v1.goods.product.vo.request.MtGoodsPageReqVO;
+import com.fuint.openapi.v1.goods.product.vo.request.MtGoodsUpdateReqVO;
+import com.fuint.openapi.v1.goods.product.vo.response.CGoodsListRespVO;
+import com.fuint.openapi.v1.goods.product.vo.response.MtGoodsPageRespVO;
+import com.fuint.openapi.v1.goods.product.vo.response.MtGoodsRespVO;
 import com.fuint.repository.model.*;
+import com.fuint.framework.pojo.PageResult;
 import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,7 +50,11 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.fuint.framework.util.collection.CollectionUtils.convertMap;
+import static com.fuint.framework.util.object.BeanUtils.buildPaginationRequest;
 import static com.fuint.framework.util.string.StrUtils.splitToInt;
+import static com.fuint.openapi.enums.GoodsErrorCodeConstants.GOODS_GET_DETAIL_FAILED;
+import static com.fuint.openapi.enums.GoodsErrorCodeConstants.GOODS_NOT_FOUND;
 
 /**
  * 商品管理controller
@@ -49,12 +68,7 @@ import static com.fuint.framework.util.string.StrUtils.splitToInt;
 @RequestMapping(value = "/api/v1/goods")
 public class OpenGoodsController extends BaseController {
 
-    @Resource
-    private MtGoodsSpecMapper mtGoodsSpecMapper;
-
-    @Resource
-    private MtGoodsSkuMapper mtGoodsSkuMapper;
-
+    private static final Logger log = LoggerFactory.getLogger(OpenGoodsController.class);
     @Resource
     private GoodsService goodsService;
 
@@ -67,7 +81,6 @@ public class OpenGoodsController extends BaseController {
     @Resource
     private SettingService settingService;
 
-
     @ApiOperation(value = "创建商品", notes = "创建一个新的商品")
     @PostMapping(value = "/create")
     @ApiSignature
@@ -77,13 +90,6 @@ public class OpenGoodsController extends BaseController {
         return CommonResult.success(goodsId);
     }
 
-    /**
-     * 更新商品
-     *
-     * @param updateReqVO 更新请求参数
-     * @return 是否成功
-     * @throws BusinessCheckException 业务异常
-     */
     @ApiOperation(value = "更新商品", notes = "根据ID更新商品信息")
     @PutMapping(value = "/update")
     @ApiSignature
@@ -93,13 +99,6 @@ public class OpenGoodsController extends BaseController {
         return CommonResult.success(true);
     }
 
-    /**
-     * 删除商品
-     *
-     * @param id 商品ID
-     * @return 是否成功
-     * @throws BusinessCheckException 业务异常
-     */
     @ApiOperation(value = "删除商品", notes = "根据ID删除商品（逻辑删除）")
     @DeleteMapping(value = "/delete/{id}")
     @ApiSignature
@@ -107,113 +106,57 @@ public class OpenGoodsController extends BaseController {
     public CommonResult<Boolean> deleteGoods(
             @ApiParam(value = "商品ID", required = true, example = "1")
             @PathVariable("id") Integer id) throws BusinessCheckException {
-
         // 检查商品是否存在
         MtGoods existGoods = goodsService.queryGoodsById(id);
         if (existGoods == null) {
-            return CommonResult.error(404, "商品不存在");
+            return CommonResult.error(GOODS_NOT_FOUND);
         }
-
         goodsService.deleteGoods(id, "openapi");
         return CommonResult.success(true);
     }
 
-    /**
-     * 获取商品详情
-     *
-     * @param id 商品ID
-     * @return 商品详情
-     * @throws BusinessCheckException 业务异常
-     */
     @ApiOperation(value = "获取商品详情", notes = "根据ID获取商品详细信息，包括规格和SKU")
     @GetMapping(value = "/detail/{id}")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<MtGoodsRespVO> getGoodsDetail(
-            @ApiParam(value = "商品ID", required = true, example = "1")
-            @PathVariable("id") Integer id) {
-
+    public CommonResult<MtGoodsRespVO> getGoodsDetail(@PathVariable("id") Integer id) {
         try {
             GoodsDto goodsDto = goodsService.getGoodsDetail(id, false);
             if (goodsDto == null) {
-                return CommonResult.error(404, "商品不存在");
+                return CommonResult.error(GOODS_NOT_FOUND);
             }
-
             MtGoodsRespVO respVO = convertToRespVO(goodsDto);
-
             return CommonResult.success(respVO);
         } catch (Exception e) {
-            return CommonResult.error(500, "获取商品详情失败: " + e.getMessage());
+            return CommonResult.error(GOODS_GET_DETAIL_FAILED);
         }
     }
 
-    /**
-     * 分页查询商品列表
-     *
-     * @param pageReqVO 分页查询参数
-     * @return 商品列表
-     * @throws BusinessCheckException 业务异常
-     */
     @ApiOperation(value = "分页查询商品列表", notes = "支持按名称、编码、类型、分类、状态等条件分页查询")
     @GetMapping(value = "/page")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<MtGoodsPageRespVO> getGoodsPage(@Valid MtGoodsPageReqVO pageReqVO) throws BusinessCheckException {
-
         // 构建分页请求
         PaginationRequest paginationRequest = new PaginationRequest();
         paginationRequest.setCurrentPage(pageReqVO.getPage());
         paginationRequest.setPageSize(pageReqVO.getPageSize());
-
         // 构建查询参数
-        Map<String, Object> params = new HashMap<>();
-        if (StringUtil.isNotEmpty(pageReqVO.getName())) {
-            params.put("name", pageReqVO.getName());
-        }
-        if (StringUtil.isNotEmpty(pageReqVO.getGoodsNo())) {
-            params.put("goodsNo", pageReqVO.getGoodsNo());
-        }
-        if (StringUtil.isNotEmpty(pageReqVO.getType())) {
-            params.put("type", pageReqVO.getType());
-        }
-        if (pageReqVO.getCateId() != null) {
-            params.put("cateId", pageReqVO.getCateId().toString());
-        }
-        if (StringUtil.isNotEmpty(pageReqVO.getStatus())) {
-            params.put("status", pageReqVO.getStatus());
-        }
-        if (pageReqVO.getStoreId() != null) {
-            params.put("storeId", pageReqVO.getStoreId().toString());
-        }
-        if (pageReqVO.getMerchantId() != null) {
-            params.put("merchantId", pageReqVO.getMerchantId().toString());
-        }
-        if (StringUtil.isNotEmpty(pageReqVO.getIsSingleSpec())) {
-            params.put("isSingleSpec", pageReqVO.getIsSingleSpec());
-        }
-        if (StringUtil.isNotEmpty(pageReqVO.getStock())) {
-            params.put("stock", pageReqVO.getStock());
-        }
-
+        Map<String, Object> params = BeanUtil.beanToMap(pageReqVO, false, true);
         paginationRequest.setSearchParams(params);
-
         // 执行查询
         PaginationResponse<GoodsDto> paginationResponse = goodsService.queryGoodsListByPagination(paginationRequest);
-
         // 构建响应
         MtGoodsPageRespVO respVO = new MtGoodsPageRespVO();
-
         // 转换数据
         List<MtGoodsRespVO> list = paginationResponse.getContent().stream()
                 .map(this::convertToRespVO)
                 .collect(Collectors.toList());
-
         respVO.setList(list);
         respVO.setTotal(paginationResponse.getTotalElements());
         respVO.setTotalPages(paginationResponse.getTotalPages());
         respVO.setCurrentPage(pageReqVO.getPage());
         respVO.setPageSize(pageReqVO.getPageSize());
-
         return CommonResult.success(respVO);
     }
 
@@ -281,7 +224,7 @@ public class OpenGoodsController extends BaseController {
         // 检查商品是否存在
         MtGoods existGoods = goodsService.queryGoodsById(id);
         if (existGoods == null) {
-            return CommonResult.error(404, "商品不存在");
+            return CommonResult.error(GOODS_NOT_FOUND);
         }
 
         // 更新状态
@@ -294,144 +237,62 @@ public class OpenGoodsController extends BaseController {
         return CommonResult.success(true);
     }
 
-    /**
-     * C端商品列表（支持动态价格计算）
-     *
-     * @param userId 用户ID（可选，用于计算个性化价格）
-     * @param storeId 店铺ID（可选）
-     * @param merchantId 商户ID（可选）
-     * @param cateId 分类ID（可选）
-     * @param pageNo 页码（从1开始）
-     * @param pageSize 每页数量
-     * @return C端商品列表
-     * @throws BusinessCheckException 业务异常
-     */
     @ApiOperation(value = "C端商品列表（支持动态价格计算）", notes = "获取已上架、可点单的商品列表，包含动态价格（根据营销活动和用户优惠券计算）和划线价格")
-    @GetMapping(value = "/c-end")
+    @GetMapping(value = "/calculate-page")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<CGoodsListPageRespVO> getCGoodsList(
-            @ApiParam(value = "用户ID（用于计算个性化价格）", example = "1") @RequestParam(required = false) Integer userId,
-            @ApiParam(value = "店铺ID", example = "1") @RequestParam(required = false) Integer storeId,
-            @ApiParam(value = "商户ID", example = "1") @RequestParam(required = false) Integer merchantId,
-            @ApiParam(value = "分类ID", example = "1") @RequestParam(required = false) Integer cateId,
-            @ApiParam(value = "页码", example = "1") @RequestParam(required = false, defaultValue = "1") Integer pageNo,
-            @ApiParam(value = "每页数量", example = "20") @RequestParam(required = false, defaultValue = "20") Integer pageSize) throws BusinessCheckException {
-
-        try {
-            // 1. 查询已上架商品
-            Map<String, Object> params = new HashMap<>();
-            params.put("status", StatusEnum.ENABLED.getKey());
-            if (merchantId != null) {
-                params.put("merchantId", merchantId.toString());
-            }
-            if (storeId != null) {
-                params.put("storeId", storeId.toString());
-            }
-            if (cateId != null) {
-                params.put("cateId", cateId.toString());
-            }
-
-            PaginationRequest paginationRequest = new PaginationRequest();
-            paginationRequest.setCurrentPage(pageNo);
-            paginationRequest.setPageSize(pageSize);
-            paginationRequest.setSearchParams(params);
-
-            PaginationResponse<GoodsDto> paginationResponse = goodsService.queryGoodsListByPagination(paginationRequest);
-
-            // 2. 转换为C端商品列表，并计算动态价格
-            List<CGoodsListRespVO> cGoodsList = new ArrayList<>();
-            String basePath = settingService.getUploadBasePath();
-
-            for (GoodsDto goodsDto : paginationResponse.getContent()) {
-                CGoodsListRespVO cGoods = new CGoodsListRespVO();
-                cGoods.setGoodsId(goodsDto.getId());
-                cGoods.setName(goodsDto.getName());
-                cGoods.setDescription(goodsDto.getDescription());
-                cGoods.setStatus(goodsDto.getStatus());
-
-                // 设置商品图片
-                String logo = goodsDto.getLogo();
-                if (StringUtil.isNotEmpty(logo) && !logo.startsWith("http")) {
-                    logo = basePath + logo;
+    public CommonResult<PageResult<CGoodsListRespVO>> getCGoodsList(@Valid CGoodsListPageReqVO pageReqVO) throws BusinessCheckException {
+        Integer merchantId = ObjectUtils.defaultIfNull(pageReqVO.getMerchantId(), 1);
+        Integer userId = ObjectUtils.defaultIfNull(pageReqVO.getUserId(), 0);
+        memberService.checkMemberExist(userId);
+        // 1. 查询已上架商品
+        PageResult<MtGoods> pageResult = goodsService.queryGoodsList(pageReqVO);
+        List<MtGoods> goodsList = pageResult.getList();
+        List<CGoodsListRespVO> goodsLs = new ArrayList<>();
+        for (MtGoods goods : goodsList) {
+            CGoodsListRespVO cGoods = BeanUtils.toBean(goods, CGoodsListRespVO.class);
+            cGoods.setImageUrl(goods.getLogo());
+            cGoods.setGoodsId(goods.getId());
+            if (StrUtil.equals(YesOrNoEnum.YES.getKey(), goods.getIsSingleSpec())) {
+                // 单规格商品，直接使用商品价格
+                BigDecimal originalPrice = goods.getPrice();
+                BigDecimal dynamicPrice = calculateDynamicPrice(merchantId != null ? merchantId : 1, userId, goods.getId(), 0, originalPrice);
+                cGoods.setOriginalPrice(originalPrice);
+                cGoods.setDynamicPrice(dynamicPrice);
+                cGoods.setStock(goods.getStock());
+            } else {
+                MtGoodsSku sku = goodsService.getLowestPriceSku(goods.getId());
+                if (sku == null) {
+                    log.error("商品ID：{}，没有找到最低价格SKU", goods.getId());
+                    continue;
                 }
-                cGoods.setImageUrl(logo);
-
-                // 处理单规格商品
-                if (goodsDto.getIsSingleSpec() != null && goodsDto.getIsSingleSpec().equals(YesOrNoEnum.YES.getKey())) {
-                    // 单规格商品，直接使用商品价格
-                    BigDecimal originalPrice = goodsDto.getPrice();
-                    BigDecimal dynamicPrice = calculateDynamicPrice(merchantId != null ? merchantId : 1, userId, goodsDto.getId(), 0, originalPrice);
-                    cGoods.setOriginalPrice(originalPrice);
-                    cGoods.setDynamicPrice(dynamicPrice);
-                    cGoods.setStock(goodsDto.getStock());
-                } else {
-                    // 多规格商品，处理SKU列表
-                    List<CGoodsSkuVO> skuList = new ArrayList<>();
-                    if (goodsDto.getSkuList() != null && !goodsDto.getSkuList().isEmpty()) {
-                        for (MtGoodsSku sku : goodsDto.getSkuList()) {
-                            CGoodsSkuVO cSku = new CGoodsSkuVO();
-                            cSku.setSkuId(sku.getId());
-                            cSku.setSkuNo(sku.getSkuNo());
-                            cSku.setStock(sku.getStock());
-                            cSku.setStatus(sku.getStatus());
-
-                            // 设置SKU图片
-                            String skuLogo = sku.getLogo();
-                            if (StringUtil.isNotEmpty(skuLogo) && !skuLogo.startsWith("http")) {
-                                skuLogo = basePath + skuLogo;
-                            } else if (StringUtil.isEmpty(skuLogo)) {
-                                skuLogo = logo;
-                            }
-                            cSku.setLogo(skuLogo);
-
-                            // 计算动态价格
-                            BigDecimal originalPrice = sku.getPrice();
-                            BigDecimal dynamicPrice = calculateDynamicPrice(merchantId != null ? merchantId : 1, userId, goodsDto.getId(), sku.getId(), originalPrice);
-                            cSku.setOriginalPrice(originalPrice);
-                            cSku.setDynamicPrice(dynamicPrice);
-
-                            // 获取规格信息
-                            if (StringUtil.isNotEmpty(sku.getSpecIds())) {
-                                List<GoodsSpecValueDto> specList = goodsService.getSpecListBySkuId(sku.getId());
-                                Map<String, String> specs = new HashMap<>();
-                                for (GoodsSpecValueDto spec : specList) {
-                                    specs.put(spec.getSpecName(), spec.getSpecValue());
-                                }
-                                cSku.setSpecs(specs);
-                            }
-
-                            skuList.add(cSku);
-                        }
-                    }
-                    cGoods.setSkus(skuList);
-                }
-
-                cGoodsList.add(cGoods);
+                // 计算动态价格
+                BigDecimal originalPrice = sku.getPrice();
+                BigDecimal dynamicPrice = calculateDynamicPrice(1, userId, goods.getId(), sku.getId(), originalPrice);
+                cGoods.setOriginalPrice(originalPrice);
+                cGoods.setDynamicPrice(dynamicPrice);
+                cGoods.setDefaultSkuId(sku.getId());
             }
-
-            // 3. 构建分页响应
-            CGoodsListPageRespVO respVO = new CGoodsListPageRespVO();
-            respVO.setPageNo(pageNo);
-            respVO.setPageSize(pageSize);
-            respVO.setTotalCount(paginationResponse.getTotalElements());
-            respVO.setTotalPages(paginationResponse.getTotalPages());
-            respVO.setItems(cGoodsList);
-
-            return CommonResult.success(respVO);
-        } catch (Exception e) {
-            return CommonResult.error(500, "获取C端商品列表失败: " + e.getMessage());
+            goodsLs.add(cGoods);
         }
+        PageResult<CGoodsListRespVO> respVO = new PageResult<>();
+        respVO.setTotal(pageResult.getTotal());
+        respVO.setTotalPages(pageResult.getTotalPages());
+        respVO.setCurrentPage(pageResult.getCurrentPage());
+        respVO.setPageSize(pageResult.getPageSize());
+        respVO.setList(goodsLs);
+        return CommonResult.success(respVO);
     }
+
 
     /**
      * 计算商品动态价格
      * 根据用户优惠券和营销活动计算实际价格
      *
-     * @param merchantId 商户ID
-     * @param userId 用户ID（可为null）
-     * @param goodsId 商品ID
-     * @param skuId SKU ID（单规格商品为0）
+     * @param merchantId    商户ID
+     * @param userId        用户ID（可为null）
+     * @param goodsId       商品ID
+     * @param skuId         SKU ID（单规格商品为0）
      * @param originalPrice 原价
      * @return 动态价格
      */
@@ -441,13 +302,11 @@ public class OpenGoodsController extends BaseController {
             if (userId == null || userId <= 0) {
                 return originalPrice;
             }
-
             // 验证用户是否存在
             MtUser userInfo = memberService.queryMemberById(userId);
             if (userInfo == null) {
                 return originalPrice;
             }
-
             // 构建购物车项（单个商品，数量为1）
             List<MtCart> cartList = new ArrayList<>();
             MtCart cart = new MtCart();
@@ -462,11 +321,7 @@ public class OpenGoodsController extends BaseController {
             Map<String, Object> cartData = orderService.calculateCartGoods(
                     merchantId, userId, cartList, 0, false, "MP-WEIXIN", OrderModeEnum.ONESELF.getKey()
             );
-
-            BigDecimal totalPrice = new BigDecimal(cartData.get("totalPrice").toString());
-            // 动态价格 = 计算后的总价（已考虑会员折扣等）
-            // 由于是单个商品，总价就是单价
-            return totalPrice;
+            return new BigDecimal(cartData.get("totalPrice").toString());
         } catch (Exception e) {
             // 计算失败，返回原价
             return originalPrice;
@@ -528,7 +383,7 @@ public class OpenGoodsController extends BaseController {
         respVO.setIsMemberDiscount(goodsDto.getIsMemberDiscount());
         respVO.setIsSingleSpec(goodsDto.getIsSingleSpec());
         respVO.setServiceTime(goodsDto.getServiceTime());
-        respVO.setCouponIds(splitToInt(goodsDto.getCouponIds(),","));
+        respVO.setCouponIds(splitToInt(goodsDto.getCouponIds(), ","));
         respVO.setSort(goodsDto.getSort());
         respVO.setStatus(goodsDto.getStatus());
         respVO.setCreateTime(goodsDto.getCreateTime());

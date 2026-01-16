@@ -17,6 +17,7 @@ import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.mapper.MtUserCouponMapper;
+import com.fuint.repository.mapper.MtCouponGoodsMapper;
 import com.fuint.repository.model.*;
 import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
@@ -82,6 +83,11 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
      * 订单服务接口
      * */
     private OrderService orderService;
+
+    /**
+     * 卡券商品关联Mapper
+     * */
+    private MtCouponGoodsMapper mtCouponGoodsMapper;
 
     /**
      * 分页查询券列表
@@ -747,5 +753,98 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
 
         mtUserCouponMapper.insert(userCoupon);
         return true;
+    }
+
+    /**
+     * 根据商品和金额获取最高额度的优惠券
+     *
+     * @param userId 会员ID
+     * @param goodsIds 商品ID列表
+     * @param amount 订单金额
+     * @return 最高额度的优惠券
+     * */
+    @Override
+    public CouponDto getBestCouponByGoodsAndAmount(Integer userId, List<Integer> goodsIds, BigDecimal amount) throws BusinessCheckException {
+        if (userId == null || userId <= 0) {
+            return null;
+        }
+        if (goodsIds == null || goodsIds.isEmpty()) {
+            return null;
+        }
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return null;
+        }
+
+        // 获取用户未使用的优惠券
+        List<String> statusList = Arrays.asList(UserCouponStatusEnum.UNUSED.getKey());
+        List<MtUserCoupon> userCouponList = mtUserCouponMapper.getUserCouponList(userId, statusList);
+
+        if (userCouponList == null || userCouponList.isEmpty()) {
+            return null;
+        }
+
+        CouponDto bestCoupon = null;
+        BigDecimal maxAmount = BigDecimal.ZERO;
+
+        for (MtUserCoupon userCoupon : userCouponList) {
+            MtCoupon couponInfo = couponService.queryCouponById(userCoupon.getCouponId());
+            if (couponInfo == null) {
+                continue;
+            }
+
+            // 只处理优惠券类型
+            if (!couponInfo.getType().equals(CouponTypeEnum.COUPON.getKey())) {
+                continue;
+            }
+
+            // 检查优惠券是否有效
+            boolean isEffective = couponService.isCouponEffective(couponInfo, userCoupon);
+            if (!isEffective) {
+                continue;
+            }
+
+            // 检查商品是否适用
+            if (couponInfo.getApplyGoods() != null && couponInfo.getApplyGoods().equals(ApplyGoodsEnum.PARK_GOODS.getKey())) {
+                // 指定商品，需要检查商品是否在适用范围内
+                List<MtCouponGoods> couponGoodsList = mtCouponGoodsMapper.getCouponGoods(couponInfo.getId());
+                if (couponGoodsList != null && !couponGoodsList.isEmpty()) {
+                    List<Integer> applyGoodsIds = new ArrayList<>();
+                    for (MtCouponGoods mtCouponGoods : couponGoodsList) {
+                        applyGoodsIds.add(mtCouponGoods.getGoodsId());
+                    }
+                    // 检查是否有交集
+                    boolean hasIntersection = goodsIds.stream().anyMatch(applyGoodsIds::contains);
+                    if (!hasIntersection) {
+                        continue;
+                    }
+                }
+            }
+
+            // 检查满减门槛
+            if (StringUtil.isNotEmpty(couponInfo.getOutRule())) {
+                BigDecimal outRule = new BigDecimal(couponInfo.getOutRule());
+                if (amount.compareTo(outRule) < 0) {
+                    continue;
+                }
+            }
+
+            // 比较优惠金额，找出最大的
+            BigDecimal couponAmount = userCoupon.getAmount();
+            if (couponAmount.compareTo(maxAmount) > 0) {
+                maxAmount = couponAmount;
+                bestCoupon = new CouponDto();
+                bestCoupon.setId(couponInfo.getId());
+                bestCoupon.setUserCouponId(userCoupon.getId());
+                bestCoupon.setName(couponInfo.getName());
+                bestCoupon.setType(couponInfo.getType());
+                bestCoupon.setAmount(couponAmount);
+                bestCoupon.setStatus(UserCouponStatusEnum.UNUSED.getKey());
+                bestCoupon.setOutRule(couponInfo.getOutRule());
+                bestCoupon.setDescription(couponInfo.getDescription());
+                bestCoupon.setImage(couponInfo.getImage());
+            }
+        }
+
+        return bestCoupon;
     }
 }

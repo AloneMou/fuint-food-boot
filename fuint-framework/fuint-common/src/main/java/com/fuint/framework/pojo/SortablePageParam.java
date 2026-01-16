@@ -12,7 +12,7 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class SortablePageParam extends PageParam {
+public class SortablePageParam extends PageParams {
 
     @ApiModelProperty(value = "排序字段")
     private List<SortingField> sortingFields;

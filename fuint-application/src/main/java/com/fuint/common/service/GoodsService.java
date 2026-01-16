@@ -6,13 +6,15 @@ import com.fuint.common.dto.GoodsTopDto;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
-import com.fuint.openapi.v1.goods.product.vo.MtGoodsCreateReqVO;
-import com.fuint.openapi.v1.goods.product.vo.MtGoodsUpdateReqVO;
+import com.fuint.openapi.v1.goods.product.vo.request.CGoodsListPageReqVO;
+import com.fuint.openapi.v1.goods.product.vo.request.MtGoodsCreateReqVO;
+import com.fuint.openapi.v1.goods.product.vo.request.MtGoodsUpdateReqVO;
 import com.fuint.repository.bean.GoodsTopBean;
 import com.fuint.repository.model.MtGoods;
 import com.fuint.repository.model.MtGoodsSku;
 import com.fuint.repository.model.MtGoodsSpec;
-import com.fuint.repository.vo.request.GoodsStatisticsReqVO;
+import com.fuint.framework.pojo.PageResult;
+import com.fuint.repository.request.GoodsStatisticsReqVO;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
@@ -169,4 +171,36 @@ public interface GoodsService {
      * @param updateReqVO 商品信息
      */
     void updateGoods(MtGoodsUpdateReqVO updateReqVO) throws BusinessCheckException;
+
+
+    /**
+     * 商品列表分页查询
+     *
+     * @param pageReqVO 请求参数
+     * @return 商品列表
+     */
+    PageResult<MtGoods> queryGoodsList(CGoodsListPageReqVO pageReqVO);
+
+    /**
+     * 获取商品SKU列表
+     *
+     * @param goodsId 商品ID
+     * @return 商品SKU列表
+     */
+    List<MtGoodsSku> queryGoodsSkuList(Integer goodsId);
+
+
+    /**
+     * 获取最低价格SKU
+     */
+    MtGoodsSku getLowestPriceSku(Integer goodsId);
+
+    /**
+     * 获取商品规格列表
+     *
+     * @param goodsId 商品ID
+     * @return 商品规格列表
+     */
+    List<MtGoodsSpec> queryGoodsSpecList(Integer goodsId);
+
 }

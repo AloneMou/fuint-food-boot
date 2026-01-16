@@ -1,12 +1,14 @@
 package com.fuint.framework.exception;
 
+import org.tuckey.web.filters.urlrewrite.Run;
+
 /**
  * 业务检查异常
  *
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
-public class BusinessCheckException extends Exception {
+public class BusinessCheckException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
     private Throwable rootCause;

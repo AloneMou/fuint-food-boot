@@ -1,6 +1,8 @@
 package com.fuint.framework.util.object;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.fuint.framework.pagination.PaginationRequest;
+import com.fuint.framework.pojo.PageParams;
 import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.util.collection.CollectionUtils;
 
@@ -9,7 +11,7 @@ import java.util.function.Consumer;
 
 /**
  * Bean 工具类
- *
+ * <p>
  * 1. 默认使用 {@link BeanUtil} 作为实现类，虽然不同 bean 工具的性能有差别，但是对绝大多数同学的项目，不用在意这点性能
  * 2. 针对复杂的对象转换，可以搜参考 AuthConvert 实现，通过 mapstruct + default 配合实现
  *
@@ -56,7 +58,7 @@ public class BeanUtils {
         if (peek != null) {
             list.forEach(peek);
         }
-        return new PageResult<>(list, source.getTotal());
+        return new PageResult<>(list, source.getTotal(), source.getTotalPages(), source.getCurrentPage(), source.getPageSize());
     }
 
     public static void copyProperties(Object source, Object target) {
@@ -64,6 +66,13 @@ public class BeanUtils {
             return;
         }
         BeanUtil.copyProperties(source, target, false);
+    }
+
+    public static PaginationRequest buildPaginationRequest(PageParams pageParam) {
+        PaginationRequest paginationRequest = new PaginationRequest();
+        paginationRequest.setCurrentPage(pageParam.getPageNo());
+        paginationRequest.setPageSize(pageParam.getPageSize());
+        return paginationRequest;
     }
 
 }

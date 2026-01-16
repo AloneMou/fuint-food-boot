@@ -70,7 +70,7 @@ public interface UserGradeService extends IService<MtUserGrade> {
      * @throws BusinessCheckException
      * @return
      */
-    MtUserGrade getInitUserGrade(Integer merchantId) throws BusinessCheckException;
+    MtUserGrade getInitUserGrade(Integer merchantId);
 
     /**
      * 获取付费会员等级列表

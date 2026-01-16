@@ -13,6 +13,7 @@ import com.fuint.common.service.*;
 import com.fuint.common.util.*;
 import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
+import com.fuint.framework.exception.ServiceException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.repository.bean.MemberTopBean;
@@ -20,7 +21,7 @@ import com.fuint.repository.mapper.MtUserActionMapper;
 import com.fuint.repository.mapper.MtUserGradeMapper;
 import com.fuint.repository.mapper.MtUserMapper;
 import com.fuint.repository.model.*;
-import com.fuint.repository.vo.request.MemberStatisticsReqVO;
+import com.fuint.repository.request.MemberStatisticsReqVO;
 import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
@@ -36,6 +37,9 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.util.*;
+
+import static com.fuint.common.config.Message.USER_NOT_EXIST;
+import static com.fuint.openapi.enums.UserErrorCodeConstants.USER_NOT_FOUND;
 
 /**
  * 会员业务接口实现类
@@ -1078,5 +1082,14 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
     @Override
     public List<MemberTopBean> getMembersConsumeTopList(MemberStatisticsReqVO reqVO) {
         return mtUserMapper.selectMembersConsumeTopList(reqVO);
+    }
+
+    @Override
+    public MtUser checkMemberExist(Integer userId) {
+        MtUser mtUser = mtUserMapper.selectById(userId);
+        if (mtUser == null) {
+            throw new ServiceException(USER_NOT_FOUND);
+        }
+        return mtUser;
     }
 }

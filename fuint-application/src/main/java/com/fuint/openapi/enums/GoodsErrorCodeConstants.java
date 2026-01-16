@@ -15,4 +15,7 @@ public interface GoodsErrorCodeConstants {
 
     //卡券ID等于“" + couponId + "”的虚拟卡券不存在.
     ErrorCode GOODS_COUPON_NOT_FOUND = new ErrorCode(100_4_002, "卡券ID等于“{}”的虚拟卡券不存在.");
+
+    //获取商品详情失败
+    ErrorCode GOODS_GET_DETAIL_FAILED = new ErrorCode(100_4_003, "获取商品详情失败");
 }

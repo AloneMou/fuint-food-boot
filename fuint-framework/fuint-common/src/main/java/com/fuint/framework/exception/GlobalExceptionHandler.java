@@ -6,6 +6,7 @@ import org.apache.poi.ss.formula.functions.T;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingPathVariableException;
@@ -92,9 +93,11 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BindException.class)
     public ResponseObject handleBindException(BindException e) {
-        log.error(e.getMessage(), e);
-        String message = e.getAllErrors().get(0).getDefaultMessage();
-        return new ResponseObject(201, message, null);
+        log.warn("[handleBindException]", e);
+        FieldError fieldError = e.getFieldError();
+        assert fieldError != null; // 断言，避免告警
+        String message = String.format("%s:%s", fieldError.getField(), fieldError.getDefaultMessage());
+        return new ResponseObject(400, message, null);
     }
 
     /**

@@ -8,6 +8,8 @@ import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtUserCoupon;
+
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -105,4 +107,14 @@ public interface UserCouponService extends IService<MtUserCoupon> {
      * @return
      * */
     boolean buyCouponItem(Integer orderId, Integer couponId, Integer userId, String mobile, Integer num) throws BusinessCheckException;
+
+    /**
+     * 根据商品和金额获取最高额度的优惠券
+     *
+     * @param userId 会员ID
+     * @param goodsIds 商品ID列表
+     * @param amount 订单金额
+     * @return 最高额度的优惠券
+     * */
+    CouponDto getBestCouponByGoodsAndAmount(Integer userId, List<Integer> goodsIds, BigDecimal amount) throws BusinessCheckException;
 }

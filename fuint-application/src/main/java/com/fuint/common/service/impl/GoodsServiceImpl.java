@@ -17,14 +17,21 @@ import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
-import com.fuint.openapi.v1.goods.product.vo.*;
+import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecChildVO;
+import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecItemCreateReqVO;
+import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecItemVO;
+import com.fuint.openapi.v1.goods.product.vo.request.CGoodsListPageReqVO;
+import com.fuint.openapi.v1.goods.product.vo.request.GoodsSkuCreateReqVO;
+import com.fuint.openapi.v1.goods.product.vo.request.MtGoodsCreateReqVO;
+import com.fuint.openapi.v1.goods.product.vo.request.MtGoodsUpdateReqVO;
 import com.fuint.repository.bean.GoodsBean;
 import com.fuint.repository.bean.GoodsTopBean;
 import com.fuint.repository.mapper.MtGoodsMapper;
 import com.fuint.repository.mapper.MtGoodsSkuMapper;
 import com.fuint.repository.mapper.MtGoodsSpecMapper;
 import com.fuint.repository.model.*;
-import com.fuint.repository.vo.request.GoodsStatisticsReqVO;
+import com.fuint.framework.pojo.PageResult;
+import com.fuint.repository.request.GoodsStatisticsReqVO;
 import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
@@ -880,30 +887,25 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
             }
         }
 
-//        // 如果传了SKU，则更新SKU
-//        if (updateReqVO.getSkuData() != null && !updateReqVO.getSkuData().isEmpty()) {
-//            mtGoodsSkuMapper.delete(Wrappers.<MtGoodsSku>lambdaQuery().eq(MtGoodsSku::getGoodsId, mtGoods.getId()));
-//            for (GoodsSkuVO skuVO : updateReqVO.getSkuData()) {
-//                MtGoodsSku sku = new MtGoodsSku();
-//                BeanUtils.copyProperties(skuVO, sku);
-//                sku.setGoodsId(mtGoods.getId());
-//                sku.setStatus(StatusEnum.ENABLED.getKey());
-//
-//                if (StringUtil.isNotEmpty(skuVO.getSpecName())) {
-//                    String[] names = skuVO.getSpecName().split("\\^");
-//                    List<String> specIdList = new ArrayList<>();
-//                    for (String name : names) {
-//                        LambdaQueryWrapper<MtGoodsSpec> specWrapper = Wrappers.lambdaQuery();
-//                        specWrapper.eq(MtGoodsSpec::getGoodsId, mtGoods.getId()).eq(MtGoodsSpec::getValue, name);
-//                        List<MtGoodsSpec> specs = mtGoodsSpecMapper.selectList(specWrapper);
-//                        if (!specs.isEmpty()) {
-//                            specIdList.add(specs.get(0).getId().toString());
-//                        }
-//                    }
-//                    sku.setSpecIds(String.join("-", specIdList));
-//                }
-//                mtGoodsSkuMapper.insert(sku);
-//            }
-//        }
+    }
+
+    @Override
+    public PageResult<MtGoods> queryGoodsList(CGoodsListPageReqVO pageReqVO) {
+        return mtGoodsMapper.selectPage(pageReqVO);
+    }
+
+    @Override
+    public List<MtGoodsSku> queryGoodsSkuList(Integer goodsId) {
+        return mtGoodsSkuMapper.selectSkuLsByGoodsId(goodsId);
+    }
+
+    @Override
+    public MtGoodsSku getLowestPriceSku(Integer goodsId) {
+        return mtGoodsSkuMapper.selectLowestPriceSku(goodsId);
+    }
+
+    @Override
+    public List<MtGoodsSpec> queryGoodsSpecList(Integer goodsId) {
+        return mtGoodsSpecMapper.selectByGoodsId(goodsId);
     }
 }

@@ -11,7 +11,7 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.repository.bean.MemberTopBean;
 import com.fuint.repository.model.MtUser;
 import com.fuint.repository.model.MtUserGrade;
-import com.fuint.repository.vo.request.MemberStatisticsReqVO;
+import com.fuint.repository.request.MemberStatisticsReqVO;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
@@ -107,7 +107,7 @@ public interface MemberService extends IService<MtUser> {
      * @return
      * @throws BusinessCheckException
      */
-    MtUser queryMemberByOpenId(Integer merchantId, String openId, JSONObject userInfo,Integer type) throws BusinessCheckException;
+    MtUser queryMemberByOpenId(Integer merchantId, String openId, JSONObject userInfo, Integer type) throws BusinessCheckException;
 
     /**
      * 根据会员组ID获取会员组信息
@@ -142,7 +142,7 @@ public interface MemberService extends IService<MtUser> {
      * 根据会员unionId获取会员信息
      *
      * @param merchantId 商户ID
-     * @param mpOpenId    会员unionId
+     * @param mpOpenId   会员unionId
      * @return
      * @throws BusinessCheckException
      */
@@ -287,4 +287,12 @@ public interface MemberService extends IService<MtUser> {
      * @return {@link List }<{@link MemberTopBean }>
      */
     List<MemberTopBean> getMembersConsumeTopList(MemberStatisticsReqVO reqVO);
+
+    /**
+     * 校验会员是否存在
+     *
+     * @param userId 会员ID
+     * @return 会员信息
+     */
+    MtUser checkMemberExist(Integer userId);
 }

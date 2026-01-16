@@ -8,9 +8,6 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.repository.model.MtCommissionRule;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  * 分销提成规则业务接口
  *

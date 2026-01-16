@@ -1959,7 +1959,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                 cartDto.setSkuId(cart.getSkuId());
                 cartDto.setUserId(cart.getUserId());
                 // 购物车是否有效
-                Boolean isEffect = true;
+                boolean isEffect = true;
                 if (cart.getSkuId() > 0) {
                     List<GoodsSpecValueDto> specList = goodsService.getSpecListBySkuId(cart.getSkuId());
                     cartDto.setSpecList(specList);
