@@ -42,10 +42,6 @@ public class ApiSignatureAspect {
 
     @Before("@annotation(signature)")
     public void beforePointCut(JoinPoint joinPoint, ApiSignature signature) {
-
-        if ("1".equals("1")){
-            return;
-        }
         // 1. 验证通过，直接结束
         if (verifySignature(signature, Objects.requireNonNull(ServletUtils.getRequest()))) {
             return;
