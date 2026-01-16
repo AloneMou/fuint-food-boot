@@ -77,9 +77,6 @@ public class OpenOrderController extends BaseController {
     private MtOrderGoodsMapper mtOrderGoodsMapper;
 
     @Resource
-    private GoodsService goodsService;
-
-    @Resource
     private com.fuint.openapi.service.EventCallbackService eventCallbackService;
 
     /**
@@ -590,11 +587,24 @@ public class OpenOrderController extends BaseController {
         params.put("ORDER_ID", orderId);
         List<MtOrderGoods> goodsList = mtOrderGoodsMapper.selectByMap(params);
         List<Map<String, Object>> items = new ArrayList<>();
-        for (MtOrderGoods goods : goodsList) {
+        for (MtOrderGoods orderGoods : goodsList) {
             Map<String, Object> item = new HashMap<>();
-            item.put("skuId", goods.getSkuId());
-            item.put("goodsName", goods.getGoodsName());
-            item.put("quantity", goods.getNum());
+            item.put("skuId", orderGoods.getSkuId());
+            item.put("quantity", orderGoods.getNum());
+            
+            // 通过goodsId查询商品信息获取商品名称
+            try {
+                MtGoods goodsInfo = goodsService.queryGoodsById(orderGoods.getGoodsId());
+                if (goodsInfo != null) {
+                    item.put("goodsName", goodsInfo.getName());
+                } else {
+                    item.put("goodsName", "");
+                }
+            } catch (Exception e) {
+                log.warn("获取商品信息失败: goodsId={}, error={}", orderGoods.getGoodsId(), e.getMessage());
+                item.put("goodsName", "");
+            }
+            
             items.add(item);
         }
 
