@@ -6,12 +6,13 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 /**
  * 商品响应VO
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -89,7 +90,7 @@ public class MtGoodsRespVO {
     private Integer serviceTime;
 
     @ApiModelProperty(value = "可用优惠券ID列表", example = "1,2,3")
-    private String couponIds;
+    private List<Integer> couponIds;
 
     @ApiModelProperty(value = "排序", example = "100")
     private Integer sort;
@@ -109,8 +110,8 @@ public class MtGoodsRespVO {
     private String operator;
 
     @ApiModelProperty(value = "商品规格列表")
-    private List<GoodsSpecItemVO> specData;
+    private List<GoodsSpecItemVO> specData = new ArrayList<>();
 
     @ApiModelProperty(value = "商品SKU列表")
-    private List<GoodsSkuVO> skuData;
+    private List<GoodsSkuVO> skuData = new ArrayList<>();
 }

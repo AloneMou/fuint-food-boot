@@ -4,9 +4,15 @@ import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.alibaba.fastjson.JSONArray;
-import com.fuint.common.dto.*;
-import com.fuint.common.enums.*;
-import com.fuint.common.service.*;
+import com.fuint.common.dto.GoodsDto;
+import com.fuint.common.dto.GoodsSpecValueDto;
+import com.fuint.common.enums.OrderModeEnum;
+import com.fuint.common.enums.StatusEnum;
+import com.fuint.common.enums.YesOrNoEnum;
+import com.fuint.common.service.GoodsService;
+import com.fuint.common.service.MemberService;
+import com.fuint.common.service.OrderService;
+import com.fuint.common.service.SettingService;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
@@ -16,7 +22,6 @@ import com.fuint.openapi.v1.goods.product.vo.*;
 import com.fuint.repository.mapper.MtGoodsSkuMapper;
 import com.fuint.repository.mapper.MtGoodsSpecMapper;
 import com.fuint.repository.model.*;
-import com.fuint.common.param.OrderListParam;
 import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -29,6 +34,8 @@ import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.fuint.framework.util.string.StrUtils.splitToInt;
 
 /**
  * 商品管理controller
@@ -521,7 +528,7 @@ public class OpenGoodsController extends BaseController {
         respVO.setIsMemberDiscount(goodsDto.getIsMemberDiscount());
         respVO.setIsSingleSpec(goodsDto.getIsSingleSpec());
         respVO.setServiceTime(goodsDto.getServiceTime());
-        respVO.setCouponIds(goodsDto.getCouponIds());
+        respVO.setCouponIds(splitToInt(goodsDto.getCouponIds(),","));
         respVO.setSort(goodsDto.getSort());
         respVO.setStatus(goodsDto.getStatus());
         respVO.setCreateTime(goodsDto.getCreateTime());
@@ -565,7 +572,6 @@ public class OpenGoodsController extends BaseController {
             GoodsSpecChildVO child = new GoodsSpecChildVO();
             child.setId(spec.getId());
             child.setName(spec.getValue());
-            child.setChecked(true);
             specItem.getChild().add(child);
         }
 
@@ -579,14 +585,12 @@ public class OpenGoodsController extends BaseController {
         GoodsSkuVO vo = new GoodsSkuVO();
         vo.setId(sku.getId());
         vo.setSkuNo(sku.getSkuNo());
-        vo.setGoodsId(sku.getGoodsId());
         vo.setSpecIds(sku.getSpecIds());
         vo.setLogo(sku.getLogo());
         vo.setPrice(sku.getPrice());
         vo.setLinePrice(sku.getLinePrice());
         vo.setWeight(sku.getWeight());
         vo.setStock(sku.getStock());
-        vo.setStatus(sku.getStatus());
         return vo;
     }
 }

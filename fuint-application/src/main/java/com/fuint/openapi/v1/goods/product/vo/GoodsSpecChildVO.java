@@ -20,7 +20,5 @@ public class GoodsSpecChildVO {
     @ApiModelProperty(value = "规格值名称", example = "大杯")
     private String name;
 
-    @ApiModelProperty(value = "是否选中", example = "true")
-    private Boolean checked;
 
 }

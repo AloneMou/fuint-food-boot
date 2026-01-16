@@ -104,4 +104,11 @@ public class StrUtils {
         });
     }
 
+    public static List<Integer> splitToInt(String value, String separator) {
+        if (value == null) {
+            return null;
+        }
+        return StrUtils.splitToInteger(value, separator);
+    }
+
 }

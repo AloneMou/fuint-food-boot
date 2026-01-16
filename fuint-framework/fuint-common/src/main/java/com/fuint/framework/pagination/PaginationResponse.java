@@ -1,5 +1,8 @@
 package com.fuint.framework.pagination;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
 import java.io.Serializable;
 import java.util.List;
@@ -11,6 +14,9 @@ import java.util.List;
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class PaginationResponse<T> implements Serializable {
 
     private static final long serialVersionUID = 1115676724739520700L;

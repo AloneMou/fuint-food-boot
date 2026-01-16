@@ -17,13 +17,7 @@ import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
-import com.fuint.openapi.v1.goods.product.vo.GoodsSkuCreateReqVO;
-import com.fuint.openapi.v1.goods.product.vo.GoodsSkuVO;
-import com.fuint.openapi.v1.goods.product.vo.GoodsSpecItemCreateReqVO;
-import com.fuint.openapi.v1.goods.product.vo.GoodsSpecItemVO;
-import com.fuint.openapi.v1.goods.product.vo.MtGoodsCreateReqVO;
-import com.fuint.openapi.v1.goods.product.vo.MtGoodsUpdateReqVO;
-import com.fuint.openapi.v1.goods.product.vo.GoodsSpecChildVO;
+import com.fuint.openapi.v1.goods.product.vo.*;
 import com.fuint.repository.bean.GoodsBean;
 import com.fuint.repository.bean.GoodsTopBean;
 import com.fuint.repository.mapper.MtGoodsMapper;
@@ -154,7 +148,7 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
             if (mtGoods.getCateId() != null) {
                 cateInfo = cateService.queryCateById(mtGoods.getCateId());
             }
-            GoodsDto item = new GoodsDto();
+            GoodsDto item = com.fuint.framework.util.object.BeanUtils.toBean(mtGoods, GoodsDto.class);
             item.setId(mtGoods.getId());
             item.setInitSale(mtGoods.getInitSale());
             if (StringUtil.isNotEmpty(mtGoods.getLogo())) {
@@ -179,6 +173,32 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
             item.setUpdateTime(mtGoods.getUpdateTime());
             item.setStatus(mtGoods.getStatus());
             item.setOperator(mtGoods.getOperator());
+            // 规格列表
+            Map<String, Object> param = new HashMap<>();
+            param.put("goods_id", item.getId());
+            param.put("status", StatusEnum.ENABLED.getKey());
+            List<MtGoodsSpec> goodsSpecList = mtGoodsSpecMapper.selectByMap(param);
+            item.setSpecList(goodsSpecList);
+
+            // sku列表
+            if (item.getIsSingleSpec().equals(YesOrNoEnum.NO.getKey())) {
+                List<MtGoodsSku> goodsSkuList = mtGoodsSkuMapper.selectByMap(param);
+                item.setSkuList(goodsSkuList);
+                // 多规格商品的价格、库存数量
+                if (!goodsSkuList.isEmpty()) {
+                    item.setPrice(goodsSkuList.get(0).getPrice());
+                    item.setLinePrice(goodsSkuList.get(0).getLinePrice());
+                    int stock = 0;
+                    for (MtGoodsSku mtGoodsSku : goodsSkuList) {
+                        stock = stock + mtGoodsSku.getStock();
+                    }
+                    item.setStock(stock);
+                } else {
+                    item.setStock(0);
+                }
+            } else {
+                item.setSkuList(new ArrayList<>());
+            }
             dataList.add(item);
         }
 
@@ -860,30 +880,30 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
             }
         }
 
-        // 如果传了SKU，则更新SKU
-        if (updateReqVO.getSkuData() != null && !updateReqVO.getSkuData().isEmpty()) {
-            mtGoodsSkuMapper.delete(Wrappers.<MtGoodsSku>lambdaQuery().eq(MtGoodsSku::getGoodsId, mtGoods.getId()));
-            for (GoodsSkuVO skuVO : updateReqVO.getSkuData()) {
-                MtGoodsSku sku = new MtGoodsSku();
-                BeanUtils.copyProperties(skuVO, sku);
-                sku.setGoodsId(mtGoods.getId());
-                sku.setStatus(StatusEnum.ENABLED.getKey());
-
-                if (StringUtil.isNotEmpty(skuVO.getSpecName())) {
-                    String[] names = skuVO.getSpecName().split("\\^");
-                    List<String> specIdList = new ArrayList<>();
-                    for (String name : names) {
-                        LambdaQueryWrapper<MtGoodsSpec> specWrapper = Wrappers.lambdaQuery();
-                        specWrapper.eq(MtGoodsSpec::getGoodsId, mtGoods.getId()).eq(MtGoodsSpec::getValue, name);
-                        List<MtGoodsSpec> specs = mtGoodsSpecMapper.selectList(specWrapper);
-                        if (!specs.isEmpty()) {
-                            specIdList.add(specs.get(0).getId().toString());
-                        }
-                    }
-                    sku.setSpecIds(String.join("-", specIdList));
-                }
-                mtGoodsSkuMapper.insert(sku);
-            }
-        }
+//        // 如果传了SKU，则更新SKU
+//        if (updateReqVO.getSkuData() != null && !updateReqVO.getSkuData().isEmpty()) {
+//            mtGoodsSkuMapper.delete(Wrappers.<MtGoodsSku>lambdaQuery().eq(MtGoodsSku::getGoodsId, mtGoods.getId()));
+//            for (GoodsSkuVO skuVO : updateReqVO.getSkuData()) {
+//                MtGoodsSku sku = new MtGoodsSku();
+//                BeanUtils.copyProperties(skuVO, sku);
+//                sku.setGoodsId(mtGoods.getId());
+//                sku.setStatus(StatusEnum.ENABLED.getKey());
+//
+//                if (StringUtil.isNotEmpty(skuVO.getSpecName())) {
+//                    String[] names = skuVO.getSpecName().split("\\^");
+//                    List<String> specIdList = new ArrayList<>();
+//                    for (String name : names) {
+//                        LambdaQueryWrapper<MtGoodsSpec> specWrapper = Wrappers.lambdaQuery();
+//                        specWrapper.eq(MtGoodsSpec::getGoodsId, mtGoods.getId()).eq(MtGoodsSpec::getValue, name);
+//                        List<MtGoodsSpec> specs = mtGoodsSpecMapper.selectList(specWrapper);
+//                        if (!specs.isEmpty()) {
+//                            specIdList.add(specs.get(0).getId().toString());
+//                        }
+//                    }
+//                    sku.setSpecIds(String.join("-", specIdList));
+//                }
+//                mtGoodsSkuMapper.insert(sku);
+//            }
+//        }
     }
 }
