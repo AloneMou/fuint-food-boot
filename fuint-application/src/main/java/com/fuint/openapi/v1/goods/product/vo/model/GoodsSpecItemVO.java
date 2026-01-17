@@ -16,9 +16,6 @@ import java.util.List;
 @ApiModel(value = "商品规格项VO")
 public class GoodsSpecItemVO {
 
-    @ApiModelProperty(value = "规格ID", example = "1")
-    private Integer id;
-
     @ApiModelProperty(value = "规格名称", example = "杯型")
     private String name;
 

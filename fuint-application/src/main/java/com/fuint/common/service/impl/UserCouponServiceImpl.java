@@ -15,6 +15,7 @@ import com.fuint.common.util.SeqUtil;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.util.spring.SpringUtils;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.mapper.MtCouponGoodsMapper;
@@ -24,69 +25,77 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.util.*;
 
+import static com.fuint.common.enums.RedisKeyConstants.USER_COUPON;
+
 /**
  * 会员卡券业务实现类
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
 @Service
-@AllArgsConstructor(onConstructor_= {@Lazy})
+@AllArgsConstructor(onConstructor_ = {@Lazy})
 public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUserCoupon> implements UserCouponService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserCouponServiceImpl.class);
     private MtUserCouponMapper mtUserCouponMapper;
 
     /**
      * 卡券服务接口
-     * */
+     */
     private CouponService couponService;
 
     /**
      * 卡券分组服务接口
-     * */
+     */
     private CouponGroupService couponGroupService;
 
     /**
      * 会员服务接口
-     * */
+     */
     private MemberService memberService;
 
     /**
      * 积分服务接口
-     * */
+     */
     private PointService pointService;
 
     /**
      * 卡券核销记录服务接口
-     * */
+     */
     private ConfirmLogService confirmLogService;
 
     /**
      * 店铺服务接口
-     * */
+     */
     private StoreService storeService;
 
     /**
      * 系统设置服务接口
-     * */
+     */
     private SettingService settingService;
 
     /**
      * 订单服务接口
-     * */
+     */
     private OrderService orderService;
 
     /**
      * 卡券商品关联Mapper
-     * */
+     */
     private MtCouponGoodsMapper mtCouponGoodsMapper;
 
     /**
@@ -144,7 +153,7 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
      *
      * @param receiveParam 领取参数
      * @return
-     * */
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean receiveCoupon(CouponReceiveParam receiveParam) throws BusinessCheckException {
@@ -189,7 +198,7 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
         if (couponInfo.getGradeIds() != null && StringUtil.isNotEmpty(couponInfo.getGradeIds())) {
             String gradeIds[] = couponInfo.getGradeIds().split(",");
             if (gradeIds.length > 0) {
-                boolean isContains = Arrays.asList(gradeIds).contains(userInfo.getGradeId()+"");
+                boolean isContains = Arrays.asList(gradeIds).contains(userInfo.getGradeId() + "");
                 if (!isContains) {
                     throw new BusinessCheckException(Message.GRADE_ERROR);
                 }
@@ -238,22 +247,22 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
         uuid.append(SeqUtil.getRandomNumber(4));
 
         for (int i = 1; i <= num; i++) {
-             MtUserCoupon userCoupon = new MtUserCoupon();
-             if (userCouponId > 0) {
-                 userCoupon = mtUserCouponMapper.selectById(userCouponId);
-             }
-             userCoupon.setMerchantId(userInfo.getMerchantId());
-             userCoupon.setStoreId(couponInfo.getStoreId());
-             userCoupon.setCouponId(couponInfo.getId());
-             userCoupon.setType(couponInfo.getType());
-             userCoupon.setAmount(couponInfo.getAmount());
-             userCoupon.setGroupId(groupInfo.getId());
-             userCoupon.setMobile(userInfo.getMobile());
-             userCoupon.setUserId(userInfo.getId());
-             userCoupon.setStatus(UserCouponStatusEnum.UNUSED.getKey());
-             userCoupon.setCreateTime(new Date());
-             userCoupon.setUpdateTime(new Date());
-             userCoupon.setExpireTime(couponInfo.getEndTime());
+            MtUserCoupon userCoupon = new MtUserCoupon();
+            if (userCouponId > 0) {
+                userCoupon = mtUserCouponMapper.selectById(userCouponId);
+            }
+            userCoupon.setMerchantId(userInfo.getMerchantId());
+            userCoupon.setStoreId(couponInfo.getStoreId());
+            userCoupon.setCouponId(couponInfo.getId());
+            userCoupon.setType(couponInfo.getType());
+            userCoupon.setAmount(couponInfo.getAmount());
+            userCoupon.setGroupId(groupInfo.getId());
+            userCoupon.setMobile(userInfo.getMobile());
+            userCoupon.setUserId(userInfo.getId());
+            userCoupon.setStatus(UserCouponStatusEnum.UNUSED.getKey());
+            userCoupon.setCreateTime(new Date());
+            userCoupon.setUpdateTime(new Date());
+            userCoupon.setExpireTime(couponInfo.getEndTime());
             if (couponInfo.getExpireType().equals(CouponExpireTypeEnum.FLEX.getKey())) {
                 Date expireTime = new Date();
                 Calendar c = Calendar.getInstance();
@@ -263,19 +272,19 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
                 userCoupon.setExpireTime(expireTime);
             }
 
-             // 12位随机数
-             StringBuffer code = new StringBuffer();
-             code.append(SeqUtil.getRandomNumber(4));
-             code.append(SeqUtil.getRandomNumber(4));
-             code.append(SeqUtil.getRandomNumber(4));
-             code.append(SeqUtil.getRandomNumber(4));
-             userCoupon.setCode(code.toString());
-             userCoupon.setUuid(uuid.toString());
-             if (userCoupon.getId() != null) {
-                 mtUserCouponMapper.updateById(userCoupon);
-             } else {
-                 mtUserCouponMapper.insert(userCoupon);
-             }
+            // 12位随机数
+            StringBuffer code = new StringBuffer();
+            code.append(SeqUtil.getRandomNumber(4));
+            code.append(SeqUtil.getRandomNumber(4));
+            code.append(SeqUtil.getRandomNumber(4));
+            code.append(SeqUtil.getRandomNumber(4));
+            userCoupon.setCode(code.toString());
+            userCoupon.setUuid(uuid.toString());
+            if (userCoupon.getId() != null) {
+                mtUserCouponMapper.updateById(userCoupon);
+            } else {
+                mtUserCouponMapper.insert(userCoupon);
+            }
         }
 
         // 是否需要扣除相应积分
@@ -283,7 +292,7 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
             MtPoint reqPointDto = new MtPoint();
             reqPointDto.setUserId(userId);
             reqPointDto.setAmount(-couponInfo.getPoint());
-            reqPointDto.setDescription("领取"+ couponInfo.getName() + "扣除" +couponInfo.getPoint() +"积分");
+            reqPointDto.setDescription("领取" + couponInfo.getName() + "扣除" + couponInfo.getPoint() + "积分");
             reqPointDto.setOperator("");
             pointService.addPoint(reqPointDto);
         }
@@ -296,7 +305,7 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
      *
      * @param paramMap 储值参数
      * @return
-     * */
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean preStore(Map<String, Object> paramMap) throws BusinessCheckException {
@@ -346,7 +355,7 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
      * @param userId 会员ID
      * @param status 状态
      * @return
-     * */
+     */
     @Override
     public List<MtUserCoupon> getUserCouponList(Integer userId, List<String> status) {
         return mtUserCouponMapper.getUserCouponList(userId, status);
@@ -356,17 +365,17 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
      * 获取会员卡券列表
      *
      * @param paramMap
-     * @throws BusinessCheckException
      * @return
-     * */
+     * @throws BusinessCheckException
+     */
     @Override
     public ResponseObject getUserCouponList(Map<String, Object> paramMap) throws BusinessCheckException {
         Integer pageNumber = paramMap.get("pageNumber") == null ? Constants.PAGE_NUMBER : Integer.parseInt(paramMap.get("pageNumber").toString());
         Integer pageSize = paramMap.get("pageSize") == null ? Constants.PAGE_SIZE : Integer.parseInt(paramMap.get("pageSize").toString());
         String userId = paramMap.get("userId") == null ? "" : paramMap.get("userId").toString();
         String userNo = paramMap.get("userNo") == null ? "" : paramMap.get("userNo").toString();
-        String status =  paramMap.get("status") == null ? "" : paramMap.get("status").toString();
-        String type =  paramMap.get("type") == null ? "": paramMap.get("type").toString();
+        String status = paramMap.get("status") == null ? "" : paramMap.get("status").toString();
+        String type = paramMap.get("type") == null ? "" : paramMap.get("type").toString();
         String mobile = paramMap.get("mobile") == null ? "" : paramMap.get("mobile").toString();
         String merchantId = paramMap.get("merchantId") == null ? "" : paramMap.get("merchantId").toString();
         String storeId = paramMap.get("storeId") == null ? "" : paramMap.get("storeId").toString();
@@ -379,25 +388,25 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
             List<String> statusList = Arrays.asList(UserCouponStatusEnum.UNUSED.getKey());
             List<MtUserCoupon> data = mtUserCouponMapper.getUserCouponList(Integer.parseInt(userId), statusList);
             for (MtUserCoupon uc : data) {
-                 MtCoupon coupon = couponService.queryCouponById(uc.getCouponId());
-                 // 已过期
-                 if (coupon.getExpireType().equals(CouponExpireTypeEnum.FIX.getKey()) && coupon.getEndTime() != null && coupon.getEndTime().before(new Date())) {
-                     uc.setStatus(UserCouponStatusEnum.EXPIRE.getKey());
-                     uc.setUpdateTime(new Date());
-                     mtUserCouponMapper.updateById(uc);
-                 }
+                MtCoupon coupon = couponService.queryCouponById(uc.getCouponId());
+                // 已过期
+                if (coupon.getExpireType().equals(CouponExpireTypeEnum.FIX.getKey()) && coupon.getEndTime() != null && coupon.getEndTime().before(new Date())) {
+                    uc.setStatus(UserCouponStatusEnum.EXPIRE.getKey());
+                    uc.setUpdateTime(new Date());
+                    mtUserCouponMapper.updateById(uc);
+                }
                 // 已过期
                 if (coupon.getExpireType().equals(CouponExpireTypeEnum.FLEX.getKey()) && uc.getExpireTime() != null && uc.getExpireTime().before(new Date())) {
                     uc.setStatus(UserCouponStatusEnum.EXPIRE.getKey());
                     uc.setUpdateTime(new Date());
                     mtUserCouponMapper.updateById(uc);
                 }
-                 // 已删除
-                 if (coupon.getStatus().equals(StatusEnum.DISABLE.getKey())) {
-                     uc.setStatus(UserCouponStatusEnum.DISABLE.getKey());
-                     uc.setUpdateTime(new Date());
-                     mtUserCouponMapper.updateById(uc);
-                 }
+                // 已删除
+                if (coupon.getStatus().equals(StatusEnum.DISABLE.getKey())) {
+                    uc.setStatus(UserCouponStatusEnum.DISABLE.getKey());
+                    uc.setUpdateTime(new Date());
+                    mtUserCouponMapper.updateById(uc);
+                }
             }
         }
 
@@ -502,13 +511,13 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
 
                 // 储值卡tips
                 if (couponInfo.getType().equals(CouponTypeEnum.PRESTORE.getKey())) {
-                    tips = "￥" + userCouponDto .getAmount() + "，余额￥" + userCouponDto.getBalance();
+                    tips = "￥" + userCouponDto.getAmount() + "，余额￥" + userCouponDto.getBalance();
                 }
 
                 // 计次卡tips
                 if (couponInfo.getType().equals(CouponTypeEnum.TIMER.getKey())) {
                     Long confirmNum = confirmLogService.getConfirmNum(userCouponDto.getId());
-                    tips = "已使用"+ confirmNum +"次，可使用" + couponInfo.getOutRule() + "次";
+                    tips = "已使用" + confirmNum + "次，可使用" + couponInfo.getOutRule() + "次";
                     dto.setNum(Integer.parseInt(couponInfo.getOutRule()) - confirmNum.intValue());
                 }
 
@@ -534,11 +543,11 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
     /**
      * 获取会员可支付使用的卡券
      *
-     * @param userId 会员ID
+     * @param userId  会员ID
      * @param storeId 使用门店
-     * @param useFor 用途
+     * @param useFor  用途
      * @return
-     * */
+     */
     @Override
     public List<CouponDto> getPayAbleCouponList(Integer userId, Integer storeId, String useFor) throws BusinessCheckException {
         List<String> statusList = Arrays.asList(UserCouponStatusEnum.UNUSED.getKey());
@@ -547,43 +556,43 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
 
         if (userCouponList.size() > 0) {
             for (MtUserCoupon userCoupon : userCouponList) {
-                 MtCoupon couponInfo = couponService.queryCouponById(userCoupon.getCouponId());
-                 // 适用门店
-                 if (storeId != null && storeId > 0 && StringUtil.isNotEmpty(couponInfo.getStoreIds())) {
-                     String[] storeIds = couponInfo.getStoreIds().split(",");
-                     if (!Arrays.asList(storeIds).contains(storeId.toString())) {
-                         continue;
-                     }
-                 }
-                 // 只取专用卡券
-                 if (StringUtil.isNotEmpty(useFor) && !couponInfo.getUseFor().equals(useFor)) {
-                     continue;
-                 }
-                 // 不取专用卡券
-                 if (StringUtil.isEmpty(useFor) && couponInfo.getUseFor() != null && StringUtil.isNotEmpty(couponInfo.getUseFor())) {
-                     continue;
-                 }
-                 CouponDto couponDto = new CouponDto();
-                 couponDto.setId(couponInfo.getId());
-                 couponDto.setUserCouponId(userCoupon.getId());
-                 couponDto.setName(couponInfo.getName());
-                 couponDto.setAmount(userCoupon.getAmount());
-                 couponDto.setStatus(UserCouponStatusEnum.UNUSED.getKey());
-                 boolean isEffective = couponService.isCouponEffective(couponInfo, userCoupon);
-                 // 1.储值卡可用
-                 if (isEffective && couponInfo.getType().equals(CouponTypeEnum.PRESTORE.getKey())) {
-                     if (userCoupon.getBalance().compareTo(new BigDecimal("0")) > 0) {
-                         couponDto.setType(CouponTypeEnum.PRESTORE.getValue());
-                         couponDto.setAmount(userCoupon.getBalance());
-                         dataList.add(couponDto);
-                     }
-                 } else if(isEffective && couponInfo.getType().equals(CouponTypeEnum.COUPON.getKey())) {
-                     // 2.无门槛的优惠券可用
-                     if (StringUtil.isEmpty(couponInfo.getOutRule()) || couponInfo.getOutRule().equals("0")) {
-                         couponDto.setType(CouponTypeEnum.COUPON.getValue());
-                         dataList.add(couponDto);
-                     }
-                 }
+                MtCoupon couponInfo = couponService.queryCouponById(userCoupon.getCouponId());
+                // 适用门店
+                if (storeId != null && storeId > 0 && StringUtil.isNotEmpty(couponInfo.getStoreIds())) {
+                    String[] storeIds = couponInfo.getStoreIds().split(",");
+                    if (!Arrays.asList(storeIds).contains(storeId.toString())) {
+                        continue;
+                    }
+                }
+                // 只取专用卡券
+                if (StringUtil.isNotEmpty(useFor) && !couponInfo.getUseFor().equals(useFor)) {
+                    continue;
+                }
+                // 不取专用卡券
+                if (StringUtil.isEmpty(useFor) && couponInfo.getUseFor() != null && StringUtil.isNotEmpty(couponInfo.getUseFor())) {
+                    continue;
+                }
+                CouponDto couponDto = new CouponDto();
+                couponDto.setId(couponInfo.getId());
+                couponDto.setUserCouponId(userCoupon.getId());
+                couponDto.setName(couponInfo.getName());
+                couponDto.setAmount(userCoupon.getAmount());
+                couponDto.setStatus(UserCouponStatusEnum.UNUSED.getKey());
+                boolean isEffective = couponService.isCouponEffective(couponInfo, userCoupon);
+                // 1.储值卡可用
+                if (isEffective && couponInfo.getType().equals(CouponTypeEnum.PRESTORE.getKey())) {
+                    if (userCoupon.getBalance().compareTo(new BigDecimal("0")) > 0) {
+                        couponDto.setType(CouponTypeEnum.PRESTORE.getValue());
+                        couponDto.setAmount(userCoupon.getBalance());
+                        dataList.add(couponDto);
+                    }
+                } else if (isEffective && couponInfo.getType().equals(CouponTypeEnum.COUPON.getKey())) {
+                    // 2.无门槛的优惠券可用
+                    if (StringUtil.isEmpty(couponInfo.getOutRule()) || couponInfo.getOutRule().equals("0")) {
+                        couponDto.setType(CouponTypeEnum.COUPON.getValue());
+                        dataList.add(couponDto);
+                    }
+                }
             }
         }
 
@@ -593,12 +602,12 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
     /**
      * 获取会员卡券详情
      *
-     * @param userId 会员ID
+     * @param userId   会员ID
      * @param couponId 卡券ID
      * @return
-     * */
+     */
     @Override
-    public  List<MtUserCoupon> getUserCouponDetail(Integer userId, Integer couponId) {
+    public List<MtUserCoupon> getUserCouponDetail(Integer userId, Integer couponId) {
         return mtUserCouponMapper.findUserCouponDetail(couponId, userId);
     }
 
@@ -607,7 +616,7 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
      *
      * @param userCouponId 会员卡券ID
      * @return
-     * */
+     */
     @Override
     public MtUserCoupon getUserCouponDetail(Integer userCouponId) {
         MtUserCoupon userCoupon = mtUserCouponMapper.selectById(userCouponId);
@@ -617,12 +626,12 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
     /**
      * 根据过期时间查询会员卡券
      *
-     * @param userId 会员ID
-     * @param status 状态
+     * @param userId    会员ID
+     * @param status    状态
      * @param startTime 开始时间
-     * @param endTime 结束时间
+     * @param endTime   结束时间
      * @return
-     * */
+     */
     @Override
     public List<MtUserCoupon> getUserCouponListByExpireTime(Integer userId, String status, String startTime, String endTime) {
         List<MtUserCoupon> result = mtUserCouponMapper.getUserCouponListByExpireTime(userId, status, startTime, endTime);
@@ -632,13 +641,13 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
     /**
      * 会员发送卡券
      *
-     * @param orderId 订单ID
+     * @param orderId  订单ID
      * @param couponId 卡券ID
-     * @param userId 会员ID
-     * @param mobile 手机号
-     * @param num 购买数量
+     * @param userId   会员ID
+     * @param mobile   手机号
+     * @param num      购买数量
      * @return
-     * */
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean buyCouponItem(Integer orderId, Integer couponId, Integer userId, String mobile, Integer num) throws BusinessCheckException {
@@ -713,9 +722,9 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
      * 预存单张
      *
      * @param couponInfo 卡券信息
-     * @param userInfo 会员信息
+     * @param userInfo   会员信息
      * @return
-     * */
+     */
     private boolean preStoreItem(MtCoupon couponInfo, MtUser userInfo, Integer orderId, BigDecimal amount) {
         MtUserCoupon userCoupon = new MtUserCoupon();
         userCoupon.setCouponId(couponInfo.getId());
@@ -755,16 +764,15 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
         return true;
     }
 
-    /**
-     * 根据商品和金额获取最高额度的优惠券
-     *
-     * @param userId 会员ID
-     * @param goodsIds 商品ID列表
-     * @param amount 订单金额
-     * @return 最高额度的优惠券
-     * */
+    @Override
+    @Cacheable(value = "USER_COUPON", key = "'BESTCOUPON_'+#userId+'_'+#goodsIds+'_'+#amount")
+    public CouponDto getBestCouponByGoodsAndAmount(Integer userId, Integer goodsIds, BigDecimal amount) {
+        return getBestCouponByGoodsAndAmount(userId, Collections.singletonList(goodsIds), amount);
+    }
+
     @Override
     public CouponDto getBestCouponByGoodsAndAmount(Integer userId, List<Integer> goodsIds, BigDecimal amount) throws BusinessCheckException {
+        UserCouponService userCouponService = SpringUtils.getBean(UserCouponService.class);
         if (userId == null || userId <= 0) {
             return null;
         }
@@ -774,39 +782,31 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             return null;
         }
-
         // 获取用户未使用的优惠券
-        List<String> statusList = Arrays.asList(UserCouponStatusEnum.UNUSED.getKey());
-        List<MtUserCoupon> userCouponList = mtUserCouponMapper.getUserCouponList(userId, statusList);
-
+        List<MtUserCoupon> userCouponList = userCouponService.getUserCouponList(userId, UserCouponStatusEnum.UNUSED.getKey());
         if (userCouponList == null || userCouponList.isEmpty()) {
             return null;
         }
-
         CouponDto bestCoupon = null;
         BigDecimal maxAmount = BigDecimal.ZERO;
-
         for (MtUserCoupon userCoupon : userCouponList) {
             MtCoupon couponInfo = couponService.queryCouponById(userCoupon.getCouponId());
             if (couponInfo == null) {
                 continue;
             }
-
             // 只处理优惠券类型
             if (!couponInfo.getType().equals(CouponTypeEnum.COUPON.getKey())) {
                 continue;
             }
-
             // 检查优惠券是否有效
             boolean isEffective = couponService.isCouponEffective(couponInfo, userCoupon);
             if (!isEffective) {
                 continue;
             }
-
             // 检查商品是否适用
             if (couponInfo.getApplyGoods() != null && couponInfo.getApplyGoods().equals(ApplyGoodsEnum.PARK_GOODS.getKey())) {
                 // 指定商品，需要检查商品是否在适用范围内
-                List<MtCouponGoods> couponGoodsList = mtCouponGoodsMapper.getCouponGoods(couponInfo.getId());
+                List<MtCouponGoods> couponGoodsList = userCouponService.getCouponGoods(couponInfo.getId());
                 if (couponGoodsList != null && !couponGoodsList.isEmpty()) {
                     List<Integer> applyGoodsIds = new ArrayList<>();
                     for (MtCouponGoods mtCouponGoods : couponGoodsList) {
@@ -827,7 +827,6 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
                     continue;
                 }
             }
-
             // 比较优惠金额，找出最大的
             BigDecimal couponAmount = userCoupon.getAmount();
             if (couponAmount.compareTo(maxAmount) > 0) {
@@ -844,7 +843,26 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
                 bestCoupon.setImage(couponInfo.getImage());
             }
         }
-
         return bestCoupon;
+    }
+
+    @Override
+    @Cacheable(cacheNames = USER_COUPON, key = "'LIST_' + #userId + '_' + #status")
+    public List<MtUserCoupon> getUserCouponList(Integer userId, String status) {
+        List<String> statusList = new ArrayList<>();
+        statusList.add(status);
+        return mtUserCouponMapper.getUserCouponList(userId, statusList);
+    }
+
+    @Override
+    @Cacheable(cacheNames = USER_COUPON, key = "'GOODS_' + #couponId")
+    public List<MtCouponGoods> getCouponGoods(Integer couponId) {
+        return mtCouponGoodsMapper.getCouponGoods(couponId);
+    }
+
+    @Override
+    @CacheEvict(cacheNames = USER_COUPON, allEntries = true)
+    public void clear() {
+        log.debug("清理缓存");
     }
 }

@@ -3,11 +3,13 @@ package com.fuint.common.mybatis.query;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import com.fuint.framework.util.collection.ArrayUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.Collection;
+import java.util.function.Predicate;
 
 /**
  * 拓展 MyBatis Plus QueryWrapper 类，主要增加如下功能：
@@ -131,5 +133,18 @@ public class LambdaQueryWrapperX<T> extends LambdaQueryWrapper<T> {
         super.in(column, coll);
         return this;
     }
+
+    @Override
+    public LambdaQueryWrapperX<T> select(Predicate<TableFieldInfo> predicate) {
+        super.select(predicate);
+        return this;
+    }
+
+    @Override
+    public LambdaQueryWrapperX<T> select(Class<T> entityClass, Predicate<TableFieldInfo> predicate) {
+          super.select(entityClass, predicate);
+          return this;
+    }
+
 
 }

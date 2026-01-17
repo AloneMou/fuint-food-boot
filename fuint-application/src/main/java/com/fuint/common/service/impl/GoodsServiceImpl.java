@@ -1,6 +1,8 @@
 package com.fuint.common.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -15,6 +17,7 @@ import com.fuint.common.enums.YesOrNoEnum;
 import com.fuint.common.service.*;
 import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
+import com.fuint.framework.exception.ServiceException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecChildVO;
@@ -47,7 +50,8 @@ import java.math.BigDecimal;
 import java.util.*;
 
 import static com.fuint.framework.exception.util.ServiceExceptionUtil.exception;
-import static com.fuint.openapi.enums.GoodsErrorCodeConstants.GOODS_COUPON_NOT_FOUND;
+import static com.fuint.framework.util.collection.CollectionUtils.convertMap;
+import static com.fuint.openapi.enums.GoodsErrorCodeConstants.*;
 
 /**
  * 商品业务实现类
@@ -722,8 +726,13 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
     @Transactional(rollbackFor = Exception.class)
     public Integer createGoods(MtGoodsCreateReqVO createReqVO) {
         if (CollUtil.isNotEmpty(createReqVO.getCouponIds())) {
+            if (createReqVO.getCouponIds().size() > 10) {
+                throw exception(GOODS_COUPON_TOO_MANY, 10);
+            }
+            List<MtCoupon> mtCoupons = couponService.queryCouponListByIds(createReqVO.getCouponIds());
+            Map<Integer, MtCoupon> couponMap = convertMap(mtCoupons, MtCoupon::getId);
             for (Integer couponId : createReqVO.getCouponIds()) {
-                MtCoupon mtCoupon = couponService.getById(couponId);
+                MtCoupon mtCoupon = couponMap.get(couponId);
                 if (mtCoupon == null) {
                     throw exception(GOODS_COUPON_NOT_FOUND, couponId);
                 }
@@ -751,7 +760,9 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
         mtGoods.setUpdateTime(new Date());
         mtGoodsMapper.insert(mtGoods);
         Integer goodsId = mtGoods.getId();
-
+        if (createReqVO.getIsSingleSpec().equals(YesOrNoEnum.YES.getKey())) {
+            return goodsId;
+        }
         List<MtGoodsSpec> specLs = new ArrayList<>();
         for (GoodsSpecItemCreateReqVO spec : createReqVO.getSpecData()) {
             for (String value : spec.getChild()) {
@@ -769,6 +780,7 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
         for (MtGoodsSpec spec : specLs) {
             specMap.put(spec.getName() + "^" + spec.getValue(), spec.getId());
         }
+        Integer stock = 0;
         for (GoodsSkuCreateReqVO sku : createReqVO.getSkuData()) {
             List<GoodsSkuCreateReqVO.Spec> specList = sku.getSpecLs();
             List<Integer> specIds = new ArrayList<>();
@@ -784,7 +796,12 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
             skuBean.setSpecIds(CollUtil.join(specIds, "-"));
             skuBean.setStatus(StatusEnum.ENABLED.getKey());
             mtGoodsSkuMapper.insert(skuBean);
+            stock += skuBean.getStock();
         }
+        MtGoods updateObj = new MtGoods();
+        updateObj.setId(goodsId);
+        updateObj.setStock(stock);
+        mtGoodsMapper.updateById(updateObj);
         return goodsId;
     }
 
@@ -793,82 +810,45 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
     public void updateGoods(MtGoodsUpdateReqVO updateReqVO) throws BusinessCheckException {
         MtGoods mtGoods = this.queryGoodsById(updateReqVO.getId());
         if (mtGoods == null) {
-            throw new BusinessCheckException("商品不存在");
+            throw exception(GOODS_NOT_FOUND);
         }
-
-        if (StringUtil.isNotEmpty(updateReqVO.getName())) {
-            mtGoods.setName(updateReqVO.getName());
+        if (CollUtil.isNotEmpty(updateReqVO.getCouponIds())) {
+            if (updateReqVO.getCouponIds().size() > 10) {
+                throw exception(GOODS_COUPON_TOO_MANY, 10);
+            }
+            List<MtCoupon> mtCoupons = couponService.queryCouponListByIds(updateReqVO.getCouponIds());
+            Map<Integer, MtCoupon> couponMap = convertMap(mtCoupons, MtCoupon::getId);
+            for (Integer couponId : updateReqVO.getCouponIds()) {
+                MtCoupon mtCoupon = couponMap.get(couponId);
+                if (mtCoupon == null) {
+                    throw exception(GOODS_COUPON_NOT_FOUND, couponId);
+                }
+            }
         }
-        if (StringUtil.isNotEmpty(updateReqVO.getGoodsNo())) {
-            mtGoods.setGoodsNo(updateReqVO.getGoodsNo());
-        }
-        if (StringUtil.isNotEmpty(updateReqVO.getType())) {
-            mtGoods.setType(updateReqVO.getType());
-        }
-        if (updateReqVO.getCateId() != null) {
-            mtGoods.setCateId(updateReqVO.getCateId());
-        }
-        if (StringUtil.isNotEmpty(updateReqVO.getDescription())) {
-            mtGoods.setDescription(updateReqVO.getDescription());
-        }
-        if (updateReqVO.getPrice() != null) {
-            mtGoods.setPrice(updateReqVO.getPrice());
-        }
-        if (updateReqVO.getLinePrice() != null) {
-            mtGoods.setLinePrice(updateReqVO.getLinePrice());
-        }
-        if (updateReqVO.getWeight() != null) {
-            mtGoods.setWeight(updateReqVO.getWeight());
-        }
-        if (updateReqVO.getStock() != null) {
-            mtGoods.setStock(updateReqVO.getStock());
-        }
-        if (updateReqVO.getInitSale() != null) {
-            mtGoods.setInitSale(updateReqVO.getInitSale());
-        }
-        if (StringUtil.isNotEmpty(updateReqVO.getSalePoint())) {
-            mtGoods.setSalePoint(updateReqVO.getSalePoint());
-        }
-        if (StringUtil.isNotEmpty(updateReqVO.getCanUsePoint())) {
-            mtGoods.setCanUsePoint(updateReqVO.getCanUsePoint());
-        }
-        if (StringUtil.isNotEmpty(updateReqVO.getIsMemberDiscount())) {
-            mtGoods.setIsMemberDiscount(updateReqVO.getIsMemberDiscount());
-        }
-        if (StringUtil.isNotEmpty(updateReqVO.getIsSingleSpec())) {
-            mtGoods.setIsSingleSpec(updateReqVO.getIsSingleSpec());
-        }
-        if (updateReqVO.getServiceTime() != null) {
-            mtGoods.setServiceTime(updateReqVO.getServiceTime());
-        }
-        if (StringUtil.isNotEmpty(updateReqVO.getCouponIds())) {
-            mtGoods.setCouponIds(updateReqVO.getCouponIds());
-        }
-        if (updateReqVO.getSort() != null) {
-            mtGoods.setSort(updateReqVO.getSort());
-        }
-        if (StringUtil.isNotEmpty(updateReqVO.getStatus())) {
-            mtGoods.setStatus(updateReqVO.getStatus());
-        }
-        if (updateReqVO.getMerchantId() != null) {
-            mtGoods.setMerchantId(updateReqVO.getMerchantId());
-        }
-        if (updateReqVO.getStoreId() != null) {
-            mtGoods.setStoreId(updateReqVO.getStoreId());
-        }
-
+        MtGoods updateObj = new MtGoods();
+        BeanUtils.copyProperties(updateReqVO, updateObj);
+        mtGoods.setCouponIds(CollUtil.join(updateReqVO.getCouponIds(), ","));
         // 图片处理
         if (updateReqVO.getImages() != null && !updateReqVO.getImages().isEmpty()) {
-            mtGoods.setLogo(updateReqVO.getImages().get(0));
-            mtGoods.setImages(JSONObject.toJSONString(updateReqVO.getImages()));
+            updateObj.setLogo(updateReqVO.getImages().get(0));
+            updateObj.setImages(JSONObject.toJSONString(updateReqVO.getImages()));
         } else if (StringUtil.isNotEmpty(updateReqVO.getLogo())) {
-            mtGoods.setLogo(updateReqVO.getLogo());
+            updateObj.setLogo(updateReqVO.getLogo());
+        }
+        updateObj.setUpdateTime(new Date());
+        updateObj.setOperator("openapi");
+        this.updateById(mtGoods);
+
+        if (!StrUtil.equals(updateReqVO.getIsSingleSpec(), mtGoods.getIsSingleSpec())) {
+            if (updateReqVO.getIsSingleSpec().equals(YesOrNoEnum.YES.getKey())) {
+                mtGoodsSpecMapper.deleteByGoodsId(mtGoods.getId());
+                mtGoodsSkuMapper.deleteByGoodsId(mtGoods.getId());
+                return;
+            }
+            List<MtGoodsSpec> specLs = queryGoodsSpecList(mtGoods.getId());
+
         }
 
-        mtGoods.setUpdateTime(new Date());
-        mtGoods.setOperator("openapi");
-
-        this.updateById(mtGoods);
 
         // 如果传了规格，则更新规格
         if (updateReqVO.getSpecData() != null && !updateReqVO.getSpecData().isEmpty()) {

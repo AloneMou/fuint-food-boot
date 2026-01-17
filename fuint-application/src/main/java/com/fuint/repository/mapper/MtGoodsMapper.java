@@ -58,6 +58,21 @@ public interface MtGoodsMapper extends BaseMapperX<MtGoods> {
                         .eq(MtGoods::getStoreId, 0)
                 )
                 .orderByAsc(MtGoods::getSort)
+                .select(
+                        MtGoods::getId,
+                        MtGoods::getName,
+                        MtGoods::getPrice,
+                        MtGoods::getStock,
+                        MtGoods::getLogo,
+                        MtGoods::getStatus,
+                        MtGoods::getType,
+                        MtGoods::getCateId,
+                        MtGoods::getStoreId,
+                        MtGoods::getSalePoint,
+                        MtGoods::getCreateTime,
+                        MtGoods::getUpdateTime
+                )
         );
     }
+
 }

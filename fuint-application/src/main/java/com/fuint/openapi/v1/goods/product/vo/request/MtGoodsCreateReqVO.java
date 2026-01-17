@@ -69,19 +69,22 @@ public class MtGoodsCreateReqVO {
     @ApiModelProperty(value = "卖点", example = "香浓美味")
     private String salePoint;
 
+    @NotBlank(message = "是否积分商品不能为空")
     @ApiModelProperty(value = "是否可使用积分：Y-是；N-否", example = "Y")
     private String canUsePoint;
 
+    @NotBlank(message = "是否会员折扣不能为空")
     @ApiModelProperty(value = "是否会员折扣：Y-是；N-否", example = "Y")
     private String isMemberDiscount;
 
+    @NotBlank(message = "是否单规格不能为空")
     @ApiModelProperty(value = "是否单规格：Y-是；N-否", example = "Y")
     private String isSingleSpec;
 
     @ApiModelProperty(value = "服务时间（分钟）", example = "10")
     private Integer serviceTime;
 
-    @ApiModelProperty(value = "可用优惠券ID列表，逗号分隔", example = "1,2,3")
+    @ApiModelProperty(value = "可用优惠券ID列表", example = "1,2,3")
     private List<Integer> couponIds;
 
     @ApiModelProperty(value = "排序", example = "100")

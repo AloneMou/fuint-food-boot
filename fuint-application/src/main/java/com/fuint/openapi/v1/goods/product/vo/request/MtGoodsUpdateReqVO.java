@@ -8,11 +8,12 @@ import lombok.Data;
 
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * 商品更新请求VO
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -82,7 +83,7 @@ public class MtGoodsUpdateReqVO {
     private Integer serviceTime;
 
     @ApiModelProperty(value = "可用优惠券ID列表，逗号分隔", example = "1,2,3")
-    private String couponIds;
+    private List<Integer> couponIds = new ArrayList<>();
 
     @ApiModelProperty(value = "排序", example = "100")
     private Integer sort;

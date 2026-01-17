@@ -1,20 +1,19 @@
 package com.fuint.openapi.v1.goods.product;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.alibaba.fastjson.JSONArray;
+import com.fuint.common.dto.CouponDto;
 import com.fuint.common.dto.GoodsDto;
 import com.fuint.common.dto.GoodsSpecValueDto;
 import com.fuint.common.enums.OrderModeEnum;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.enums.YesOrNoEnum;
-import com.fuint.common.service.GoodsService;
-import com.fuint.common.service.MemberService;
-import com.fuint.common.service.OrderService;
-import com.fuint.common.service.SettingService;
+import com.fuint.common.service.*;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
@@ -50,6 +49,7 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.fuint.framework.exception.enums.GlobalErrorCodeConstants.BAD_REQUEST;
 import static com.fuint.framework.util.collection.CollectionUtils.convertMap;
 import static com.fuint.framework.util.object.BeanUtils.buildPaginationRequest;
 import static com.fuint.framework.util.string.StrUtils.splitToInt;
@@ -73,13 +73,10 @@ public class OpenGoodsController extends BaseController {
     private GoodsService goodsService;
 
     @Resource
-    private OrderService orderService;
-
-    @Resource
     private MemberService memberService;
 
     @Resource
-    private SettingService settingService;
+    private UserCouponService userCouponService;
 
     @ApiOperation(value = "创建商品", notes = "创建一个新的商品")
     @PostMapping(value = "/create")
@@ -226,13 +223,11 @@ public class OpenGoodsController extends BaseController {
         if (existGoods == null) {
             return CommonResult.error(GOODS_NOT_FOUND);
         }
-
         // 更新状态
         MtGoods mtGoods = new MtGoods();
         mtGoods.setId(id);
         mtGoods.setStatus(status);
         mtGoods.setOperator("openapi");
-
         goodsService.saveGoods(mtGoods);
         return CommonResult.success(true);
     }
@@ -242,9 +237,11 @@ public class OpenGoodsController extends BaseController {
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<PageResult<CGoodsListRespVO>> getCGoodsList(@Valid CGoodsListPageReqVO pageReqVO) throws BusinessCheckException {
-        Integer merchantId = ObjectUtils.defaultIfNull(pageReqVO.getMerchantId(), 1);
         Integer userId = ObjectUtils.defaultIfNull(pageReqVO.getUserId(), 0);
         memberService.checkMemberExist(userId);
+        if (pageReqVO.getPageSize() > 20) {
+            return CommonResult.error(BAD_REQUEST.getCode(), "每页条数不能大于20");
+        }
         // 1. 查询已上架商品
         PageResult<MtGoods> pageResult = goodsService.queryGoodsList(pageReqVO);
         List<MtGoods> goodsList = pageResult.getList();
@@ -256,7 +253,7 @@ public class OpenGoodsController extends BaseController {
             if (StrUtil.equals(YesOrNoEnum.YES.getKey(), goods.getIsSingleSpec())) {
                 // 单规格商品，直接使用商品价格
                 BigDecimal originalPrice = goods.getPrice();
-                BigDecimal dynamicPrice = calculateDynamicPrice(merchantId != null ? merchantId : 1, userId, goods.getId(), 0, originalPrice);
+                BigDecimal dynamicPrice = calculateDynamicPrice(userId, goods.getId(), originalPrice);
                 cGoods.setOriginalPrice(originalPrice);
                 cGoods.setDynamicPrice(dynamicPrice);
                 cGoods.setStock(goods.getStock());
@@ -268,7 +265,7 @@ public class OpenGoodsController extends BaseController {
                 }
                 // 计算动态价格
                 BigDecimal originalPrice = sku.getPrice();
-                BigDecimal dynamicPrice = calculateDynamicPrice(1, userId, goods.getId(), sku.getId(), originalPrice);
+                BigDecimal dynamicPrice = calculateDynamicPrice(userId, goods.getId(), originalPrice);
                 cGoods.setOriginalPrice(originalPrice);
                 cGoods.setDynamicPrice(dynamicPrice);
                 cGoods.setDefaultSkuId(sku.getId());
@@ -289,42 +286,20 @@ public class OpenGoodsController extends BaseController {
      * 计算商品动态价格
      * 根据用户优惠券和营销活动计算实际价格
      *
-     * @param merchantId    商户ID
      * @param userId        用户ID（可为null）
      * @param goodsId       商品ID
-     * @param skuId         SKU ID（单规格商品为0）
      * @param originalPrice 原价
      * @return 动态价格
      */
-    private BigDecimal calculateDynamicPrice(Integer merchantId, Integer userId, Integer goodsId, Integer skuId, BigDecimal originalPrice) {
+    private BigDecimal calculateDynamicPrice(Integer userId, Integer goodsId, BigDecimal originalPrice) {
         try {
-            // 如果没有用户ID，直接返回原价
-            if (userId == null || userId <= 0) {
-                return originalPrice;
-            }
-            // 验证用户是否存在
-            MtUser userInfo = memberService.queryMemberById(userId);
-            if (userInfo == null) {
-                return originalPrice;
-            }
-            // 构建购物车项（单个商品，数量为1）
-            List<MtCart> cartList = new ArrayList<>();
-            MtCart cart = new MtCart();
-            cart.setGoodsId(goodsId);
-            cart.setSkuId(skuId != null ? skuId : 0);
-            cart.setNum(1);
-            cart.setUserId(userId);
-            cart.setStatus(StatusEnum.ENABLED.getKey());
-            cartList.add(cart);
-
-            // 调用价格计算逻辑（不使用优惠券，只计算基础价格和会员折扣）
-            Map<String, Object> cartData = orderService.calculateCartGoods(
-                    merchantId, userId, cartList, 0, false, "MP-WEIXIN", OrderModeEnum.ONESELF.getKey()
-            );
-            return new BigDecimal(cartData.get("totalPrice").toString());
+            CouponDto couponDto = userCouponService.getBestCouponByGoodsAndAmount(userId, goodsId, originalPrice);
+            return NumberUtil.sub(originalPrice, couponDto != null ? couponDto.getAmount() : BigDecimal.ZERO);
         } catch (Exception e) {
             // 计算失败，返回原价
             return originalPrice;
+        } finally {
+            userCouponService.clear();
         }
     }
 
@@ -418,7 +393,7 @@ public class OpenGoodsController extends BaseController {
 
             if (specItem == null) {
                 specItem = new GoodsSpecItemVO();
-                specItem.setId(spec.getId());
+//                specItem.setId(spec.getId());
                 specItem.setName(specName);
                 specItem.setChild(new ArrayList<>());
                 specMap.put(specName, specItem);

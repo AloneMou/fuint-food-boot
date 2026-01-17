@@ -25,14 +25,20 @@ public class CGoodsListRespVO {
     @ApiModelProperty(value = "商品名称", example = "拿铁咖啡")
     private String name;
 
-    @ApiModelProperty(value = "商品描述", example = "经典拿铁")
-    private String description;
+    @ApiModelProperty(value = "商品类型:goods-实物商品", example = "1")
+    private String type;
+
+//    @ApiModelProperty(value = "商品描述", example = "经典拿铁")
+//    private String description;
 
     @ApiModelProperty(value = "商品图片", example = "https://example.com/logo.jpg")
     private String imageUrl;
 
-    @ApiModelProperty(value = "状态：A-上架；D-下架", example = "A")
-    private String status;
+    @ApiModelProperty(value = "卖点", example = "香浓美味")
+    private String salePoint;
+
+//    @ApiModelProperty(value = "状态：A-上架；D-下架", example = "A")
+//    private String status;
 
 //    @ApiModelProperty(value = "商品SKU列表（包含动态价格）")
 //    private List<CGoodsSkuVO> skus;

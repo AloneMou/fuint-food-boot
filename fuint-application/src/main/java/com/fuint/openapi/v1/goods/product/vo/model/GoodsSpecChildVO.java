@@ -20,5 +20,4 @@ public class GoodsSpecChildVO {
     @ApiModelProperty(value = "规格值名称", example = "大杯")
     private String name;
 
-
 }

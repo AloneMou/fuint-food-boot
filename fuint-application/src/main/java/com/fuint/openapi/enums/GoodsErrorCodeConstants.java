@@ -18,4 +18,7 @@ public interface GoodsErrorCodeConstants {
 
     //获取商品详情失败
     ErrorCode GOODS_GET_DETAIL_FAILED = new ErrorCode(100_4_003, "获取商品详情失败");
+
+    ErrorCode GOODS_COUPON_TOO_MANY = new ErrorCode(100_4_004, "单个商品优惠券不得大于{}");
+
 }

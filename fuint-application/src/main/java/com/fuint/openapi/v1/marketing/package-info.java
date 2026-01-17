@@ -1,0 +1,1 @@
+package com.fuint.openapi.v1.marketing;

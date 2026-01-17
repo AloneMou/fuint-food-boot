@@ -33,4 +33,10 @@ public interface MtGoodsSkuMapper extends BaseMapper<MtGoodsSku> {
                 .last("limit 1")
         );
     }
+
+    default void deleteByGoodsId(Integer goodsId) {
+        delete(new LambdaQueryWrapperX<MtGoodsSku>()
+                .eqIfPresent(MtGoodsSku::getGoodsId, goodsId)
+        );
+    }
 }
