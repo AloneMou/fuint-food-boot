@@ -14,10 +14,10 @@ import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtSetting;
 import com.fuint.repository.model.MtSmsSendedLog;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -75,10 +75,10 @@ public class BackendSmsController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> searchParams = new HashMap<>();
-        if (StringUtil.isNotEmpty(mobile)) {
+        if (StringUtils.isNotEmpty(mobile)) {
             searchParams.put("mobile", mobile);
         }
-        if (StringUtil.isNotEmpty(content)) {
+        if (StringUtils.isNotEmpty(content)) {
             searchParams.put("content", content);
         }
 
@@ -115,7 +115,7 @@ public class BackendSmsController extends BaseController {
         String accessKeySecret = "";
         String signName = "";
         for (MtSetting setting : settingList) {
-            if (StringUtil.isNotEmpty(setting.getValue())) {
+            if (StringUtils.isNotEmpty(setting.getValue())) {
                 if (setting.getName().equals(SmsSettingEnum.IS_CLOSE.getKey())) {
                     isClose = setting.getValue();
                 } else if (setting.getName().equals(SmsSettingEnum.ACCESS_KEY_ID.getKey())) {

@@ -6,11 +6,11 @@ import com.fuint.common.util.CommonUtil;
 import com.fuint.common.util.DateUtil;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
-import com.fuint.utils.StringUtil;
 import com.aliyun.oss.OSS;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -76,7 +76,7 @@ public class ClientFileController extends BaseController {
 
         Map<String, String> resultMap = new HashMap<>();
         String originalFilename = file.getOriginalFilename();
-        if (StringUtil.isEmpty(originalFilename)) {
+        if (StringUtils.isEmpty(originalFilename)) {
             return getFailureResult(201, "上传出错啦");
         }
 
@@ -123,7 +123,7 @@ public class ClientFileController extends BaseController {
                 OSS ossClient = AliyunOssUtil.getOSSClient(accessKeyId, accessKeySecret, endPoint);
 
                 String pathRoot = env.getProperty("images.root");
-                if (pathRoot == null || StringUtil.isEmpty(pathRoot)) {
+                if (pathRoot == null || StringUtils.isEmpty(pathRoot)) {
                     pathRoot = ResourceUtils.getURL("classpath:").getPath();
                 }
 
@@ -154,7 +154,7 @@ public class ClientFileController extends BaseController {
         String fileName = file.getOriginalFilename();
         String imageName = fileName.substring(fileName.lastIndexOf("."));
         String pathRoot = env.getProperty("images.root");
-        if (pathRoot == null || StringUtil.isEmpty(pathRoot)) {
+        if (pathRoot == null || StringUtils.isEmpty(pathRoot)) {
             pathRoot = ResourceUtils.getURL("classpath:").getPath();
         }
         String uuid = UUID.randomUUID().toString().replaceAll("-", "");

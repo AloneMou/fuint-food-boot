@@ -7,17 +7,17 @@ import com.fuint.common.service.*;
 import com.fuint.common.util.TokenUtil;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.util.TimeUtils;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtSetting;
 import com.fuint.repository.model.MtStore;
 import com.fuint.repository.model.MtUser;
 import com.fuint.repository.model.TAccount;
-import com.fuint.utils.StringUtil;
-import com.fuint.utils.TimeUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -255,7 +255,7 @@ public class BackendOrderController extends BaseController {
         dto.setId(orderId);
         dto.setStatus(OrderStatusEnum.DELIVERED.getKey());
 
-        if (StringUtil.isNotEmpty(expressCompany) || StringUtil.isNotEmpty(expressNo)) {
+        if (StringUtils.isNotEmpty(expressCompany) || StringUtils.isNotEmpty(expressNo)) {
             ExpressDto expressInfo = new ExpressDto();
             String time = TimeUtils.formatDate(new Date(), "yyyy-MM-dd HH:mm");
             expressInfo.setExpressTime(time);
@@ -277,7 +277,7 @@ public class BackendOrderController extends BaseController {
             params.put("expressNo", expressNo);
             weixinService.sendSubscribeMessage(userInfo.getMerchantId(), userInfo.getId(), userInfo.getOpenId(), WxMessageEnum.DELIVER_GOODS.getKey(), "pages/order/index", params, sendTime);
 
-            if (StringUtil.isNotBlank(userInfo.getMpOpenId())) {
+            if (StringUtils.isNotBlank(userInfo.getMpOpenId())) {
                 weixinService.sendTemplateMessage(userInfo.getMerchantId(), userInfo.getId(), userInfo.getMpOpenId(), WxMessageEnum.DELIVER_GOODS.getKey(), "pages/order/index", params, sendTime);
 
             }else{
@@ -319,19 +319,19 @@ public class BackendOrderController extends BaseController {
         OrderDto orderDto = new OrderDto();
         orderDto.setId(orderId);
         orderDto.setOperator(accountInfo.getAccountName());
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             orderDto.setStatus(status);
         }
-        if (StringUtil.isNotEmpty(amount)) {
+        if (StringUtils.isNotEmpty(amount)) {
             orderDto.setAmount(new BigDecimal(amount));
         }
-        if (StringUtil.isNotEmpty(discount)) {
+        if (StringUtils.isNotEmpty(discount)) {
             orderDto.setDiscount(new BigDecimal(discount));
         }
-        if (StringUtil.isNotEmpty(remark)) {
+        if (StringUtils.isNotEmpty(remark)) {
             orderDto.setRemark(remark);
         }
-        if (StringUtil.isNotEmpty(orderMode)) {
+        if (StringUtils.isNotEmpty(orderMode)) {
             orderDto.setOrderMode(orderMode);
         }
 
@@ -367,10 +367,10 @@ public class BackendOrderController extends BaseController {
         OrderDto orderDto = new OrderDto();
         orderDto.setId(orderId);
         orderDto.setOperator(accountInfo.getAccountName());
-        if (StringUtil.isNotEmpty(remark)) {
+        if (StringUtils.isNotEmpty(remark)) {
             orderDto.setRemark(remark);
         }
-        if (StringUtil.isNotEmpty(verifyCode)) {
+        if (StringUtils.isNotEmpty(verifyCode)) {
             orderDto.setVerifyCode(verifyCode);
         }
 

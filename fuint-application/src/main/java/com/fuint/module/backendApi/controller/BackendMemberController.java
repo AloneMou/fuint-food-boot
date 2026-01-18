@@ -16,10 +16,10 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -102,31 +102,31 @@ public class BackendMemberController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> params = new HashMap<>();
-        if (StringUtil.isNotEmpty(userId)) {
+        if (StringUtils.isNotEmpty(userId)) {
             params.put("id", userId);
         }
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             params.put("name", name);
         }
-        if (StringUtil.isNotEmpty(mobile)) {
+        if (StringUtils.isNotEmpty(mobile)) {
             params.put("mobile", mobile);
         }
-        if (StringUtil.isNotEmpty(birthday)) {
+        if (StringUtils.isNotEmpty(birthday)) {
             params.put("birthday", birthday);
         }
-        if (StringUtil.isNotEmpty(userNo)) {
+        if (StringUtils.isNotEmpty(userNo)) {
             params.put("userNo", userNo);
         }
-        if (StringUtil.isNotEmpty(gradeId)) {
+        if (StringUtils.isNotEmpty(gradeId)) {
             params.put("gradeId", gradeId);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
-        if (StringUtil.isNotEmpty(storeIds)) {
+        if (StringUtils.isNotEmpty(storeIds)) {
             params.put("storeIds", storeIds);
         }
-        if (StringUtil.isNotEmpty(groupIds)) {
+        if (StringUtils.isNotEmpty(groupIds)) {
             params.put("groupIds", groupIds);
         }
         AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
@@ -137,10 +137,10 @@ public class BackendMemberController extends BaseController {
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
             params.put("merchantId", accountInfo.getMerchantId());
         }
-        if (StringUtil.isNotEmpty(startTime)) {
+        if (StringUtils.isNotEmpty(startTime)) {
             params.put("startTime", startTime);
         }
-        if (StringUtil.isNotEmpty(endTime)) {
+        if (StringUtils.isNotEmpty(endTime)) {
             params.put("endTime", endTime);
         }
         paginationRequest.setSearchParams(params);
@@ -274,11 +274,11 @@ public class BackendMemberController extends BaseController {
 
         if (PhoneFormatCheckUtils.isChinaPhoneLegal(mobile)) {
             // 重置该手机号
-            memberService.resetMobile(mobile, StringUtil.isEmpty(id) ? 0 : Integer.parseInt(id));
+            memberService.resetMobile(mobile, StringUtils.isEmpty(id) ? 0 : Integer.parseInt(id));
         }
 
         MtUser memberInfo;
-        if (StringUtil.isEmpty(id)) {
+        if (StringUtils.isEmpty(id)) {
             memberInfo = new MtUser();
         } else {
             memberInfo = memberService.queryMemberById(Integer.parseInt(id));
@@ -287,7 +287,7 @@ public class BackendMemberController extends BaseController {
         memberInfo.setMerchantId(accountInfo.getMerchantId());
         memberInfo.setName(name);
         memberInfo.setStatus(status);
-        if (StringUtil.isNotEmpty(groupId)) {
+        if (StringUtils.isNotEmpty(groupId)) {
             memberInfo.setGroupId(Integer.parseInt(groupId));
         }
         memberInfo.setGradeId(gradeId);
@@ -303,7 +303,7 @@ public class BackendMemberController extends BaseController {
         memberInfo.setStartTime(DateUtil.parseDate(startTime));
         memberInfo.setEndTime(DateUtil.parseDate(endTime));
         memberInfo.setIsStaff(YesOrNoEnum.NO.getKey());
-        if (StringUtil.isNotEmpty(storeId)) {
+        if (StringUtils.isNotEmpty(storeId)) {
             memberInfo.setStoreId(Integer.parseInt(storeId));
         }
         TAccount account = accountService.getAccountInfoById(accountInfo.getId());
@@ -311,7 +311,7 @@ public class BackendMemberController extends BaseController {
         if (myStoreId != null && myStoreId > 0) {
             memberInfo.setStoreId(myStoreId);
         }
-        if (StringUtil.isEmpty(id)) {
+        if (StringUtils.isEmpty(id)) {
             memberService.addMember(memberInfo);
         } else {
             memberService.updateMember(memberInfo, false);
@@ -353,7 +353,7 @@ public class BackendMemberController extends BaseController {
 
         // 隐藏手机号中间四位
         String phone = memberInfo.getMobile();
-        if (phone != null && StringUtil.isNotEmpty(phone) && phone.length() == 11) {
+        if (phone != null && StringUtils.isNotEmpty(phone) && phone.length() == 11) {
             memberInfo.setMobile(phone.substring(0, 3) + "****" + phone.substring(7));
         }
 
@@ -396,7 +396,7 @@ public class BackendMemberController extends BaseController {
         String openWxCard = YesOrNoEnum.FALSE.getKey();
         WxCardDto wxMemberCard = null;
         for (MtSetting setting : settingList) {
-            if (StringUtil.isNotEmpty(setting.getValue())) {
+            if (StringUtils.isNotEmpty(setting.getValue())) {
                 if (setting.getName().equals(UserSettingEnum.GET_COUPON_NEED_PHONE.getKey())) {
                     getCouponNeedPhone = setting.getValue();
                 } else if (setting.getName().equals(UserSettingEnum.GET_COUPON_NEED_PHONE.getKey())) {
@@ -479,7 +479,7 @@ public class BackendMemberController extends BaseController {
                 wxCardId = cardIdSetting.getValue();
             }
             String cardId = weixinService.createWxCard(accountInfo.getMerchantId(), wxCardId);
-            if (StringUtil.isNotEmpty(cardId)) {
+            if (StringUtils.isNotEmpty(cardId)) {
                 MtSetting mtSetting = new MtSetting();
                 mtSetting.setType(SettingTypeEnum.USER.getKey());
                 mtSetting.setName(UserSettingEnum.WX_MEMBER_CARD_ID.getKey());
@@ -514,7 +514,7 @@ public class BackendMemberController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
-        if (StringUtil.isEmpty(password)) {
+        if (StringUtils.isEmpty(password)) {
             return getFailureResult(1001, "密码格式有误");
         }
 

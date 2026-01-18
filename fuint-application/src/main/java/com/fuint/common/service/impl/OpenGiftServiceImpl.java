@@ -18,11 +18,10 @@ import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.mapper.MtOpenGiftMapper;
 import com.fuint.repository.mapper.MtUserMapper;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -242,7 +241,7 @@ public class OpenGiftServiceImpl extends ServiceImpl<MtOpenGiftMapper, MtOpenGif
         if (user == null) {
             throw new BusinessCheckException("会员状态异常");
         }
-        if (user.getGradeId() == null && StringUtil.isEmpty(user.getGradeId())) {
+        if (user.getGradeId() == null && StringUtils.isEmpty(user.getGradeId())) {
             user.setGradeId("0");
         }
         MtUserGrade oldGrade = userGradeService.queryUserGradeById(user.getMerchantId(), Integer.parseInt(user.getGradeId()), user.getId());

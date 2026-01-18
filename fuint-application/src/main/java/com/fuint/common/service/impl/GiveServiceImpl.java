@@ -16,11 +16,10 @@ import com.fuint.repository.mapper.MtGiveItemMapper;
 import com.fuint.repository.mapper.MtGiveMapper;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -156,7 +155,7 @@ public class GiveServiceImpl extends ServiceImpl<MtGiveMapper, MtGive> implement
         Integer storeId = giveParam.getStoreId() == null ? 0 : giveParam.getStoreId();
         Integer merchantId = giveParam.getMerchantId() == null ? 0 : giveParam.getMerchantId();
 
-        if (StringUtil.isEmpty(mobile) || mobile.length() > 11 || mobile.length() < 11) {
+        if (StringUtils.isEmpty(mobile) || mobile.length() > 11 || mobile.length() < 11) {
             throw new BusinessCheckException("转增对象手机号有误");
         }
 
@@ -242,11 +241,11 @@ public class GiveServiceImpl extends ServiceImpl<MtGiveMapper, MtGive> implement
         give.setNote(note);
         give.setMessage(message);
         give.setUserMobile(myUser.getMobile());
-        String couponIdsStr = StringUtil.join(couponIdList.toArray(), ",");
-        give.setGroupIds(StringUtil.join(groupIds.toArray(), ","));
-        give.setGroupNames(StringUtil.join(groupNames.toArray(), ","));
+        String couponIdsStr = StringUtils.join(couponIdList.toArray(), ",");
+        give.setGroupIds(StringUtils.join(groupIds.toArray(), ","));
+        give.setGroupNames(StringUtils.join(groupNames.toArray(), ","));
         give.setCouponIds(couponIdsStr);
-        give.setCouponNames(StringUtil.join(couponNames.toArray(), ","));
+        give.setCouponNames(StringUtils.join(couponNames.toArray(), ","));
         give.setStatus(StatusEnum.ENABLED.getKey());
         Date createTime = new Date();
         give.setCreateTime(createTime);

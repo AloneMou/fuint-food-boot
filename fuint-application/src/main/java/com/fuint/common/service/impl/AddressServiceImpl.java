@@ -7,8 +7,8 @@ import com.fuint.repository.mapper.MtAddressMapper;
 import com.fuint.common.enums.YesOrNoEnum;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.common.enums.StatusEnum;
-import com.fuint.utils.StringUtil;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -40,22 +40,22 @@ public class AddressServiceImpl extends ServiceImpl<MtAddressMapper, MtAddress> 
     public MtAddress saveAddress(MtAddress mtAddress) {
         if (mtAddress.getId() > 0) {
             MtAddress address = mtAddressMapper.selectById(mtAddress.getId());
-            if (StringUtil.isNotEmpty(mtAddress.getName())) {
+            if (StringUtils.isNotEmpty(mtAddress.getName())) {
                 address.setName(mtAddress.getName());
             }
-            if (StringUtil.isNotEmpty(mtAddress.getMobile())) {
+            if (StringUtils.isNotEmpty(mtAddress.getMobile())) {
                 address.setMobile(mtAddress.getMobile());
             }
-            if (StringUtil.isNotEmpty(mtAddress.getDetail())) {
+            if (StringUtils.isNotEmpty(mtAddress.getDetail())) {
                 address.setDetail(mtAddress.getDetail());
             }
-            if (StringUtil.isNotEmpty(mtAddress.getIsDefault())) {
+            if (StringUtils.isNotEmpty(mtAddress.getIsDefault())) {
                 if (mtAddress.getIsDefault().equals(YesOrNoEnum.YES.getKey())) {
                     mtAddressMapper.setDefault(mtAddress.getUserId(), mtAddress.getId());
                 }
                 address.setIsDefault(mtAddress.getIsDefault());
             }
-            if (StringUtil.isNotEmpty(mtAddress.getStatus())) {
+            if (StringUtils.isNotEmpty(mtAddress.getStatus())) {
                 address.setStatus(mtAddress.getStatus());
             }
             if (mtAddress.getProvinceId() > 0) {

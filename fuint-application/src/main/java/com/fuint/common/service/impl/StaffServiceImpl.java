@@ -17,11 +17,10 @@ import com.fuint.repository.mapper.MtStaffMapper;
 import com.fuint.repository.model.MtStaff;
 import com.fuint.repository.model.MtStore;
 import com.fuint.repository.model.MtUser;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -97,7 +96,7 @@ public class StaffServiceImpl extends ServiceImpl<MtStaffMapper, MtStaff> implem
             for (MtStaff mtStaff : dataList) {
                 // 隐藏手机号中间四位
                 String phone = mtStaff.getMobile();
-                if (phone != null && StringUtil.isNotEmpty(phone) && phone.length() == 11) {
+                if (phone != null && StringUtils.isNotEmpty(phone) && phone.length() == 11) {
                     mtStaff.setMobile(phone.substring(0, 3) + "****" + phone.substring(7));
                 }
             }

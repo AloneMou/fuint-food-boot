@@ -13,10 +13,10 @@ import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtSendLog;
 import com.fuint.repository.model.MtUser;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -79,7 +79,7 @@ public class BackendSendLogController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> searchParams = new HashMap<>();
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             searchParams.put("status", status);
         }
 
@@ -91,15 +91,15 @@ public class BackendSendLogController extends BaseController {
             searchParams.put("storeId", accountInfo.getStoreId());
         }
 
-        if (StringUtil.isNotEmpty(userId)) {
+        if (StringUtils.isNotEmpty(userId)) {
             searchParams.put("userId", userId);
         }
 
-        if (StringUtil.isNotEmpty(couponId)) {
+        if (StringUtils.isNotEmpty(couponId)) {
             searchParams.put("couponId", couponId);
         }
 
-        if (StringUtil.isNotEmpty(mobile)) {
+        if (StringUtils.isNotEmpty(mobile)) {
             MtUser userInfo = memberService.queryMemberByMobile(accountInfo.getMerchantId(), mobile);
             if (userInfo != null) {
                 searchParams.put("userId", userInfo.getId().toString());

@@ -16,10 +16,10 @@ import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.repository.model.MtCommissionRule;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -82,16 +82,16 @@ public class BackendCommissionRuleController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> params = new HashMap<>();
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             params.put("name", name);
         }
-        if (StringUtil.isNotEmpty(target)) {
+        if (StringUtils.isNotEmpty(target)) {
             params.put("target", target);
         }
-        if (StringUtil.isNotEmpty(type)) {
+        if (StringUtils.isNotEmpty(type)) {
             params.put("type", type);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
@@ -180,7 +180,7 @@ public class BackendCommissionRuleController extends BaseController {
         if (accountInfo.getStoreId() != null && accountInfo.getStoreId() > 0) {
             params.setStoreId(accountInfo.getStoreId());
         }
-        if (StringUtil.isNotEmpty(id)) {
+        if (StringUtils.isNotEmpty(id)) {
             commissionRuleService.updateCommissionRule(params);
         } else {
             commissionRuleService.addCommissionRule(params);

@@ -16,10 +16,10 @@ import com.fuint.framework.web.ResponseObject;
 import com.fuint.module.backendApi.request.DutyStatusRequest;
 import com.fuint.repository.model.TDuty;
 import com.fuint.repository.model.TSource;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -81,10 +81,10 @@ public class BackendDutyController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> searchParams = new HashMap<>();
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             searchParams.put("name", name);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             searchParams.put("status", status);
         }
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
@@ -224,7 +224,7 @@ public class BackendDutyController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
-        if (StringUtil.isEmpty(id)) {
+        if (StringUtils.isEmpty(id)) {
             return getFailureResult(201, "信息提交有误");
         }
 

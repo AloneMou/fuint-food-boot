@@ -16,17 +16,17 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.exception.ServiceException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.util.SeqUtil;
 import com.fuint.repository.bean.MemberTopBean;
 import com.fuint.repository.mapper.MtUserActionMapper;
 import com.fuint.repository.mapper.MtUserGradeMapper;
 import com.fuint.repository.mapper.MtUserMapper;
 import com.fuint.repository.model.*;
 import com.fuint.repository.request.MemberStatisticsReqVO;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.PageImpl;
@@ -38,7 +38,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.util.*;
 
-import static com.fuint.common.config.Message.USER_NOT_EXIST;
 import static com.fuint.openapi.enums.UserErrorCodeConstants.USER_NOT_FOUND;
 
 /**
@@ -247,15 +246,15 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
         // 注册开始、结束时间
         String startTime = paginationRequest.getSearchParams().get("startTime") == null ? "" : paginationRequest.getSearchParams().get("startTime").toString();
         String endTime = paginationRequest.getSearchParams().get("endTime") == null ? "" : paginationRequest.getSearchParams().get("endTime").toString();
-        if (StringUtil.isNotEmpty(startTime)) {
+        if (StringUtils.isNotEmpty(startTime)) {
             wrapper.ge(MtUser::getCreateTime, startTime);
         }
-        if (StringUtil.isNotEmpty(endTime)) {
+        if (StringUtils.isNotEmpty(endTime)) {
             wrapper.le(MtUser::getCreateTime, endTime);
         }
         // 注册时间
         String regTime = paginationRequest.getSearchParams().get("regTime") == null ? "" : paginationRequest.getSearchParams().get("regTime").toString();
-        if (StringUtil.isNotEmpty(regTime)) {
+        if (StringUtils.isNotEmpty(regTime)) {
             String[] dateTime = regTime.split("~");
             if (dateTime.length == 2) {
                 wrapper.ge(MtUser::getCreateTime, dateTime[0]);
@@ -264,7 +263,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
         }
         // 活跃时间
         String activeTime = paginationRequest.getSearchParams().get("activeTime") == null ? "" : paginationRequest.getSearchParams().get("activeTime").toString();
-        if (StringUtil.isNotEmpty(activeTime)) {
+        if (StringUtils.isNotEmpty(activeTime)) {
             String[] dateTime = activeTime.split("~");
             if (dateTime.length == 2) {
                 wrapper.ge(MtUser::getUpdateTime, dateTime[0]);
@@ -273,7 +272,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
         }
         // 会员有效期
         String memberTime = paginationRequest.getSearchParams().get("memberTime") == null ? "" : paginationRequest.getSearchParams().get("memberTime").toString();
-        if (StringUtil.isNotEmpty(memberTime)) {
+        if (StringUtils.isNotEmpty(memberTime)) {
             String[] dateTime = memberTime.split("~");
             if (dateTime.length == 2) {
                 wrapper.ge(MtUser::getStartTime, dateTime[0]);
@@ -288,7 +287,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
             UserDto userDto = new UserDto();
             BeanUtils.copyProperties(mtUser, userDto);
             // 隐藏手机号中间四位
-            if (phone != null && StringUtil.isNotEmpty(phone) && phone.length() == 11) {
+            if (phone != null && StringUtils.isNotEmpty(phone) && phone.length() == 11) {
                 userDto.setMobile(phone.substring(0, 3) + "****" + phone.substring(7));
             }
             if (userDto.getStoreId() != null && userDto.getStoreId() > 0) {
@@ -298,13 +297,13 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
                 }
             }
             if (userDto.getGradeId() != null) {
-                Integer mchId = StringUtil.isNotEmpty(merchantId) ? Integer.parseInt(merchantId) : 0;
+                Integer mchId = StringUtils.isNotEmpty(merchantId) ? Integer.parseInt(merchantId) : 0;
                 MtUserGrade mtGrade = userGradeService.queryUserGradeById(mchId, Integer.parseInt(userDto.getGradeId()), mtUser.getId());
                 if (mtGrade != null) {
                     userDto.setGradeName(mtGrade.getName());
                 }
             }
-            if (mtUser.getUserNo() == null || StringUtil.isEmpty(mtUser.getUserNo())) {
+            if (mtUser.getUserNo() == null || StringUtils.isEmpty(mtUser.getUserNo())) {
                 mtUser.setUserNo(CommonUtil.createUserNo());
                 updateById(mtUser);
             }
@@ -333,14 +332,14 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
     @OperationServiceLog(description = "新增会员信息")
     public MtUser addMember(MtUser mtUser) throws BusinessCheckException {
         // 用户名就是手机号
-        if (StringUtil.isNotEmpty(mtUser.getName()) && StringUtil.isEmpty(mtUser.getMobile()) && PhoneFormatCheckUtils.isChinaPhoneLegal(mtUser.getName())) {
+        if (StringUtils.isNotEmpty(mtUser.getName()) && StringUtils.isEmpty(mtUser.getMobile()) && PhoneFormatCheckUtils.isChinaPhoneLegal(mtUser.getName())) {
             mtUser.setMobile(mtUser.getName());
             String name = mtUser.getName().replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1****$2");
             mtUser.setName(name);
         }
 
         // 手机号已存在
-        if (StringUtil.isNotEmpty(mtUser.getMobile())) {
+        if (StringUtils.isNotEmpty(mtUser.getMobile())) {
             MtUser userInfo = queryMemberByMobile(mtUser.getMerchantId(), mtUser.getMobile());
             if (userInfo != null) {
                 return userInfo;
@@ -348,7 +347,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
         }
 
         String userNo = CommonUtil.createUserNo();
-        if (StringUtil.isNotEmpty(mtUser.getUserNo())) {
+        if (StringUtils.isNotEmpty(mtUser.getUserNo())) {
             userNo = mtUser.getUserNo();
         }
         // 会员名称已存在
@@ -357,7 +356,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
             mtUser.setName(userNo);
         }
         // 默认会员等级
-        if (StringUtil.isEmpty(mtUser.getGradeId())) {
+        if (StringUtils.isEmpty(mtUser.getGradeId())) {
             MtUserGrade grade = userGradeService.getInitUserGrade(mtUser.getMerchantId());
             if (grade != null) {
                 mtUser.setGradeId(grade.getId().toString());
@@ -368,7 +367,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
         if (mtUser.getPoint() == null || mtUser.getPoint() < 1) {
             mtUser.setPoint(0);
         }
-        if (StringUtil.isEmpty(mtUser.getIdcard())) {
+        if (StringUtils.isEmpty(mtUser.getIdcard())) {
             mtUser.setIdcard("");
         }
         mtUser.setSex(mtUser.getSex());
@@ -387,14 +386,14 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
             mtUser.setIsStaff(YesOrNoEnum.NO.getKey());
         }
         // 密码加密
-        if (mtUser.getPassword() != null && StringUtil.isNotEmpty(mtUser.getPassword())) {
+        if (mtUser.getPassword() != null && StringUtils.isNotEmpty(mtUser.getPassword())) {
             String salt = SeqUtil.getRandomLetter(4);
             mtUser.setSalt(salt);
             String password = enCodePassword(mtUser.getPassword(), salt);
             mtUser.setPassword(password);
             mtUser.setSource(MemberSourceEnum.REGISTER_BY_ACCOUNT.getKey());
         }
-        if (mtUser.getSource() == null || StringUtil.isEmpty(mtUser.getSource())) {
+        if (mtUser.getSource() == null || StringUtils.isEmpty(mtUser.getSource())) {
             mtUser.setSource(MemberSourceEnum.BACKEND_ADD.getKey());
         }
 
@@ -440,7 +439,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
         mtUser.setUpdateTime(new Date());
 
         MtUser oldUserInfo = mtUserMapper.selectById(mtUser.getId());
-        if (mtUser.getGradeId() != null && StringUtil.isNotEmpty(mtUser.getGradeId())) {
+        if (mtUser.getGradeId() != null && StringUtils.isNotEmpty(mtUser.getGradeId())) {
             if (!CommonUtil.isNumeric(mtUser.getGradeId())) {
                 throw new BusinessCheckException("该会员等级有误");
             }
@@ -451,7 +450,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
         }
 
         // 检查会员号是否重复
-        if (StringUtil.isNotEmpty(mtUser.getUserNo())) {
+        if (StringUtils.isNotEmpty(mtUser.getUserNo())) {
             List<MtUser> userList = mtUserMapper.findMembersByUserNo(mtUser.getMerchantId(), mtUser.getUserNo());
             if (userList.size() > 0) {
                 for (MtUser user : userList) {
@@ -530,7 +529,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
      */
     @Override
     public MtUser queryMemberByMobile(Integer merchantId, String mobile) {
-        if (mobile == null || StringUtil.isEmpty(mobile)) {
+        if (mobile == null || StringUtils.isEmpty(mobile)) {
             return null;
         }
         List<MtUser> mtUser = mtUserMapper.queryMemberByMobile(merchantId, mobile);
@@ -543,7 +542,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
 
     @Override
     public MtUser queryMemberByUnionId(Integer merchantId, String unionId) throws BusinessCheckException {
-        if (unionId == null || StringUtil.isEmpty(unionId)) {
+        if (unionId == null || StringUtils.isEmpty(unionId)) {
             return null;
         }
         List<MtUser> mtUser = mtUserMapper.queryMemberByUnionId(merchantId, unionId);
@@ -556,7 +555,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
 
     @Override
     public MtUser queryMemberByMpOpenId(Integer merchantId, String mpOpenId) throws BusinessCheckException {
-        if (mpOpenId == null || StringUtil.isEmpty(mpOpenId)) {
+        if (mpOpenId == null || StringUtils.isEmpty(mpOpenId)) {
             return null;
         }
         List<MtUser> mtUser = mtUserMapper.queryMemberByMpOpenId(merchantId, mpOpenId);
@@ -576,7 +575,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
      */
     @Override
     public MtUser queryMemberByUserNo(Integer merchantId, String userNo) {
-        if (userNo == null || StringUtil.isEmpty(userNo)) {
+        if (userNo == null || StringUtils.isEmpty(userNo)) {
             return null;
         }
         List<MtUser> mtUser = mtUserMapper.findMembersByUserNo(merchantId, userNo);
@@ -641,7 +640,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
      */
     @Override
     public MtUser queryMemberByName(Integer merchantId, String name) {
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             List<MtUser> userList = mtUserMapper.queryMemberByName(merchantId, name);
             if (userList.size() == 1) {
                 return userList.get(0);
@@ -663,7 +662,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
 
         String unionid = userInfo.getString("unionid");
         MtUser user = null;
-        if (StringUtil.isNotBlank(unionid)) {
+        if (StringUtils.isNotBlank(unionid)) {
             user = queryMemberByUnionId(merchantId, unionid);
         }
         if (type == 0) {
@@ -683,18 +682,18 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
         }
 
 
-        String avatar = StringUtil.isNotEmpty(userInfo.getString("avatarUrl")) ? userInfo.getString("avatarUrl") : "";
-        String gender = StringUtil.isNotEmpty(userInfo.getString("gender")) ? userInfo.getString("gender") : GenderEnum.MAN.getKey().toString();
-        String country = StringUtil.isNotEmpty(userInfo.getString("country")) ? userInfo.getString("country") : "";
-        String province = StringUtil.isNotEmpty(userInfo.getString("province")) ? userInfo.getString("province") : "";
-        String city = StringUtil.isNotEmpty(userInfo.getString("city")) ? userInfo.getString("city") : "";
-        String storeId = StringUtil.isNotEmpty(userInfo.getString("storeId")) ? userInfo.getString("storeId") : "0";
-        String nickName = StringUtil.isNotEmpty(userInfo.getString("nickName")) ? userInfo.getString("nickName") : "";
-        String mobile = StringUtil.isNotEmpty(userInfo.getString("phone")) ? userInfo.getString("phone") : "";
-        String source = StringUtil.isNotEmpty(userInfo.getString("source")) ? userInfo.getString("source") : MemberSourceEnum.WECHAT_LOGIN.getKey();
+        String avatar = StringUtils.isNotEmpty(userInfo.getString("avatarUrl")) ? userInfo.getString("avatarUrl") : "";
+        String gender = StringUtils.isNotEmpty(userInfo.getString("gender")) ? userInfo.getString("gender") : GenderEnum.MAN.getKey().toString();
+        String country = StringUtils.isNotEmpty(userInfo.getString("country")) ? userInfo.getString("country") : "";
+        String province = StringUtils.isNotEmpty(userInfo.getString("province")) ? userInfo.getString("province") : "";
+        String city = StringUtils.isNotEmpty(userInfo.getString("city")) ? userInfo.getString("city") : "";
+        String storeId = StringUtils.isNotEmpty(userInfo.getString("storeId")) ? userInfo.getString("storeId") : "0";
+        String nickName = StringUtils.isNotEmpty(userInfo.getString("nickName")) ? userInfo.getString("nickName") : "";
+        String mobile = StringUtils.isNotEmpty(userInfo.getString("phone")) ? userInfo.getString("phone") : "";
+        String source = StringUtils.isNotEmpty(userInfo.getString("source")) ? userInfo.getString("source") : MemberSourceEnum.WECHAT_LOGIN.getKey();
 
 //        // 需要手机号登录
-//        if (StringUtil.isEmpty(mobile) && user == null) {
+//        if (StringUtils.isEmpty(mobile) && user == null) {
 //            MtSetting mtSetting = settingService.querySettingByName(merchantId, SettingTypeEnum.USER.getKey(), UserSettingEnum.LOGIN_NEED_PHONE.getKey());
 //            if (mtSetting != null) {
 //                if (mtSetting.getValue().equals(YesOrNoEnum.TRUE.getKey())) {
@@ -709,7 +708,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
 
 
         // 手机号已经存在
-        if (StringUtil.isNotEmpty(mobile) && user == null) {
+        if (StringUtils.isNotEmpty(mobile) && user == null) {
             user = queryMemberByMobile(merchantId, mobile);
             if (user != null) {
                 if (type == 0) {
@@ -724,14 +723,14 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
 
 
         MtUser old;
-        if (StringUtil.isNotBlank(unionid)) {
+        if (StringUtils.isNotBlank(unionid)) {
             old = queryMemberByUnionId(merchantId, unionid);
             if (old != null && user != null) {
-                if (Objects.equals(old.getId(), user.getId()) && StringUtil.isBlank(user.getUnionid())) {
+                if (Objects.equals(old.getId(), user.getId()) && StringUtils.isBlank(user.getUnionid())) {
                     user.setUnionid(unionid);
                 }
             } else if (old == null && user != null) {
-                if (StringUtil.isBlank(user.getUnionid())) {
+                if (StringUtils.isBlank(user.getUnionid())) {
                     user.setUnionid(unionid);
                     updateById(user);
                 }
@@ -742,7 +741,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
         boolean isNew = false;
         if (user == null) {
             MtUser mtUser = new MtUser();
-            if (StringUtil.isNotEmpty(mobile)) {
+            if (StringUtils.isNotEmpty(mobile)) {
                 MtUser mtUserMobile = queryMemberByMobile(merchantId, mobile);
                 if (mtUserMobile != null) {
                     mtUser = mtUserMobile;
@@ -750,7 +749,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
             }
 
             // 昵称为空，用手机号
-            if (StringUtil.isEmpty(nickName) && StringUtil.isNotEmpty(mobile)) {
+            if (StringUtils.isEmpty(nickName) && StringUtils.isNotEmpty(mobile)) {
                 nickName = mobile.replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1****$2");
             }
             mtUser.setMerchantId(merchantId);
@@ -761,7 +760,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
             mtUser.setUserNo(userNo);
             mtUser.setMobile(mobile);
             mtUser.setAvatar(avatar);
-            if (StringUtil.isNotEmpty(nickName)) {
+            if (StringUtils.isNotEmpty(nickName)) {
                 mtUser.setName(nickName);
             } else {
                 mtUser.setName(userNo);
@@ -792,7 +791,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
                 gender = GenderEnum.FEMALE.getKey().toString();
             }
             mtUser.setSex(Integer.parseInt(gender));
-            if (StringUtil.isNotEmpty(storeId)) {
+            if (StringUtils.isNotEmpty(storeId)) {
                 mtUser.setStoreId(Integer.parseInt(storeId));
             } else {
                 mtUser.setStoreId(0);
@@ -805,7 +804,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
             } else {
                 updateById(mtUser);
             }
-            if (StringUtil.isNotBlank(unionid)) {
+            if (StringUtils.isNotBlank(unionid)) {
                 user = this.queryMemberByUnionId(merchantId, unionid);
             } else if (type == 0) {
                 user = mtUserMapper.queryMemberByOpenId(merchantId, openId);
@@ -820,12 +819,12 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
                 return null;
             }
             // 补充手机号
-            if (StringUtil.isNotEmpty(mobile) && PhoneFormatCheckUtils.isChinaPhoneLegal(mobile)) {
+            if (StringUtils.isNotEmpty(mobile) && PhoneFormatCheckUtils.isChinaPhoneLegal(mobile)) {
                 user.setMobile(mobile);
                 updateById(user);
             }
             // 补充会员号
-            if (StringUtil.isEmpty(user.getUserNo())) {
+            if (StringUtils.isEmpty(user.getUserNo())) {
                 user.setUserNo(CommonUtil.createUserNo());
                 updateById(user);
             }
@@ -951,7 +950,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
      */
     @Override
     public void resetMobile(String mobile, Integer userId) {
-        if (mobile == null || StringUtil.isEmpty(mobile)) {
+        if (mobile == null || StringUtils.isEmpty(mobile)) {
             return;
         }
         mtUserMapper.resetMobile(mobile, userId);
@@ -1004,7 +1003,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
                 lambdaQueryWrapper.in(MtUser::getGroupId, idList);
             }
         }
-        if (StringUtil.isNotEmpty(keyword)) {
+        if (StringUtils.isNotEmpty(keyword)) {
             List<String> itemList = Arrays.asList(keyword.split(","));
             lambdaQueryWrapper.and(wq -> wq
                     .in(MtUser::getUserNo, itemList)
@@ -1022,7 +1021,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
                 memberDto.setUserNo(mtUser.getUserNo());
                 // 隐藏手机号中间四位
                 String phone = mtUser.getMobile();
-                if (phone != null && StringUtil.isNotEmpty(phone) && phone.length() == 11) {
+                if (phone != null && StringUtils.isNotEmpty(phone) && phone.length() == 11) {
                     memberDto.setMobile(phone.substring(0, 3) + "****" + phone.substring(7));
                 }
                 dataList.add(memberDto);

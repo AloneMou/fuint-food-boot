@@ -11,7 +11,6 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import com.ijpay.alipay.AliPayApi;
 import com.ijpay.core.kit.HttpKit;
 import com.ijpay.core.kit.WxPayKit;
@@ -19,6 +18,7 @@ import com.ijpay.wxpay.WxPayApiConfigKit;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -185,7 +185,7 @@ public class ClientPayController extends BaseController {
             String tranAmt = resData.get("total_fee"); // 交易金额
             BigDecimal tranAmount = new BigDecimal(tranAmt).divide(new BigDecimal("100"), BigDecimal.ROUND_CEILING, 3);
             // 参数校验
-            if (StringUtil.isNotEmpty(orderSn) && StringUtil.isNotEmpty(tranAmt) && StringUtil.isNotEmpty(orderId)) {
+            if (StringUtils.isNotEmpty(orderSn) && StringUtils.isNotEmpty(tranAmt) && StringUtils.isNotEmpty(orderId)) {
                 UserOrderDto orderInfo = orderService.getOrderByOrderSn(orderSn);
                 if (orderInfo != null) {
                     String result = resData.get("return_code");
@@ -255,7 +255,7 @@ public class ClientPayController extends BaseController {
                 logger.info("{} = {}", entry.getKey(), entry.getValue());
             }
             String orderSn = params.get("out_trade_no") != null ? params.get("out_trade_no") : "";
-            if (StringUtil.isEmpty(orderSn)) {
+            if (StringUtils.isEmpty(orderSn)) {
                 logger.error("支付宝验证失败 订单号为空");
             }
             Boolean verifyResult = alipayService.checkCallBack(params);

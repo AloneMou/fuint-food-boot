@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fuint.common.dto.ReqCouponDto;
 import com.fuint.common.enums.CouponExpireTypeEnum;
-import com.fuint.common.enums.CouponTypeEnum;
 import com.fuint.common.enums.SendWayEnum;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.enums.UserCouponStatusEnum;
@@ -14,6 +13,7 @@ import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.util.SeqUtil;
 import com.fuint.openapi.service.OpenApiCouponService;
 import com.fuint.repository.mapper.MtCouponGoodsMapper;
 import com.fuint.repository.mapper.MtCouponMapper;
@@ -21,12 +21,10 @@ import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.MtCoupon;
 import com.fuint.repository.model.MtCouponGoods;
 import com.fuint.repository.model.MtUserCoupon;
-import com.fuint.utils.SeqUtil;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageImpl;
@@ -139,7 +137,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
         mtCouponMapper.insert(mtCoupon);
 
         // 处理适用商品
-        if (StringUtil.isNotEmpty(reqCouponDto.getGoodsIds())) {
+        if (StringUtils.isNotEmpty(reqCouponDto.getGoodsIds())) {
             saveCouponGoods(mtCoupon.getId(), reqCouponDto.getGoodsIds());
         }
 
@@ -176,7 +174,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
         mtCouponMapper.updateById(mtCoupon);
 
         // 更新适用商品
-        if (StringUtil.isNotEmpty(reqCouponDto.getGoodsIds())) {
+        if (StringUtils.isNotEmpty(reqCouponDto.getGoodsIds())) {
             // 先删除原有商品
             deleteCouponGoods(mtCoupon.getId());
             // 再添加新商品
@@ -348,7 +346,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
 
         // 固定有效期验证
         if (CouponExpireTypeEnum.FIX.getKey().equals(dto.getExpireType())) {
-            if (StringUtil.isEmpty(dto.getBeginTime()) || StringUtil.isEmpty(dto.getEndTime())) {
+            if (StringUtils.isEmpty(dto.getBeginTime()) || StringUtils.isEmpty(dto.getEndTime())) {
                 throw new BusinessCheckException("固定有效期的开始时间和结束时间不能为空");
             }
             Date startTime = DateUtil.parseDate(dto.getBeginTime());
@@ -413,13 +411,13 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
             coupon.setAmount(BigDecimal.ZERO);
         }
 
-        if (dto.getDiscountRate() != null) {
-            coupon.setDiscountRate(dto.getDiscountRate());
-        }
-
-        if (dto.getMaxDiscountAmount() != null) {
-            coupon.setMaxDiscountAmount(dto.getMaxDiscountAmount());
-        }
+//        if (dto.getDiscountRate() != null) {
+//            coupon.setDiscountRate(dto.getDiscountRate());
+//        }
+//
+//        if (dto.getMaxDiscountAmount() != null) {
+//            coupon.setMaxDiscountAmount(dto.getMaxDiscountAmount());
+//        }
 
         // 有效期设置
         coupon.setExpireType(dto.getExpireType());
@@ -536,7 +534,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
         }
 
         // 生成券码 (12位随机数)
-        String code = SeqUtil.getRandomNumber(4) + 
+        String code = SeqUtil.getRandomNumber(4) +
                       SeqUtil.getRandomNumber(4) + 
                       SeqUtil.getRandomNumber(4);
         userCoupon.setCode(code);
@@ -548,13 +546,13 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
      * 保存优惠券适用商品
      */
     private void saveCouponGoods(Integer couponId, String goodsIds) {
-        if (StringUtil.isEmpty(goodsIds)) {
+        if (StringUtils.isEmpty(goodsIds)) {
             return;
         }
 
         String[] goodsIdArray = goodsIds.split(",");
         for (String goodsIdStr : goodsIdArray) {
-            if (StringUtil.isEmpty(goodsIdStr)) {
+            if (StringUtils.isEmpty(goodsIdStr)) {
                 continue;
             }
 

@@ -16,10 +16,10 @@ import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.v1.goods.cate.vo.*;
 import com.fuint.repository.model.MtGoodsCate;
 import com.fuint.repository.model.MtStore;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -149,10 +149,10 @@ public class OpenCateController extends BaseController {
 
         // 构建查询参数
         Map<String, Object> params = new HashMap<>();
-        if (StringUtil.isNotEmpty(pageReqVO.getName())) {
+        if (StringUtils.isNotEmpty(pageReqVO.getName())) {
             params.put("name", pageReqVO.getName());
         }
-        if (StringUtil.isNotEmpty(pageReqVO.getStatus())) {
+        if (StringUtils.isNotEmpty(pageReqVO.getStatus())) {
             params.put("status", pageReqVO.getStatus());
         }
         if (pageReqVO.getStoreId() != null) {

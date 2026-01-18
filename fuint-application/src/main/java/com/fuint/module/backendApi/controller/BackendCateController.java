@@ -18,10 +18,10 @@ import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtGoodsCate;
 import com.fuint.repository.model.MtStore;
 import com.fuint.repository.model.TAccount;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -94,13 +94,13 @@ public class BackendCateController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> params = new HashMap<>();
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             params.put("name", name);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
-        if (StringUtil.isNotEmpty(searchStoreId)) {
+        if (StringUtils.isNotEmpty(searchStoreId)) {
             params.put("storeId", searchStoreId);
         }
         if (storeId > 0) {
@@ -189,7 +189,7 @@ public class BackendCateController extends BaseController {
         String logo = params.get("logo") == null ? "" : CommonUtil.replaceXSS(params.get("logo").toString());
         String sort = params.get("sort") == null ? "0" : params.get("sort").toString();
         String status = params.get("status") == null ? StatusEnum.ENABLED.getKey() : params.get("status").toString();
-        Integer storeId = (params.get("storeId") == null || StringUtil.isEmpty(params.get("storeId").toString())) ? 0 : Integer.parseInt(params.get("storeId").toString());
+        Integer storeId = (params.get("storeId") == null || StringUtils.isEmpty(params.get("storeId").toString())) ? 0 : Integer.parseInt(params.get("storeId").toString());
 
         AccountInfo accountDto = TokenUtil.getAccountInfoByToken(token);
         if (accountDto == null) {
@@ -212,7 +212,7 @@ public class BackendCateController extends BaseController {
         String operator = accountDto.getAccountName();
         info.setOperator(operator);
 
-        if (StringUtil.isNotEmpty(id)) {
+        if (StringUtils.isNotEmpty(id)) {
             info.setId(Integer.parseInt(id));
             cateService.updateCate(info);
         } else {

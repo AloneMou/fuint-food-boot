@@ -18,10 +18,10 @@ import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.mapper.MtGoodsSkuMapper;
 import com.fuint.repository.mapper.MtGoodsSpecMapper;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -109,7 +109,7 @@ public class BackendGoodsController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> params = new HashMap<>();
-        if (StringUtil.isNotEmpty(searchStoreId)) {
+        if (StringUtils.isNotEmpty(searchStoreId)) {
             params.put("storeId", searchStoreId);
         }
         if (merchantId > 0) {
@@ -118,25 +118,25 @@ public class BackendGoodsController extends BaseController {
         if (storeId > 0) {
             params.put("storeId", storeId);
         }
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             params.put("name", name);
         }
-        if (StringUtil.isNotEmpty(type)) {
+        if (StringUtils.isNotEmpty(type)) {
             params.put("type", type);
         }
-        if (StringUtil.isNotEmpty(cateId)) {
+        if (StringUtils.isNotEmpty(cateId)) {
             params.put("cateId", cateId);
         }
-        if (StringUtil.isNotEmpty(goodsNo)) {
+        if (StringUtils.isNotEmpty(goodsNo)) {
             params.put("goodsNo", goodsNo);
         }
-        if (StringUtil.isNotEmpty(isSingleSpec)) {
+        if (StringUtils.isNotEmpty(isSingleSpec)) {
             params.put("isSingleSpec", isSingleSpec);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
-        if (StringUtil.isNotEmpty(stock)) {
+        if (StringUtils.isNotEmpty(stock)) {
             params.put("stock", stock);
         }
         paginationRequest.setSearchParams(params);
@@ -383,7 +383,7 @@ public class BackendGoodsController extends BaseController {
         }
 
         String goodsId = param.get("goodsId") == null ? "0" : param.get("goodsId").toString();
-        if (StringUtil.isEmpty(goodsId)) {
+        if (StringUtils.isEmpty(goodsId)) {
             goodsId = "0";
         }
 
@@ -402,8 +402,8 @@ public class BackendGoodsController extends BaseController {
         String canUsePoint = param.get("canUsePoint") == null ? "" : param.get("canUsePoint").toString();
         String isMemberDiscount = param.get("isMemberDiscount") == null ? "" : param.get("isMemberDiscount").toString();
         String isSingleSpec = param.get("isSingleSpec") == null ? "" : param.get("isSingleSpec").toString();
-        Integer cateId = (param.get("cateId") == null || StringUtil.isEmpty(param.get("cateId").toString())) ? 0 : Integer.parseInt(param.get("cateId").toString());
-        Integer storeId = (param.get("storeId") == null || StringUtil.isEmpty(param.get("storeId").toString())) ? 0 : Integer.parseInt(param.get("storeId").toString());
+        Integer cateId = (param.get("cateId") == null || StringUtils.isEmpty(param.get("cateId").toString())) ? 0 : Integer.parseInt(param.get("cateId").toString());
+        Integer storeId = (param.get("storeId") == null || StringUtils.isEmpty(param.get("storeId").toString())) ? 0 : Integer.parseInt(param.get("storeId").toString());
         String type = param.get("type") == null ? "" : param.get("type").toString();
         String couponIds = param.get("couponIds") == null ? "" : param.get("couponIds").toString();
         String serviceTime = param.get("serviceTime") == null ? "0" : param.get("serviceTime").toString();
@@ -415,7 +415,7 @@ public class BackendGoodsController extends BaseController {
             for (LinkedHashMap specDto : specList) {
                  String specId = specDto.get("id") == null ? "" : specDto.get("id").toString();
                  String specName = specDto.get("name") == null ? "" : specDto.get("name").toString();
-                 if (StringUtil.isNotEmpty(specId) && StringUtil.isNotEmpty(specName)) {
+                 if (StringUtils.isNotEmpty(specId) && StringUtils.isNotEmpty(specName)) {
                      MtGoodsSpec mtGoodsSpec = mtGoodsSpecMapper.selectById(Integer.parseInt(specId));
                      String oldName = mtGoodsSpec.getName();
                      Map<String, Object> paramSearch = new HashMap<>();
@@ -469,25 +469,25 @@ public class BackendGoodsController extends BaseController {
             sku.setGoodsId(Integer.parseInt(goodsId));
             sku.setSpecIds(skuDto.get("specIds").toString());
             String skuStock = skuDto.get("stock").toString();
-            if (StringUtil.isEmpty(skuStock)) {
+            if (StringUtils.isEmpty(skuStock)) {
                 skuStock = "0";
             }
             sku.setStock(Integer.parseInt(skuStock));
 
             BigDecimal skuPrice = new BigDecimal("0");
-            if (skuDto.get("price") != null && StringUtil.isNotEmpty(skuDto.get("price").toString())) {
+            if (skuDto.get("price") != null && StringUtils.isNotEmpty(skuDto.get("price").toString())) {
                 skuPrice = new BigDecimal(skuDto.get("price").toString());
             }
             sku.setPrice(skuPrice);
 
             BigDecimal skuLinePrice = new BigDecimal("0");
-            if (skuDto.get("linePrice") != null && StringUtil.isNotEmpty(skuDto.get("linePrice").toString())) {
+            if (skuDto.get("linePrice") != null && StringUtils.isNotEmpty(skuDto.get("linePrice").toString())) {
                 skuLinePrice = new BigDecimal(skuDto.get("linePrice").toString());
             }
             sku.setLinePrice(skuLinePrice);
 
             BigDecimal skuWeight = new BigDecimal("0");
-            if (skuDto.get("weight") != null && StringUtil.isNotEmpty(skuDto.get("weight").toString())) {
+            if (skuDto.get("weight") != null && StringUtils.isNotEmpty(skuDto.get("weight").toString())) {
                 skuWeight = new BigDecimal(skuDto.get("weight").toString());
             }
             sku.setWeight(skuWeight);
@@ -522,23 +522,23 @@ public class BackendGoodsController extends BaseController {
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
             mtGoods.setMerchantId(accountInfo.getMerchantId());
         }
-        if (StringUtil.isNotEmpty(type)) {
+        if (StringUtils.isNotEmpty(type)) {
             mtGoods.setType(type);
         }
         mtGoods.setCateId(cateId);
         mtGoods.setName(name);
         mtGoods.setGoodsNo(goodsNo);
-        if (StringUtil.isNotEmpty(serviceTime)) {
+        if (StringUtils.isNotEmpty(serviceTime)) {
             mtGoods.setServiceTime(Integer.parseInt(serviceTime));
         }
-        if (StringUtil.isNotEmpty(couponIds)) {
+        if (StringUtils.isNotEmpty(couponIds)) {
             mtGoods.setCouponIds(couponIds);
         }
         mtGoods.setIsSingleSpec(isSingleSpec);
-        if (StringUtil.isNotEmpty(stock)) {
+        if (StringUtils.isNotEmpty(stock)) {
             mtGoods.setStock(Integer.parseInt(stock));
         }
-        if (StringUtil.isNotEmpty(description)) {
+        if (StringUtils.isNotEmpty(description)) {
             mtGoods.setDescription(description);
         }
         if (storeId != null && param.get("storeId") != null) {
@@ -547,31 +547,31 @@ public class BackendGoodsController extends BaseController {
         if (images.size() > 0) {
             mtGoods.setLogo(images.get(0));
         }
-        if (StringUtil.isNotEmpty(sort)) {
+        if (StringUtils.isNotEmpty(sort)) {
             mtGoods.setSort(Integer.parseInt(sort));
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             mtGoods.setStatus(status);
         }
-        if (StringUtil.isNotEmpty(price)) {
+        if (StringUtils.isNotEmpty(price)) {
             mtGoods.setPrice(new BigDecimal(price));
         }
-        if (StringUtil.isNotEmpty(linePrice)) {
+        if (StringUtils.isNotEmpty(linePrice)) {
             mtGoods.setLinePrice(new BigDecimal(linePrice));
         }
-        if (StringUtil.isNotEmpty(weight)) {
+        if (StringUtils.isNotEmpty(weight)) {
             mtGoods.setWeight(new BigDecimal(weight));
         }
         if (initSale > 0) {
             mtGoods.setInitSale(initSale);
         }
-        if (StringUtil.isNotEmpty(salePoint)) {
+        if (StringUtils.isNotEmpty(salePoint)) {
             mtGoods.setSalePoint(salePoint);
         }
-        if (StringUtil.isNotEmpty(canUsePoint)) {
+        if (StringUtils.isNotEmpty(canUsePoint)) {
             mtGoods.setCanUsePoint(canUsePoint);
         }
-        if (StringUtil.isNotEmpty(isMemberDiscount)) {
+        if (StringUtils.isNotEmpty(isMemberDiscount)) {
             mtGoods.setIsMemberDiscount(isMemberDiscount);
         }
         if (images.size() > 0) {
@@ -607,7 +607,7 @@ public class BackendGoodsController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
-        if (StringUtil.isEmpty(goodsId)) {
+        if (StringUtils.isEmpty(goodsId)) {
             return getFailureResult(201, "请先保存商品基础信息");
         }
 
@@ -662,15 +662,15 @@ public class BackendGoodsController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
-        if (StringUtil.isEmpty(goodsId)) {
+        if (StringUtils.isEmpty(goodsId)) {
             return getFailureResult(201, "请先保存商品基础信息");
         }
 
-        if (StringUtil.isEmpty(specName)) {
+        if (StringUtils.isEmpty(specName)) {
             return getFailureResult(201, "规格名称不能为空");
         }
 
-        if ( StringUtil.isEmpty(value)) {
+        if ( StringUtils.isEmpty(value)) {
             return getFailureResult(201, "规格值不能为空");
         }
 
@@ -684,7 +684,7 @@ public class BackendGoodsController extends BaseController {
         Integer id = 0;
         if (dataList.size() > 0) {
             for (MtGoodsSpec mtGoodsSpec : dataList) {
-                if (StringUtil.isEmpty(mtGoodsSpec.getValue())) {
+                if (StringUtils.isEmpty(mtGoodsSpec.getValue())) {
                     mtGoodsSpec.setValue(value);
                     id = mtGoodsSpec.getId();
                     mtGoodsSpecMapper.updateById(mtGoodsSpec);
@@ -743,7 +743,7 @@ public class BackendGoodsController extends BaseController {
         String specName = request.getParameter("specName") == null ? "" : request.getParameter("specName");
         String goodsId = request.getParameter("goodsId") == null ? "0" : request.getParameter("goodsId");
 
-        if (StringUtil.isEmpty(specName) || StringUtil.isEmpty(goodsId)) {
+        if (StringUtils.isEmpty(specName) || StringUtils.isEmpty(goodsId)) {
             return getFailureResult(201, "请求参数错误");
         }
 

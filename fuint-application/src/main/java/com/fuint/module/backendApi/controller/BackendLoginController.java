@@ -16,10 +16,10 @@ import com.fuint.module.backendApi.response.LoginResponse;
 import com.fuint.repository.model.TAccount;
 import com.fuint.repository.model.TDuty;
 import com.fuint.repository.model.TSource;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import com.fuint.common.domain.TreeNode;
 import javax.servlet.http.HttpServletRequest;
@@ -140,7 +140,7 @@ public class BackendLoginController extends BaseController {
             treeNode.setId(tSource.getSourceId());
             treeNode.setLevel(tSource.getSourceLevel());
             treeNode.setIsMenu(tSource.getIsMenu());
-            treeNode.setSort((tSource.getSourceStyle() == null || StringUtil.isEmpty(tSource.getSourceStyle())) ? 0 : Integer.parseInt(tSource.getSourceStyle()));
+            treeNode.setSort((tSource.getSourceStyle() == null || StringUtils.isEmpty(tSource.getSourceStyle())) ? 0 : Integer.parseInt(tSource.getSourceStyle()));
             if (tSource.getParentId() != null) {
                 treeNode.setPId(tSource.getParentId());
             }
@@ -163,7 +163,7 @@ public class BackendLoginController extends BaseController {
     @OperationServiceLog(description = "退出后台系统")
     public ResponseObject logout(HttpServletRequest request) {
         String token = request.getHeader("Access-Token");
-        if (StringUtil.isEmpty(token)) {
+        if (StringUtils.isEmpty(token)) {
             return getFailureResult(Constants.HTTP_RESPONSE_CODE_USER_NOT_EXIST);
         }
 

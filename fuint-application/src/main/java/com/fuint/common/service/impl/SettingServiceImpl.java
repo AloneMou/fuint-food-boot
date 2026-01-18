@@ -10,8 +10,8 @@ import com.fuint.repository.model.MtSetting;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.service.SettingService;
 import com.fuint.framework.exception.BusinessCheckException;
-import com.fuint.utils.StringUtil;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,7 +74,7 @@ public class SettingServiceImpl extends ServiceImpl<MtSettingMapper, MtSetting> 
             if (mtSetting.getDescription() != null) {
                 settingInfo.setDescription(mtSetting.getDescription());
             }
-            if (StringUtil.isNotEmpty(mtSetting.getOperator())) {
+            if (StringUtils.isNotEmpty(mtSetting.getOperator())) {
                 settingInfo.setOperator(mtSetting.getOperator());
             }
             if (mtSetting.getUpdateTime() != null) {
@@ -156,7 +156,7 @@ public class SettingServiceImpl extends ServiceImpl<MtSettingMapper, MtSetting> 
         } else {
             if (mode.equals("1")) {
                 String domain = env.getProperty("aliyun.oss.domain");
-                if (StringUtil.isNotEmpty(domain)) {
+                if (StringUtils.isNotEmpty(domain)) {
                     basePath = domain;
                 }
             }

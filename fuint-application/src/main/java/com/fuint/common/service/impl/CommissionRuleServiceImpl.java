@@ -22,10 +22,9 @@ import com.fuint.common.enums.StatusEnum;
 import com.fuint.repository.model.MtCommissionRule;
 import com.fuint.repository.model.MtCommissionRuleItem;
 import com.fuint.repository.model.MtGoods;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.pagehelper.Page;
@@ -129,7 +128,7 @@ public class CommissionRuleServiceImpl extends ServiceImpl<MtCommissionRuleMappe
         mtCommissionRule.setCreateTime(date);
         mtCommissionRule.setUpdateTime(date);
         mtCommissionRule.setMerchantId(mtCommissionRule.getMerchantId()== null ? 0 : mtCommissionRule.getMerchantId());
-        String storeIds = StringUtil.join(commissionRule.getStoreIdList().toArray(), ",");
+        String storeIds = StringUtils.join(commissionRule.getStoreIdList().toArray(), ",");
         mtCommissionRule.setStoreIds(storeIds);
         boolean result = save(mtCommissionRule);
         if (result) {
@@ -202,7 +201,7 @@ public class CommissionRuleServiceImpl extends ServiceImpl<MtCommissionRuleMappe
         commissionRuleDto.setDetailList(detailList);
 
         List<Integer> storeIds = new ArrayList<>();
-        if (StringUtil.isNotEmpty(mtCommissionRule.getStoreIds())) {
+        if (StringUtils.isNotEmpty(mtCommissionRule.getStoreIds())) {
             List<String> storeIdList = Arrays.asList(mtCommissionRule.getStoreIds().split(","));
             if (storeIdList != null && storeIdList.size() > 0) {
                 for (String storeId : storeIdList) {
@@ -256,7 +255,7 @@ public class CommissionRuleServiceImpl extends ServiceImpl<MtCommissionRuleMappe
                 mtCommissionRuleItemMapper.deleteByRuleId(commissionRule.getId(), new Date());
             }
         }
-        String storeIds = StringUtil.join(commissionRule.getStoreIdList().toArray(), ",");
+        String storeIds = StringUtils.join(commissionRule.getStoreIdList().toArray(), ",");
         mtCommissionRule.setStoreIds(storeIds);
 
         // 更新或插入

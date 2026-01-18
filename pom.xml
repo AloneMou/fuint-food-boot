@@ -10,7 +10,6 @@
     <version>1.0.0</version>
     <description>fuint project root</description>
     <modules>
-        <module>fuint-utils</module>
         <module>fuint-application</module>
         <module>fuint-framework</module>
     </modules>

@@ -7,10 +7,10 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtUser;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
@@ -49,7 +49,7 @@ public class ClientCashierController extends BaseController {
         Integer merchantId = merchantService.getMerchantId(merchantNo);
 
         String mobile = memberInfoParam.getMobile() == null ? "" : memberInfoParam.getMobile();
-        if (StringUtil.isEmpty(mobile)) {
+        if (StringUtils.isEmpty(mobile)) {
             return getFailureResult(201);
         }
 

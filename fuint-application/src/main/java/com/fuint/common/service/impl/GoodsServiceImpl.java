@@ -1,6 +1,5 @@
 package com.fuint.common.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
@@ -17,7 +16,6 @@ import com.fuint.common.enums.YesOrNoEnum;
 import com.fuint.common.service.*;
 import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
-import com.fuint.framework.exception.ServiceException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecChildVO;
@@ -35,11 +33,10 @@ import com.fuint.repository.mapper.MtGoodsSpecMapper;
 import com.fuint.repository.model.*;
 import com.fuint.framework.pojo.PageResult;
 import com.fuint.repository.request.GoodsStatisticsReqVO;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -50,7 +47,7 @@ import java.math.BigDecimal;
 import java.util.*;
 
 import static com.fuint.framework.exception.util.ServiceExceptionUtil.exception;
-import static com.fuint.framework.util.collection.CollectionUtils.convertMap;
+import static com.fuint.framework.util.collection.CollectionUtils.*;
 import static com.fuint.openapi.enums.GoodsErrorCodeConstants.*;
 
 /**
@@ -162,7 +159,7 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
             GoodsDto item = com.fuint.framework.util.object.BeanUtils.toBean(mtGoods, GoodsDto.class);
             item.setId(mtGoods.getId());
             item.setInitSale(mtGoods.getInitSale());
-            if (StringUtil.isNotEmpty(mtGoods.getLogo())) {
+            if (StringUtils.isNotEmpty(mtGoods.getLogo())) {
                 item.setLogo(basePath + mtGoods.getLogo());
             }
             item.setStoreId(mtGoods.getStoreId());
@@ -255,31 +252,31 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
         if (mtGoods.getId() == null && (mtGoods.getMerchantId() == null || mtGoods.getMerchantId() < 1)) {
             throw new BusinessCheckException("平台方帐号无法执行该操作，请使用商户帐号操作");
         }
-        if (StringUtil.isNotEmpty(reqDto.getIsSingleSpec())) {
+        if (StringUtils.isNotEmpty(reqDto.getIsSingleSpec())) {
             mtGoods.setIsSingleSpec(reqDto.getIsSingleSpec());
         }
-        if (reqDto.getId() != null && reqDto.getId() <= 0 && StringUtil.isEmpty(reqDto.getIsSingleSpec())) {
+        if (reqDto.getId() != null && reqDto.getId() <= 0 && StringUtils.isEmpty(reqDto.getIsSingleSpec())) {
             mtGoods.setIsSingleSpec(YesOrNoEnum.YES.getKey());
         }
-        if (StringUtil.isNotEmpty(reqDto.getName())) {
+        if (StringUtils.isNotEmpty(reqDto.getName())) {
             mtGoods.setName(reqDto.getName());
         }
-        if (StringUtil.isNotEmpty(reqDto.getStatus())) {
+        if (StringUtils.isNotEmpty(reqDto.getStatus())) {
             mtGoods.setStatus(reqDto.getStatus());
         }
-        if (StringUtil.isNotEmpty(reqDto.getLogo())) {
+        if (StringUtils.isNotEmpty(reqDto.getLogo())) {
             mtGoods.setLogo(reqDto.getLogo());
         }
-        if (StringUtil.isNotEmpty(reqDto.getIsSingleSpec())) {
+        if (StringUtils.isNotEmpty(reqDto.getIsSingleSpec())) {
             mtGoods.setIsSingleSpec(reqDto.getIsSingleSpec());
         }
-        if (StringUtil.isNotEmpty(reqDto.getDescription())) {
+        if (StringUtils.isNotEmpty(reqDto.getDescription())) {
             mtGoods.setDescription(reqDto.getDescription());
         }
-        if (StringUtil.isNotEmpty(reqDto.getOperator())) {
+        if (StringUtils.isNotEmpty(reqDto.getOperator())) {
             mtGoods.setOperator(reqDto.getOperator());
         }
-        if (StringUtil.isNotEmpty(reqDto.getType())) {
+        if (StringUtils.isNotEmpty(reqDto.getType())) {
             mtGoods.setType(reqDto.getType());
         }
         if (reqDto.getCateId() != null && reqDto.getCateId() > 0) {
@@ -288,7 +285,7 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
         if (reqDto.getServiceTime() != null && reqDto.getServiceTime() > 0) {
             mtGoods.setServiceTime(reqDto.getServiceTime());
         }
-        if (StringUtil.isNotEmpty(reqDto.getGoodsNo())) {
+        if (StringUtils.isNotEmpty(reqDto.getGoodsNo())) {
             mtGoods.setGoodsNo(reqDto.getGoodsNo());
         }
         if (reqDto.getSort() != null) {
@@ -306,7 +303,7 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
         if (reqDto.getLinePrice() == null && reqDto.getId() != null && reqDto.getId() <= 0) {
             mtGoods.setLinePrice(new BigDecimal("0.00"));
         }
-        if (StringUtil.isNotEmpty(reqDto.getCouponIds())) {
+        if (StringUtils.isNotEmpty(reqDto.getCouponIds())) {
             mtGoods.setCouponIds(reqDto.getCouponIds());
         }
         if (reqDto.getWeight() != null) {
@@ -318,25 +315,25 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
         if (reqDto.getStock() != null) {
             mtGoods.setStock(reqDto.getStock());
         }
-        if (StringUtil.isNotEmpty(reqDto.getSalePoint())) {
+        if (StringUtils.isNotEmpty(reqDto.getSalePoint())) {
             mtGoods.setSalePoint(reqDto.getSalePoint());
         }
-        if (StringUtil.isEmpty(reqDto.getSalePoint()) && reqDto.getId() != null && reqDto.getId() <= 0) {
+        if (StringUtils.isEmpty(reqDto.getSalePoint()) && reqDto.getId() != null && reqDto.getId() <= 0) {
             reqDto.setSalePoint("");
         }
-        if (StringUtil.isNotEmpty(reqDto.getCanUsePoint())) {
+        if (StringUtils.isNotEmpty(reqDto.getCanUsePoint())) {
             mtGoods.setCanUsePoint(reqDto.getCanUsePoint());
         }
-        if (StringUtil.isNotEmpty(reqDto.getIsMemberDiscount())) {
+        if (StringUtils.isNotEmpty(reqDto.getIsMemberDiscount())) {
             mtGoods.setIsMemberDiscount(reqDto.getIsMemberDiscount());
         }
-        if (StringUtil.isNotEmpty(reqDto.getImages())) {
+        if (StringUtils.isNotEmpty(reqDto.getImages())) {
             mtGoods.setImages(reqDto.getImages());
         }
         if (!mtGoods.getType().equals(GoodsTypeEnum.COUPON.getKey())) {
             mtGoods.setCouponIds("");
         }
-        if (mtGoods.getCouponIds() != null && StringUtil.isNotEmpty(mtGoods.getCouponIds())) {
+        if (mtGoods.getCouponIds() != null && StringUtils.isNotEmpty(mtGoods.getCouponIds())) {
             String[] couponIds = mtGoods.getCouponIds().split(",");
             for (String couponId : couponIds) {
                 MtCoupon mtCoupon = couponService.queryCouponById(Integer.parseInt(couponId));
@@ -438,7 +435,7 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
         }
 
         String basePath = settingService.getUploadBasePath();
-        if (StringUtil.isNotEmpty(goodsInfo.getLogo())) {
+        if (StringUtils.isNotEmpty(goodsInfo.getLogo())) {
             goodsInfo.setLogo(basePath + goodsInfo.getLogo());
         }
 
@@ -519,7 +516,7 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
         Page<MtGoods> pageHelper = PageHelper.startPage(page, pageSize);
         List<MtGoods> goodsList = new ArrayList<>();
         List<MtGoodsSku> skuList = new ArrayList<>();
-        if (StringUtil.isNotEmpty(keyword)) {
+        if (StringUtils.isNotEmpty(keyword)) {
             skuList = mtGoodsSkuMapper.getBySkuNo(keyword);
         }
         if (skuList != null && skuList.size() > 0) {
@@ -527,7 +524,7 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
             goodsList.add(goods);
         } else {
             pageHelper = PageHelper.startPage(page, pageSize);
-            if (keyword != null && StringUtil.isNotEmpty(keyword)) {
+            if (keyword != null && StringUtils.isNotEmpty(keyword)) {
                 goodsList = mtGoodsMapper.searchStoreGoodsList(merchantId, storeId, keyword);
             } else {
                 goodsList = mtGoodsMapper.getStoreGoodsList(merchantId, storeId, cateId);
@@ -631,9 +628,9 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
     public PaginationResponse<GoodsDto> selectGoodsList(Map<String, Object> params) throws BusinessCheckException {
         Integer page = params.get("page") == null ? Constants.PAGE_NUMBER : Integer.parseInt(params.get("page").toString());
         Integer pageSize = params.get("pageSize") == null ? Constants.PAGE_SIZE : Integer.parseInt(params.get("pageSize").toString());
-        Integer merchantId = (params.get("merchantId") == null || StringUtil.isEmpty(params.get("merchantId").toString())) ? 0 : Integer.parseInt(params.get("merchantId").toString());
-        Integer storeId = (params.get("storeId") == null || StringUtil.isEmpty(params.get("storeId").toString())) ? 0 : Integer.parseInt(params.get("storeId").toString());
-        Integer cateId = (params.get("cateId") == null || StringUtil.isEmpty(params.get("cateId").toString())) ? 0 : Integer.parseInt(params.get("cateId").toString());
+        Integer merchantId = (params.get("merchantId") == null || StringUtils.isEmpty(params.get("merchantId").toString())) ? 0 : Integer.parseInt(params.get("merchantId").toString());
+        Integer storeId = (params.get("storeId") == null || StringUtils.isEmpty(params.get("storeId").toString())) ? 0 : Integer.parseInt(params.get("storeId").toString());
+        Integer cateId = (params.get("cateId") == null || StringUtils.isEmpty(params.get("cateId").toString())) ? 0 : Integer.parseInt(params.get("cateId").toString());
         String keyword = params.get("keyword") == null ? "" : params.get("keyword").toString();
 
         MtStore mtStore = storeService.queryStoreById(storeId);
@@ -664,7 +661,7 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
                 if (goodsSkuList != null && goodsSkuList.size() > 0) {
                     goodsDto.setSkuId(goodsSkuList.get(0).getId());
                     goodsDto.setPrice(goodsSkuList.get(0).getPrice());
-                    if (goodsSkuList.get(0).getLogo() != null && StringUtil.isNotEmpty(goodsSkuList.get(0).getLogo())) {
+                    if (goodsSkuList.get(0).getLogo() != null && StringUtils.isNotEmpty(goodsSkuList.get(0).getLogo())) {
                         goodsDto.setLogo(goodsSkuList.get(0).getLogo());
                     }
                     goodsDto.setStock(goodsSkuList.get(0).getStock());
@@ -747,7 +744,7 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
         if (createReqVO.getImages() != null && !createReqVO.getImages().isEmpty()) {
             mtGoods.setLogo(createReqVO.getImages().get(0));
             mtGoods.setImages(JSONObject.toJSONString(createReqVO.getImages()));
-        } else if (StringUtil.isNotEmpty(createReqVO.getLogo())) {
+        } else if (StringUtils.isNotEmpty(createReqVO.getLogo())) {
             mtGoods.setLogo(createReqVO.getLogo());
             mtGoods.setImages(JSONObject.toJSONString(Collections.singletonList(createReqVO.getLogo())));
         }
@@ -832,12 +829,12 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
         if (updateReqVO.getImages() != null && !updateReqVO.getImages().isEmpty()) {
             updateObj.setLogo(updateReqVO.getImages().get(0));
             updateObj.setImages(JSONObject.toJSONString(updateReqVO.getImages()));
-        } else if (StringUtil.isNotEmpty(updateReqVO.getLogo())) {
+        } else if (StrUtil.isNotEmpty(updateReqVO.getLogo())) {
             updateObj.setLogo(updateReqVO.getLogo());
         }
         updateObj.setUpdateTime(new Date());
         updateObj.setOperator("openapi");
-        this.updateById(mtGoods);
+        this.updateById(updateObj);
 
         if (!StrUtil.equals(updateReqVO.getIsSingleSpec(), mtGoods.getIsSingleSpec())) {
             if (updateReqVO.getIsSingleSpec().equals(YesOrNoEnum.YES.getKey())) {
@@ -845,28 +842,77 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
                 mtGoodsSkuMapper.deleteByGoodsId(mtGoods.getId());
                 return;
             }
-            List<MtGoodsSpec> specLs = queryGoodsSpecList(mtGoods.getId());
-
-        }
-
-
-        // 如果传了规格，则更新规格
-        if (updateReqVO.getSpecData() != null && !updateReqVO.getSpecData().isEmpty()) {
-            mtGoodsSpecMapper.delete(Wrappers.<MtGoodsSpec>lambdaQuery().eq(MtGoodsSpec::getGoodsId, mtGoods.getId()));
-            for (GoodsSpecItemVO specItem : updateReqVO.getSpecData()) {
-                if (specItem.getChild() != null) {
-                    for (GoodsSpecChildVO child : specItem.getChild()) {
-                        MtGoodsSpec spec = new MtGoodsSpec();
-                        spec.setGoodsId(mtGoods.getId());
-                        spec.setName(specItem.getName());
-                        spec.setValue(child.getName());
-                        spec.setStatus(StatusEnum.ENABLED.getKey());
-                        mtGoodsSpecMapper.insert(spec);
-                    }
+            List<MtGoodsSpec> oldSpecLs = queryGoodsSpecList(mtGoods.getId());
+            List<MtGoodsSku> oldSkuLs = queryGoodsSkuList(mtGoods.getId());
+            List<MtGoodsSpec> specLs = new ArrayList<>();
+            for (GoodsSpecItemVO spec : updateReqVO.getSpecData()) {
+                for (GoodsSpecChildVO child : spec.getChild()) {
+                    MtGoodsSpec specBean = new MtGoodsSpec();
+                    specBean.setName(spec.getName());
+                    specBean.setGoodsId(updateObj.getId());
+                    specBean.setStatus(StatusEnum.ENABLED.getKey());
+                    specBean.setValue(child.getName());
+                    specLs.add(specBean);
                 }
             }
-        }
+            List<List<MtGoodsSpec>> diffLs = diffList(oldSpecLs, specLs, (oldObj, newObj) -> {
+                String key = oldObj.getName() + "^" + oldObj.getValue();
+                String newKey = newObj.getName() + "^" + newObj.getValue();
+                return key.equals(newKey);
+            });
+            List<MtGoodsSpec> addLs = diffLs.get(0);
+            mtGoodsSpecMapper.saveBatch(addLs);
+            List<MtGoodsSpec> updateLs = diffLs.get(1);
+            for (MtGoodsSpec spec : updateLs) {
+                mtGoodsSpecMapper.updateById(spec);
+            }
+            List<MtGoodsSpec> deleteLs = diffLs.get(2);
+            List<Integer> deleteIds = convertList(deleteLs, MtGoodsSpec::getId);
+            mtGoodsSpecMapper.deleteBatchIds(deleteIds);
 
+            List<MtGoodsSpec> specList = queryGoodsSpecList(mtGoods.getId());
+            Map<String, Integer> specMap = convertMap(specList, spec -> spec.getName() + "^" + spec.getValue(), MtGoodsSpec::getId);
+            List<MtGoodsSku> skuLs = new ArrayList<>();
+            Integer stock = 0;
+            for (GoodsSkuCreateReqVO sku : updateReqVO.getSkuData()) {
+                List<GoodsSkuCreateReqVO.Spec> specs = sku.getSpecLs();
+                List<Integer> specIds = new ArrayList<>();
+                for (GoodsSkuCreateReqVO.Spec spec : specs) {
+                    Integer specId = specMap.get(spec.getName() + "^" + spec.getValue());
+                    if (specId != null) {
+                        specIds.add(specId);
+                    }
+                }
+                MtGoodsSku skuBean = new MtGoodsSku();
+                BeanUtils.copyProperties(sku, skuBean);
+                skuBean.setGoodsId(updateReqVO.getId());
+                skuBean.setSpecIds(CollUtil.join(specIds, "-"));
+                skuBean.setStatus(StatusEnum.ENABLED.getKey());
+                stock += skuBean.getStock();
+            }
+            List<List<MtGoodsSku>> diffSkuLs = diffList(oldSkuLs, skuLs, (oldObj, newObj) -> {
+                String key = oldObj.getSpecIds();
+                String newKey = newObj.getSpecIds();
+                return key.equals(newKey);
+            });
+            List<MtGoodsSku> addSkuLs = diffSkuLs.get(0);
+            for (MtGoodsSku sku : addSkuLs) {
+                mtGoodsSkuMapper.insert(sku);
+            }
+            List<MtGoodsSku> updateSkuLs = diffSkuLs.get(1);
+            for (MtGoodsSku sku : updateSkuLs) {
+                mtGoodsSkuMapper.updateById(sku);
+            }
+            List<MtGoodsSku> deleteSkuLs = diffSkuLs.get(2);
+            List<Integer> deleteSkuIds = convertList(deleteSkuLs, MtGoodsSku::getId);
+            mtGoodsSkuMapper.deleteBatchIds(deleteSkuIds);
+
+            // 更新库存
+            MtGoods updateStock = new MtGoods();
+            updateStock.setId(mtGoods.getId());
+            updateStock.setStock(stock);
+            mtGoodsMapper.updateById(updateStock);
+        }
     }
 
     @Override

@@ -18,10 +18,10 @@ import com.fuint.repository.model.MtCart;
 import com.fuint.repository.model.MtGoodsSku;
 import com.fuint.repository.model.MtTable;
 import com.fuint.repository.model.MtUser;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -106,7 +106,7 @@ public class ClientCartController extends BaseController {
                 storeId = mtTable.getStoreId();
             }
         }
-        if (mtUser == null && StringUtil.isNotEmpty(token)) {
+        if (mtUser == null && StringUtils.isNotEmpty(token)) {
             AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
             if (accountInfo != null) {
                 return getFailureResult(201, "该管理员还未关联店铺员工");
@@ -119,7 +119,7 @@ public class ClientCartController extends BaseController {
         }
 
         // 通过商品条码操作
-        if (StringUtil.isNotEmpty(skuNo)) {
+        if (StringUtils.isNotEmpty(skuNo)) {
             MtGoodsSku mtGoodsSku = goodsService.getSkuInfoBySkuNo(skuNo);
             if (mtGoodsSku != null) {
                 goodsId = mtGoodsSku.getGoodsId();
@@ -194,8 +194,8 @@ public class ClientCartController extends BaseController {
             return getFailureResult(1001);
         }
 
-        if (StringUtil.isEmpty(cartIds)) {
-            if (StringUtil.isNotEmpty(hangNo)) {
+        if (StringUtils.isEmpty(cartIds)) {
+            if (StringUtils.isNotEmpty(hangNo)) {
                 cartService.removeCartByHangNo(hangNo);
             } else {
                 cartService.clearCart(mtUser.getId());
@@ -255,7 +255,7 @@ public class ClientCartController extends BaseController {
         if (userInfo == null) {
             mtUser = memberService.getCurrentUserInfo(request, userId, token);
             // 把收银员的购物信息切换给会员
-            if (mtUser != null && StringUtil.isNotEmpty(cartIds)) {
+            if (mtUser != null && StringUtils.isNotEmpty(cartIds)) {
                 cartService.switchCartIds(userId, cartIds);
             }
         } else {
@@ -268,7 +268,7 @@ public class ClientCartController extends BaseController {
             param.put("userId", mtUser.getId());
         }
 
-        if (StringUtil.isNotEmpty(cartIds)) {
+        if (StringUtils.isNotEmpty(cartIds)) {
             param.put("ids", cartIds);
         }
 
@@ -279,7 +279,7 @@ public class ClientCartController extends BaseController {
             param.put("merchantId", merchantId);
         }
         param.put("status", StatusEnum.ENABLED.getKey());
-        if (StringUtil.isNotEmpty(hangNo)) {
+        if (StringUtils.isNotEmpty(hangNo)) {
             param.remove("userId");
             param.put("hangNo", hangNo);
         } else {

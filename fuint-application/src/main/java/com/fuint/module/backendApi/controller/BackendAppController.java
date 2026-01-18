@@ -11,10 +11,10 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.app.MtApp;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -68,13 +68,13 @@ public class BackendAppController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> params = new HashMap<>();
-        if (StringUtil.isNotEmpty(appName)) {
+        if (StringUtils.isNotEmpty(appName)) {
             params.put("appName", appName);
         }
-        if (StringUtil.isNotEmpty(appId)) {
+        if (StringUtils.isNotEmpty(appId)) {
             params.put("appId", appId);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
         
@@ -139,12 +139,12 @@ public class BackendAppController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
-        if (StringUtil.isEmpty(appName)) {
+        if (StringUtils.isEmpty(appName)) {
             return getFailureResult(400, "应用名称不能为空");
         }
 
         MtApp mtApp = new MtApp();
-        if (StringUtil.isNotEmpty(appId)) {
+        if (StringUtils.isNotEmpty(appId)) {
             mtApp.setAppId(appId);
         }
         mtApp.setAppName(appName);
@@ -185,7 +185,7 @@ public class BackendAppController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
-        if (StringUtil.isEmpty(id)) {
+        if (StringUtils.isEmpty(id)) {
             return getFailureResult(400, "应用ID不能为空");
         }
 
@@ -195,19 +195,19 @@ public class BackendAppController extends BaseController {
         }
 
         mtApp.setId(Long.parseLong(id));
-        if (StringUtil.isNotEmpty(appId)) {
+        if (StringUtils.isNotEmpty(appId)) {
             mtApp.setAppId(appId);
         }
-        if (StringUtil.isNotEmpty(appName)) {
+        if (StringUtils.isNotEmpty(appName)) {
             mtApp.setAppName(appName);
         }
-        if (StringUtil.isNotEmpty(callbackUrl)) {
+        if (StringUtils.isNotEmpty(callbackUrl)) {
             mtApp.setCallbackUrl(callbackUrl);
         }
         if (params.containsKey("whiteList")) {
             mtApp.setWhiteList(whiteList);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             mtApp.setStatus(status);
         }
         mtApp.setUpdateTime(new Date());
@@ -241,7 +241,7 @@ public class BackendAppController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
-        if (StringUtil.isEmpty(id)) {
+        if (StringUtils.isEmpty(id)) {
             return getFailureResult(400, "应用ID不能为空");
         }
 
@@ -275,7 +275,7 @@ public class BackendAppController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
-        if (StringUtil.isEmpty(id)) {
+        if (StringUtils.isEmpty(id)) {
             return getFailureResult(400, "应用ID不能为空");
         }
 
@@ -309,7 +309,7 @@ public class BackendAppController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
-        if (StringUtil.isEmpty(id)) {
+        if (StringUtils.isEmpty(id)) {
             return getFailureResult(400, "应用ID不能为空");
         }
 
@@ -347,7 +347,7 @@ public class BackendAppController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
-        if (StringUtil.isEmpty(id)) {
+        if (StringUtils.isEmpty(id)) {
             return getFailureResult(400, "应用ID不能为空");
         }
 

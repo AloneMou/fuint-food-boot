@@ -8,18 +8,18 @@ import com.fuint.common.enums.UserCouponStatusEnum;
 import com.fuint.common.service.*;
 import com.fuint.common.util.DateUtil;
 import com.fuint.common.util.QRCodeUtil;
-import com.fuint.common.util.SeqUtil;
 import com.fuint.common.util.TokenUtil;
 import com.fuint.common.util.Base64Util;
 import com.fuint.framework.exception.BusinessCheckException;
+import com.fuint.framework.util.SeqUtil;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
@@ -95,11 +95,11 @@ public class ClientUserCouponController extends BaseController {
         int height = param.get("height") == null ? 800 : Integer.parseInt(param.get("height").toString());
 
         // 参数有误
-        if (userCouponId <= 0 && StringUtil.isEmpty(userCouponCode)) {
+        if (userCouponId <= 0 && StringUtils.isEmpty(userCouponCode)) {
             return getFailureResult(1004);
         }
 
-        if (StringUtil.isEmpty(token)) {
+        if (StringUtils.isEmpty(token)) {
             return getFailureResult(1001);
         }
 
@@ -183,7 +183,7 @@ public class ClientUserCouponController extends BaseController {
 
             // 如果是计次卡，获取核销列表
             if (couponInfo.getType().equals(CouponTypeEnum.TIMER.getKey())) {
-                if (userCouponId <= 0 && StringUtil.isNotEmpty(userCouponCode)) {
+                if (userCouponId <= 0 && StringUtils.isNotEmpty(userCouponCode)) {
                     userCouponId = userCoupon.getId();
                 }
                 List<MtConfirmLog> confirmLogs = confirmLogService.getConfirmList(userCouponId);

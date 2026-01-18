@@ -3,7 +3,8 @@ package com.fuint.common.util;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.JSONArray;
-import com.fuint.utils.StringUtil;
+import com.fuint.framework.util.SeqUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
@@ -96,7 +97,7 @@ public class CommonUtil {
      * @return
      * */
     public static boolean isNumeric(String str) {
-        if (StringUtil.isEmpty(str)) {
+        if (StringUtils.isEmpty(str)) {
             return false;
         }
 
@@ -282,7 +283,7 @@ public class CommonUtil {
      */
     public static String formatDate(Date date, String formatStr) {
         if (date == null) date = new Date();
-        if (StringUtil.isEmpty(formatStr)) formatStr = "yyyy-MM-dd";
+        if (StringUtils.isEmpty(formatStr)) formatStr = "yyyy-MM-dd";
         SimpleDateFormat dateFormater = new SimpleDateFormat(formatStr);
         return dateFormater.format(date);
     }
@@ -340,7 +341,7 @@ public class CommonUtil {
             JSONObject jsonObject = geocodes.getJSONObject(0);
             String location = jsonObject.getString("location");
 
-            if (org.apache.commons.lang.StringUtils.isNotEmpty(location)) {
+            if (StringUtils.isNotEmpty(location)) {
                 String latAndLng[] = location.split(",");
                 if (latAndLng.length == 2) {
                     lat = latAndLng[1];
@@ -383,7 +384,7 @@ public class CommonUtil {
             }
 
             String emojiStr = buf.toString();
-            if (!StringUtil.isEmpty(emojiStr)) {
+            if (!StringUtils.isEmpty(emojiStr)) {
                 value = emojiStr;
             }
 

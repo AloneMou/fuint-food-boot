@@ -19,10 +19,10 @@ import com.fuint.repository.model.MtCoupon;
 import com.fuint.repository.model.MtUser;
 import com.fuint.repository.model.MtUserCoupon;
 import com.fuint.repository.model.TAccount;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -86,13 +86,13 @@ public class BackendDoConfirmController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
-        if (StringUtil.isEmpty(userCouponCode) && StringUtil.isEmpty(userCouponId)) {
+        if (StringUtils.isEmpty(userCouponCode) && StringUtils.isEmpty(userCouponId)) {
             return getFailureResult(201, "核销券码不能为空");
         }
 
         // 通过券码或ID获取
         MtUserCoupon userCoupon;
-        if (!StringUtil.isEmpty(userCouponCode)) {
+        if (!StringUtils.isEmpty(userCouponCode)) {
             userCoupon = mtUserCouponMapper.findByCode(userCouponCode);
         } else {
             userCoupon = mtUserCouponMapper.selectById(Integer.parseInt(userCouponId));
@@ -159,14 +159,14 @@ public class BackendDoConfirmController extends BaseController {
     public ResponseObject doConfirm(HttpServletRequest request, @RequestBody Map<String, Object> param) {
         String token = request.getHeader("Access-Token");
         String userCouponId = param.get("userCouponId") == null ? "" : param.get("userCouponId").toString();
-        String amount = (param.get("amount") == null || StringUtil.isEmpty(param.get("amount").toString())) ? "0" : param.get("amount").toString();
-        String remark = (param.get("remark") == null || StringUtil.isEmpty(param.get("remark").toString())) ? "后台核销" : param.get("remark").toString();
+        String amount = (param.get("amount") == null || StringUtils.isEmpty(param.get("amount").toString())) ? "0" : param.get("amount").toString();
+        String remark = (param.get("remark") == null || StringUtils.isEmpty(param.get("remark").toString())) ? "后台核销" : param.get("remark").toString();
 
         AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
         if (accountInfo == null) {
             return getFailureResult(1001, "请先登录");
         }
-        if (StringUtil.isEmpty(userCouponId)) {
+        if (StringUtils.isEmpty(userCouponId)) {
             return getFailureResult(201, "系统参数有误");
         }
 
@@ -174,7 +174,7 @@ public class BackendDoConfirmController extends BaseController {
         Integer storeId = account.getStoreId() == null ? 0 : account.getStoreId();
 
         MtUserCoupon mtUserCoupon = mtUserCouponMapper.selectById(Integer.parseInt(userCouponId));
-        if (mtUserCoupon.getType().equals(CouponTypeEnum.PRESTORE.getKey()) && StringUtil.isEmpty(amount)) {
+        if (mtUserCoupon.getType().equals(CouponTypeEnum.PRESTORE.getKey()) && StringUtils.isEmpty(amount)) {
             return getFailureResult(201, "储值卡核销金额不能为空");
         }
 

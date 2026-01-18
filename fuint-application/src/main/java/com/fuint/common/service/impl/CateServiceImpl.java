@@ -16,11 +16,10 @@ import com.fuint.repository.mapper.MtGoodsMapper;
 import com.fuint.repository.model.MtGoods;
 import com.fuint.repository.model.MtGoodsCate;
 import com.fuint.repository.model.MtStore;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -209,7 +208,7 @@ public class CateServiceImpl extends ServiceImpl<MtGoodsCateMapper, MtGoodsCate>
             mtCate.setDescription(reqDto.getDescription());
         }
         mtCate.setUpdateTime(new Date());
-        if (StringUtil.isNotEmpty(reqDto.getOperator())) {
+        if (StringUtils.isNotEmpty(reqDto.getOperator())) {
             mtCate.setOperator(reqDto.getOperator());
         }
         if (reqDto.getStatus() != null) {

@@ -15,11 +15,10 @@ import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.v1.marketing.coupon.vo.*;
 import com.fuint.repository.mapper.MtCouponGoodsMapper;
-import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -152,13 +151,13 @@ public class OpenCouponController extends BaseController {
             if (pageReqVO.getStoreId() != null) {
                 params.put("storeId", pageReqVO.getStoreId());
             }
-            if (StringUtil.isNotEmpty(pageReqVO.getName())) {
+            if (StringUtils.isNotEmpty(pageReqVO.getName())) {
                 params.put("name", pageReqVO.getName());
             }
-            if (StringUtil.isNotEmpty(pageReqVO.getType())) {
+            if (StringUtils.isNotEmpty(pageReqVO.getType())) {
                 params.put("type", pageReqVO.getType());
             }
-            if (StringUtil.isNotEmpty(pageReqVO.getStatus())) {
+            if (StringUtils.isNotEmpty(pageReqVO.getStatus())) {
                 params.put("status", pageReqVO.getStatus());
             } else {
                 params.put("status", StatusEnum.ENABLED.getKey());
@@ -239,7 +238,7 @@ public class OpenCouponController extends BaseController {
                 // 单个用户
                 if (sendReqVO.getUserId() != null) {
                     userIdList.add(sendReqVO.getUserId());
-                } else if (StringUtil.isNotEmpty(sendReqVO.getMobile())) {
+                } else if (StringUtils.isNotEmpty(sendReqVO.getMobile())) {
                     MtUser user = memberService.queryMemberByMobile(coupon.getMerchantId(), sendReqVO.getMobile());
                     if (user != null) {
                         userIdList.add(user.getId());
@@ -283,7 +282,7 @@ public class OpenCouponController extends BaseController {
 
             // 批量发券
             Boolean sendMessage = sendReqVO.getSendMessage() != null && sendReqVO.getSendMessage();
-            String operator = StringUtil.isNotEmpty(sendReqVO.getOperator()) ? sendReqVO.getOperator() : "system";
+            String operator = StringUtils.isNotEmpty(sendReqVO.getOperator()) ? sendReqVO.getOperator() : "system";
             openApiCouponService.batchSendCoupon(sendReqVO.getCouponId(), userIdList, sendReqVO.getNum(), uuid, operator);
 
             Map<String, Object> result = new HashMap<>();
@@ -316,7 +315,7 @@ public class OpenCouponController extends BaseController {
                 return CommonResult.error(404, "优惠券不存在");
             }
 
-            String operator = StringUtil.isNotEmpty(revokeReqVO.getOperator()) ? revokeReqVO.getOperator() : "system";
+            String operator = StringUtils.isNotEmpty(revokeReqVO.getOperator()) ? revokeReqVO.getOperator() : "system";
             openApiCouponService.revokeCoupon(revokeReqVO.getCouponId(), revokeReqVO.getUuid(), operator);
 
             Map<String, Object> result = new HashMap<>();

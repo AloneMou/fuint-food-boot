@@ -14,10 +14,9 @@ import com.fuint.repository.mapper.MtCommissionRelationMapper;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.repository.model.MtCommissionRelation;
 import com.fuint.repository.model.MtUser;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.pagehelper.Page;
@@ -77,7 +76,7 @@ public class CommissionRelationServiceImpl extends ServiceImpl<MtCommissionRelat
         String merchantId = paginationRequest.getSearchParams().get("merchantId") == null ? "" : paginationRequest.getSearchParams().get("merchantId").toString();
 
         String merchantNo = paginationRequest.getSearchParams().get("merchantNo") == null ? "" : paginationRequest.getSearchParams().get("merchantNo").toString();
-        if (StringUtils.isNotBlank(merchantNo) && StringUtil.isEmpty(merchantId)) {
+        if (StringUtils.isNotBlank(merchantNo) && StringUtils.isEmpty(merchantId)) {
             Integer mchId = merchantService.getMerchantId(merchantNo);
             if (mchId != null && mchId > 0) {
                 merchantId = mchId.toString();
@@ -124,7 +123,7 @@ public class CommissionRelationServiceImpl extends ServiceImpl<MtCommissionRelat
      */
     @Override
     public void setCommissionRelation(MtUser userInfo, String shareId) throws BusinessCheckException {
-        if (userInfo == null || StringUtil.isEmpty(shareId) || Integer.parseInt(shareId) <= 0) {
+        if (userInfo == null || StringUtils.isEmpty(shareId) || Integer.parseInt(shareId) <= 0) {
             return;
         }
 

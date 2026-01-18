@@ -16,10 +16,10 @@ import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtUser;
 import com.fuint.repository.model.TAccount;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -97,10 +97,10 @@ public class BackendRefundController extends BaseController {
         if (account.getMerchantId() != null && account.getMerchantId() > 0) {
             params.put("merchantId", account.getMerchantId());
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
-        if (StringUtil.isNotEmpty(orderSn)) {
+        if (StringUtils.isNotEmpty(orderSn)) {
             UserOrderDto orderInfo = orderService.getOrderByOrderSn(orderSn);
             if (orderInfo != null) {
                 params.put("orderId", orderInfo.getId().toString());
@@ -108,7 +108,7 @@ public class BackendRefundController extends BaseController {
                 params.put("orderId", "0");
             }
         }
-        if (StringUtil.isNotEmpty(mobile)) {
+        if (StringUtils.isNotEmpty(mobile)) {
             MtUser userInfo = memberService.queryMemberByMobile(account.getMerchantId(), mobile);
             if (userInfo != null) {
                 userId = userInfo.getId().toString();
@@ -116,16 +116,16 @@ public class BackendRefundController extends BaseController {
                 userId = "0";
             }
         }
-        if (StringUtil.isNotEmpty(userId)) {
+        if (StringUtils.isNotEmpty(userId)) {
             params.put("userId", userId);
         }
         if (storeId != null && storeId > 0) {
             params.put("storeId", storeId);
         }
-        if (StringUtil.isNotEmpty(startTime)) {
+        if (StringUtils.isNotEmpty(startTime)) {
             params.put("startTime", startTime);
         }
-        if (StringUtil.isNotEmpty(endTime)) {
+        if (StringUtils.isNotEmpty(endTime)) {
             params.put("endTime", endTime);
         }
         paginationRequest.setSearchParams(params);
@@ -245,7 +245,7 @@ public class BackendRefundController extends BaseController {
         if (accountInfo == null) {
             return getFailureResult(1001, "请先登录");
         }
-        if (orderId <= 0 || StringUtil.isEmpty(refundAmount)) {
+        if (orderId <= 0 || StringUtils.isEmpty(refundAmount)) {
             return getFailureResult(201, "参数有误，发起退款失败");
         }
         Boolean result = refundService.doRefund(orderId, refundAmount, remark, accountInfo);

@@ -1,6 +1,7 @@
 package com.fuint.common.util;
 
-import com.fuint.utils.StringUtil;
+import com.fuint.framework.util.SeqUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.text.SimpleDateFormat;
@@ -26,7 +27,7 @@ public class BizCodeGenerator {
      */
     public synchronized static String getPreCodeString(String preString) {
         StringBuffer result = new StringBuffer();
-        if(StringUtil.isNotEmpty(preString)){
+        if(StringUtils.isNotEmpty(preString)){
             result.append(preString);
         }
 

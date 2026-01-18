@@ -18,11 +18,10 @@ import com.fuint.repository.mapper.MtSmsSendedLogMapper;
 import com.fuint.repository.model.MtSetting;
 import com.fuint.repository.model.MtSmsSendedLog;
 import com.fuint.repository.model.MtSmsTemplate;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -86,7 +85,7 @@ public class SendSmsServiceImpl implements SendSmsService {
         Map<Boolean, List<String>> result = new HashMap<>();
         Integer mode = Integer.parseInt(env.getProperty("aliyun.sms.mode"));
         MtSetting mtSetting = settingService.querySettingByName(merchantId, SettingTypeEnum.SMS_CONFIG.getKey(), SmsSettingEnum.IS_CLOSE.getKey());
-        if (mtSetting != null && StringUtil.isNotEmpty(mtSetting.getValue())) {
+        if (mtSetting != null && StringUtils.isNotEmpty(mtSetting.getValue())) {
             mode = Integer.parseInt(mtSetting.getValue());
             logger.info("商户短信设置 mtSetting = {}", JSON.toJSONString(mtSetting));
         }
@@ -126,7 +125,7 @@ public class SendSmsServiceImpl implements SendSmsService {
     public MessageResDto sendMessage(Integer merchantId, String phoneNo, String templateUname, Map<String, String> contentParams) throws BusinessCheckException {
         MessageResDto resInfo = new MessageResDto();
         logger.info("sendMessage inParams:phoneNo={}, message={}", phoneNo, templateUname);
-        if (StringUtil.isBlank(phoneNo) || phoneNo.split(",").length > 200) {
+        if (StringUtils.isBlank(phoneNo) || phoneNo.split(",").length > 200) {
             logger.error("手机号列表不符合要求");
             resInfo.setResult(Boolean.FALSE);
             return resInfo;
@@ -143,17 +142,17 @@ public class SendSmsServiceImpl implements SendSmsService {
             String secret1 = "";
             String signName1 = "";
             for (MtSetting mtSetting : settings) {
-                if (mtSetting.getName().equals(SmsSettingEnum.ACCESS_KEY_ID.getKey()) && StringUtil.isNotEmpty(mtSetting.getValue())) {
+                if (mtSetting.getName().equals(SmsSettingEnum.ACCESS_KEY_ID.getKey()) && StringUtils.isNotEmpty(mtSetting.getValue())) {
                     accessKeyId1 = mtSetting.getValue();
                 }
-                if (mtSetting.getName().equals(SmsSettingEnum.ACCESS_KEY_SECRET.getKey()) && StringUtil.isNotEmpty(mtSetting.getValue())) {
+                if (mtSetting.getName().equals(SmsSettingEnum.ACCESS_KEY_SECRET.getKey()) && StringUtils.isNotEmpty(mtSetting.getValue())) {
                     secret1 = mtSetting.getValue();
                 }
-                if (mtSetting.getName().equals(SmsSettingEnum.SIGN_NAME.getKey()) && StringUtil.isNotEmpty(mtSetting.getValue())) {
+                if (mtSetting.getName().equals(SmsSettingEnum.SIGN_NAME.getKey()) && StringUtils.isNotEmpty(mtSetting.getValue())) {
                     signName1 = mtSetting.getValue();
                 }
             }
-            if (StringUtil.isNotEmpty(accessKeyId1) && StringUtil.isNotEmpty(secret1) && StringUtil.isNotEmpty(signName1)) {
+            if (StringUtils.isNotEmpty(accessKeyId1) && StringUtils.isNotEmpty(secret1) && StringUtils.isNotEmpty(signName1)) {
                 accessKeyId = accessKeyId1;
                 secret = secret1;
                 signName = signName1;
@@ -190,7 +189,7 @@ public class SendSmsServiceImpl implements SendSmsService {
 
             // 装配参数
             String smsContent = templateInfo.getContent();
-            if (smsContent == null || StringUtil.isEmpty(smsContent)) {
+            if (smsContent == null || StringUtils.isEmpty(smsContent)) {
                 resInfo.setResult(Boolean.FALSE);
                 return resInfo;
             }

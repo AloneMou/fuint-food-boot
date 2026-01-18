@@ -13,11 +13,11 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.util.spring.SpringUtils;
 import com.fuint.repository.mapper.MtAppMapper;
 import com.fuint.repository.model.app.MtApp;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -135,7 +135,7 @@ public class AppServiceImpl extends ServiceImpl<MtAppMapper, MtApp> implements A
     @Override
     @Cacheable(value = "APP_CACHE", key = "'REQUEST_'+#appId")
     public MtApp queryAppByAppId(String appId) throws BusinessCheckException {
-        if (StringUtil.isEmpty(appId)) {
+        if (StringUtils.isEmpty(appId)) {
             throw new BusinessCheckException("应用ID不能为空");
         }
         return mtAppMapper.findByAppId(appId);
@@ -154,12 +154,12 @@ public class AppServiceImpl extends ServiceImpl<MtAppMapper, MtApp> implements A
     @CacheEvict(value = "APP_CACHE", allEntries = true)
     public MtApp createApp(MtApp mtApp) throws BusinessCheckException {
         // 参数验证
-        if (StringUtil.isEmpty(mtApp.getAppName())) {
+        if (StringUtils.isEmpty(mtApp.getAppName())) {
             throw new BusinessCheckException("应用名称不能为空");
         }
 
         // 检查应用ID是否已存在
-        if (StringUtil.isNotEmpty(mtApp.getAppId())) {
+        if (StringUtils.isNotEmpty(mtApp.getAppId())) {
             MtApp existApp = mtAppMapper.findByAppId(mtApp.getAppId());
             if (existApp != null) {
                 throw new BusinessCheckException("应用ID已存在");
@@ -170,7 +170,7 @@ public class AppServiceImpl extends ServiceImpl<MtAppMapper, MtApp> implements A
         }
 
         // 生成应用密钥
-        if (StringUtil.isEmpty(mtApp.getAppSecret())) {
+        if (StringUtils.isEmpty(mtApp.getAppSecret())) {
             mtApp.setAppSecret(generateAppSecret());
         }
 
@@ -212,7 +212,7 @@ public class AppServiceImpl extends ServiceImpl<MtAppMapper, MtApp> implements A
         }
 
         // 检查应用ID是否与其他应用重复
-        if (StringUtil.isNotEmpty(mtApp.getAppId()) && !mtApp.getAppId().equals(existApp.getAppId())) {
+        if (StringUtils.isNotEmpty(mtApp.getAppId()) && !mtApp.getAppId().equals(existApp.getAppId())) {
             MtApp checkApp = mtAppMapper.findByAppId(mtApp.getAppId());
             if (checkApp != null && !checkApp.getId().equals(mtApp.getId())) {
                 throw new BusinessCheckException("应用ID已被其他应用使用");
@@ -356,7 +356,7 @@ public class AppServiceImpl extends ServiceImpl<MtAppMapper, MtApp> implements A
      */
     @Override
     public Boolean validateApp(String appId, String appSecret) {
-        if (StringUtil.isEmpty(appId) || StringUtil.isEmpty(appSecret)) {
+        if (StringUtils.isEmpty(appId) || StringUtils.isEmpty(appSecret)) {
             return false;
         }
 
@@ -390,7 +390,7 @@ public class AppServiceImpl extends ServiceImpl<MtAppMapper, MtApp> implements A
      */
     @Override
     public Boolean checkIpWhiteList(String appId, String ip) throws BusinessCheckException {
-        if (StringUtil.isEmpty(appId) || StringUtil.isEmpty(ip)) {
+        if (StringUtils.isEmpty(appId) || StringUtils.isEmpty(ip)) {
             return false;
         }
         MtApp mtApp = SpringUtils.getBean(AppService.class).queryAppByAppId(appId);
@@ -398,7 +398,7 @@ public class AppServiceImpl extends ServiceImpl<MtAppMapper, MtApp> implements A
             return false;
         }
         // 如果未设置白名单，则允许所有IP访问
-        if (StringUtil.isEmpty(mtApp.getWhiteList())) {
+        if (StringUtils.isEmpty(mtApp.getWhiteList())) {
             return true;
         }
 

@@ -17,11 +17,12 @@ import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtBookCate;
 import com.fuint.repository.model.MtBookItem;
 import com.fuint.repository.model.MtUser;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import java.lang.reflect.InvocationTargetException;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.text.ParseException;
@@ -85,10 +86,10 @@ public class ClientBookController extends BaseController {
 
         Map<String, Object> params = new HashMap<>();
         params.put("status", StatusEnum.ENABLED.getKey());
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             params.put("name", name);
         }
-        if (StringUtil.isNotEmpty(merchantNo)) {
+        if (StringUtils.isNotEmpty(merchantNo)) {
             params.put("merchantNo", merchantNo);
         }
         if (cateId != null && cateId > 0) {

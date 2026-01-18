@@ -19,10 +19,10 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.module.backendApi.request.CommissionLogRequest;
 import com.fuint.module.backendApi.request.CommissionSettleRequest;
 import com.fuint.repository.model.MtStore;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -94,13 +94,13 @@ public class BackendCommissionLogController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> params = new HashMap<>();
-        if (StringUtil.isNotEmpty(target)) {
+        if (StringUtils.isNotEmpty(target)) {
             params.put("target", target);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
-        if (StringUtil.isNotEmpty(searchStoreId)) {
+        if (StringUtils.isNotEmpty(searchStoreId)) {
             params.put("storeId", searchStoreId);
         }
         if (storeId != null && storeId > 0) {
@@ -109,19 +109,19 @@ public class BackendCommissionLogController extends BaseController {
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
             params.put("merchantId", accountInfo.getMerchantId());
         }
-        if (StringUtil.isNotEmpty(startTime)) {
+        if (StringUtils.isNotEmpty(startTime)) {
             params.put("startTime", startTime);
         }
-        if (StringUtil.isNotEmpty(endTime)) {
+        if (StringUtils.isNotEmpty(endTime)) {
             params.put("endTime", endTime);
         }
-        if (StringUtil.isNotEmpty(realName)) {
+        if (StringUtils.isNotEmpty(realName)) {
             params.put("realName", realName);
         }
-        if (StringUtil.isNotEmpty(mobile)) {
+        if (StringUtils.isNotEmpty(mobile)) {
             params.put("mobile", mobile);
         }
-        if (StringUtil.isNotEmpty(uuid)) {
+        if (StringUtils.isNotEmpty(uuid)) {
             params.put("uuid", uuid);
         }
         paginationRequest.setSearchParams(params);

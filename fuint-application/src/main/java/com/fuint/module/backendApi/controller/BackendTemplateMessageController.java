@@ -15,10 +15,10 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtSetting;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -85,7 +85,7 @@ public class BackendTemplateMessageController extends BaseController {
                     String templateId = jsonObject.get("templateId").toString();
                     String tid = jsonObject.get("tid").toString();
                     JSONArray paramArray = (JSONArray) JSONObject.parse(jsonObject.get("params").toString());
-                    if (StringUtil.isEmpty(templateId) || StringUtil.isEmpty(tid) || paramArray.size() < 1) {
+                    if (StringUtils.isEmpty(templateId) || StringUtils.isEmpty(tid) || paramArray.size() < 1) {
                         jsonObject = null;
                     }
                 }
@@ -97,11 +97,11 @@ public class BackendTemplateMessageController extends BaseController {
                 e.setStatus(StatusEnum.FORBIDDEN.getKey());
             }
 
-            if (StringUtil.isNotEmpty(status)) {
+            if (StringUtils.isNotEmpty(status)) {
                 if (e.getStatus().equals(status)) {
                     dataList.add(e);
                 }
-            } else if(StringUtil.isNotEmpty(title)) {
+            } else if(StringUtils.isNotEmpty(title)) {
                 if (e.getTitle().indexOf(title) >= 0) {
                     dataList.add(e);
                 }
@@ -136,7 +136,7 @@ public class BackendTemplateMessageController extends BaseController {
         Map<String, Object> result = new HashMap();
 
         String name = WxMessageEnum.getValue(key);
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             MtSetting mtSetting = settingService.querySettingByName(accountInfo.getMerchantId(), SettingTypeEnum.TEMP_MESSAGE.getKey(), key);
             JSONObject jsonObject = null;
             try {
@@ -155,7 +155,7 @@ public class BackendTemplateMessageController extends BaseController {
 
                 List<ParamDto> params = new ArrayList<>();
                 String tplConfigJson = env.getProperty("weixin.subMessage." + key);
-                if (StringUtil.isNotEmpty(tplConfigJson)) {
+                if (StringUtils.isNotEmpty(tplConfigJson)) {
                     JSONArray jsonArray = (JSONArray)JSONObject.parse(tplConfigJson);
                     for (int i = 0; i < jsonArray.size(); i++) {
                         JSONObject obj = jsonArray.getJSONObject(i);

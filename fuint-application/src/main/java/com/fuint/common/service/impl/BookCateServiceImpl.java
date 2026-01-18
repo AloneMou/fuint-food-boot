@@ -14,10 +14,9 @@ import com.fuint.common.service.SettingService;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.repository.model.MtBookCate;
 import com.fuint.repository.model.MtStore;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.pagehelper.Page;
@@ -113,7 +112,7 @@ public class BookCateServiceImpl extends ServiceImpl<MtBookCateMapper, MtBookCat
         if (mtBookCate.getMerchantId() == null || mtBookCate.getMerchantId() <= 0) {
             throw new BusinessCheckException("新增预约分类失败：所属商户不能为空！");
         }
-        if (StringUtil.isEmpty(mtBookCate.getName())) {
+        if (StringUtils.isEmpty(mtBookCate.getName())) {
             throw new BusinessCheckException("新增预约分类失败：分类名称不能为空！");
         }
         bookCate.setStoreId(storeId);

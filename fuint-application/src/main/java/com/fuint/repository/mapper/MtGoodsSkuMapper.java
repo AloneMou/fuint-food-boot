@@ -18,6 +18,8 @@ public interface MtGoodsSkuMapper extends BaseMapper<MtGoodsSku> {
 
     List<MtGoodsSku> getBySkuNo(@Param("skuNo") String skuNo);
 
+    int saveBatch(@Param("list") List<MtGoodsSku> list);
+
     default List<MtGoodsSku> selectSkuLsByGoodsId(Integer goodsId) {
         return selectList(new LambdaQueryWrapperX<MtGoodsSku>()
                 .eqIfPresent(MtGoodsSku::getGoodsId, goodsId)

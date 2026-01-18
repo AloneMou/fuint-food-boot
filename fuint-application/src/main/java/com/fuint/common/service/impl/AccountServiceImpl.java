@@ -16,17 +16,16 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.exception.BusinessRuntimeException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.util.Digests;
+import com.fuint.framework.util.Encodes;
 import com.fuint.module.backendApi.request.LoginRequest;
 import com.fuint.module.backendApi.response.LoginResponse;
 import com.fuint.repository.mapper.*;
 import com.fuint.repository.model.*;
-import com.fuint.utils.Digests;
-import com.fuint.utils.Encodes;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -368,7 +367,7 @@ public class AccountServiceImpl extends ServiceImpl<TAccountMapper, TAccount> im
             throw new BusinessCheckException("图形验证码有误");
         }
 
-        if (StringUtil.isEmpty(accountName)|| StringUtil.isEmpty(password) || StringUtil.isEmpty(captchaCode)) {
+        if (StringUtils.isEmpty(accountName)|| StringUtils.isEmpty(password) || StringUtils.isEmpty(captchaCode)) {
             throw new BusinessCheckException("登录参数有误");
         } else {
             AccountInfo accountInfo = getAccountByName(loginRequest.getUsername());

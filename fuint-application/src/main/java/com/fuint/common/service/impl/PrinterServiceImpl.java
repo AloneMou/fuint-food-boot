@@ -25,10 +25,9 @@ import com.fuint.common.enums.StatusEnum;
 import com.fuint.repository.mapper.MtPrinterMapper;
 import com.fuint.repository.model.MtSetting;
 import com.fuint.repository.model.MtStore;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.pagehelper.Page;
@@ -267,7 +266,7 @@ public class PrinterServiceImpl extends ServiceImpl<MtPrinterMapper, MtPrinter> 
             return;
         }
         // 删除云打印机
-        if (StringUtil.isNotEmpty(mtPrinter.getSn())) {
+        if (StringUtils.isNotEmpty(mtPrinter.getSn())) {
             DelPrinterRequest restRequest = new DelPrinterRequest();
             createRequestHeader(mtPrinter.getMerchantId(), restRequest);
             String[] snList = {mtPrinter.getSn()};
@@ -378,7 +377,7 @@ public class PrinterServiceImpl extends ServiceImpl<MtPrinterMapper, MtPrinter> 
                     userKey = mtSetting.getValue();
                 }
             }
-            if (StringUtil.isNotEmpty(userName) && StringUtil.isNotEmpty(userKey)) {
+            if (StringUtils.isNotEmpty(userName) && StringUtils.isNotEmpty(userKey)) {
                 request.setUser(userName);
                 request.setTimestamp(System.currentTimeMillis() + "");
                 request.setSign(HashSignUtil.sign(request.getUser() + userKey + request.getTimestamp()));

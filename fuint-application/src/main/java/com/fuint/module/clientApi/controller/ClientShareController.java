@@ -16,11 +16,12 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtUser;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import java.lang.reflect.InvocationTargetException;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -73,7 +74,7 @@ public class ClientShareController extends BaseController {
         String merchantNo = request.getHeader("merchantNo") == null ? "" : request.getHeader("merchantNo");
 
         String token = request.getHeader("Access-Token");
-        if (StringUtil.isEmpty(token)) {
+        if (StringUtils.isEmpty(token)) {
             return getFailureResult(1001);
         }
 
@@ -89,7 +90,7 @@ public class ClientShareController extends BaseController {
         Map<String, Object> params = new HashMap<>();
         params.put("status", StatusEnum.ENABLED.getKey());
         params.put("userId", userInfo.getId());
-        if (StringUtil.isNotEmpty(merchantNo)) {
+        if (StringUtils.isNotEmpty(merchantNo)) {
             params.put("merchantNo", merchantNo);
         }
         paginationRequest.setSearchParams(params);

@@ -17,10 +17,10 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.repository.model.MtPrinter;
 import com.fuint.repository.model.MtSetting;
 import com.fuint.repository.model.MtStore;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -96,16 +96,16 @@ public class BackendPrinterController extends BaseController {
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
             params.put("merchantId", accountInfo.getMerchantId());
         }
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             params.put("name", name);
         }
-        if (StringUtil.isNotEmpty(sn)) {
+        if (StringUtils.isNotEmpty(sn)) {
             params.put("sn", sn);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
-        if (StringUtil.isNotEmpty(searchStoreId)) {
+        if (StringUtils.isNotEmpty(searchStoreId)) {
             params.put("storeId", searchStoreId);
         }
         if (storeId != null && storeId > 0) {
@@ -197,7 +197,7 @@ public class BackendPrinterController extends BaseController {
         mtPrinter.setAutoPrint(autoPrint);
         mtPrinter.setDescription(description);
         mtPrinter.setMerchantId(accountInfo.getMerchantId());
-        if (StringUtil.isNotEmpty(id)) {
+        if (StringUtils.isNotEmpty(id)) {
             mtPrinter.setId(Integer.parseInt(id));
             printerService.updatePrinter(mtPrinter);
         } else {
@@ -255,7 +255,7 @@ public class BackendPrinterController extends BaseController {
         String userKey = "";
         String enable = "";
         for (MtSetting setting : settingList) {
-            if (StringUtil.isNotEmpty(setting.getValue())) {
+            if (StringUtils.isNotEmpty(setting.getValue())) {
                 if (setting.getName().equals(PrinterSettingEnum.USER_NAME.getKey())) {
                     userName = setting.getValue();
                 } else if (setting.getName().equals(PrinterSettingEnum.USER_KEY.getKey())) {

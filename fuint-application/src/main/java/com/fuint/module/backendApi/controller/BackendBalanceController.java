@@ -20,10 +20,10 @@ import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtBalance;
 import com.fuint.repository.model.MtSetting;
 import com.fuint.repository.model.MtUser;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -82,19 +82,19 @@ public class BackendBalanceController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
         Map<String, Object> searchParams = new HashMap<>();
-        if (StringUtil.isNotEmpty(mobile)) {
+        if (StringUtils.isNotEmpty(mobile)) {
             searchParams.put("mobile", mobile);
         }
-        if (StringUtil.isNotEmpty(userId)) {
+        if (StringUtils.isNotEmpty(userId)) {
             searchParams.put("userId", userId);
         }
-        if (StringUtil.isNotEmpty(userNo)) {
+        if (StringUtils.isNotEmpty(userNo)) {
             searchParams.put("userNo", userNo);
         }
-        if (StringUtil.isNotEmpty(orderSn)) {
+        if (StringUtils.isNotEmpty(orderSn)) {
             searchParams.put("orderSn", orderSn);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             searchParams.put("status", status);
         }
         Integer storeId = accountInfo.getStoreId();

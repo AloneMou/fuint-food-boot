@@ -18,6 +18,9 @@ public interface MtGoodsSpecMapper extends BaseMapperX<MtGoodsSpec> {
 
     List<MtGoodsSpec> getGoodsSpecCountList(@Param("goodsId") Integer goodsId);
 
+    int saveBatch(@Param("list") List<MtGoodsSpec> list);
+
+
     default List<MtGoodsSpec> selectByGoodsId(Integer goodsId) {
         return selectList(MtGoodsSpec::getGoodsId, goodsId, MtGoodsSpec::getStatus, StatusEnum.ENABLED.getKey());
     }
@@ -25,4 +28,6 @@ public interface MtGoodsSpecMapper extends BaseMapperX<MtGoodsSpec> {
     default void deleteByGoodsId(Integer goodsId) {
         delete(MtGoodsSpec::getGoodsId, goodsId);
     }
+
+
 }

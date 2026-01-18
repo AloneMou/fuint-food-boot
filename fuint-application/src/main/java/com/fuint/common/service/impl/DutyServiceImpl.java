@@ -11,18 +11,17 @@ import com.fuint.common.domain.TreeNode;
 import com.fuint.framework.exception.BusinessRuntimeException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.util.ArrayUtil;
 import com.fuint.module.backendApi.request.DutyStatusRequest;
 import com.fuint.repository.mapper.TDutyMapper;
 import com.fuint.repository.mapper.TDutySourceMapper;
 import com.fuint.repository.model.TDuty;
 import com.fuint.repository.model.TDutySource;
 import com.fuint.repository.model.TSource;
-import com.fuint.utils.ArrayUtil;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -155,7 +154,7 @@ public class DutyServiceImpl extends ServiceImpl<TDutyMapper, TDuty> implements 
         if (existsDuty == null) {
             throw new BusinessCheckException("角色不存在.");
         }
-        if (!StringUtil.equals(tduty.getDutyName(), existsDuty.getDutyName())) {
+        if (!StringUtils.equals(tduty.getDutyName(), existsDuty.getDutyName())) {
             TDuty tDuty = findByName(existsDuty.getMerchantId(), tduty.getDutyName());
             if (tDuty != null) {
                 throw new BusinessCheckException("角色名已存在.");

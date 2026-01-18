@@ -12,10 +12,10 @@ import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.repository.model.TGenCode;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -66,10 +66,10 @@ public class BackendGenCodeController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> params = new HashMap<>();
-        if (StringUtil.isNotEmpty(tableName)) {
+        if (StringUtils.isNotEmpty(tableName)) {
             params.put("tableName", tableName);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
         paginationRequest.setSearchParams(params);
@@ -146,7 +146,7 @@ public class BackendGenCodeController extends BaseController {
         tGenCode.setBackendPath(backendPath);
         tGenCode.setServiceName(CommonUtil.firstLetterToUpperCase(tableName));
         tGenCode.setPackageName(tableName);
-        if (StringUtil.isNotEmpty(id)) {
+        if (StringUtils.isNotEmpty(id)) {
             tGenCode.setId(Integer.parseInt(id));
             genCodeService.updateGenCode(tGenCode);
         } else {

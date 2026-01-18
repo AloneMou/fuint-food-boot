@@ -17,10 +17,10 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.common.service.BannerService;
 import com.fuint.repository.model.MtBanner;
 import com.fuint.repository.model.MtStore;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -90,13 +90,13 @@ public class BackendBannerController extends BaseController {
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
             params.put("merchantId", accountInfo.getMerchantId());
         }
-        if (StringUtil.isNotEmpty(title)) {
+        if (StringUtils.isNotEmpty(title)) {
             params.put("title", title);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
-        if (StringUtil.isNotEmpty(searchStoreId)) {
+        if (StringUtils.isNotEmpty(searchStoreId)) {
             params.put("storeId", searchStoreId);
         }
         if (storeId != null && storeId > 0) {
@@ -210,7 +210,7 @@ public class BackendBannerController extends BaseController {
         bannerDto.setSort(Integer.parseInt(sort));
         bannerDto.setMerchantId(accountInfo.getMerchantId());
         bannerDto.setPosition(position);
-        if (StringUtil.isNotEmpty(id)) {
+        if (StringUtils.isNotEmpty(id)) {
             bannerDto.setId(Integer.parseInt(id));
             bannerService.updateBanner(bannerDto);
         } else {

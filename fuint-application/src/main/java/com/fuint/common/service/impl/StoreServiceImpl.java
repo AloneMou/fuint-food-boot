@@ -19,11 +19,10 @@ import com.fuint.repository.mapper.MtMerchantMapper;
 import com.fuint.repository.mapper.MtStoreMapper;
 import com.fuint.repository.model.MtMerchant;
 import com.fuint.repository.model.MtStore;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -224,7 +223,7 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
         Map<String, Object> params = new HashMap<>();
         params.put("status", StatusEnum.ENABLED.getKey());
         params.put("is_default", YesOrNoEnum.YES.getKey());
-        if (StringUtil.isNotEmpty(merchantNo)) {
+        if (StringUtils.isNotEmpty(merchantNo)) {
             MtMerchant mtMerchant = merchantService.queryMerchantByNo(merchantNo);
             if (mtMerchant != null) {
                 params.put("merchantId", mtMerchant.getId());
@@ -281,7 +280,7 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
         StoreDto mtStoreDto = new StoreDto();
         BeanUtils.copyProperties(mtStore, mtStoreDto);
 
-        if (StringUtil.isEmpty(mtStore.getQrCode())) {
+        if (StringUtils.isEmpty(mtStore.getQrCode())) {
             String page = QrCodeEnum.STORE.getPage() + "?" + QrCodeEnum.STORE.getKey() + "Id = " + mtStore.getId();
             String qr = weixinService.createQrCode(mtStore.getMerchantId(), QrCodeEnum.STORE.getKey(), mtStore.getId(), page, 320);
             mtStoreDto.setQrCode(qr);
@@ -375,7 +374,7 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
             for (StoreDistanceBean bean : distanceList) {
                  for (MtStore mtStore : storeList) {
                       if (mtStore.getId().equals(bean.getId())) {
-                          if (StringUtil.isNotEmpty(latitude) && StringUtil.isNotEmpty(longitude)) {
+                          if (StringUtils.isNotEmpty(latitude) && StringUtils.isNotEmpty(longitude)) {
                               mtStore.setDistance(new BigDecimal(bean.getDistance()));
                           } else {
                               mtStore.setDistance(new BigDecimal("0.0"));
@@ -397,7 +396,7 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
      * */
     @Override
     public String getStoreNames(String storeIds) {
-       if (StringUtil.isEmpty(storeIds)) {
+       if (StringUtils.isEmpty(storeIds)) {
            return "";
        }
        String[] ids = storeIds.split(",");

@@ -11,10 +11,10 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -100,7 +100,7 @@ public class ClientUserController extends BaseController {
         if (loginInfo != null) {
             mtUser = memberService.queryMemberById(loginInfo.getId());
         }
-        if (StringUtil.isNotEmpty(userNo)) {
+        if (StringUtils.isNotEmpty(userNo)) {
             mtUser = memberService.queryMemberByUserNo(merchantId, userNo);
         }
         MtUserGrade gradeInfo = null;
@@ -115,7 +115,7 @@ public class ClientUserController extends BaseController {
         if (mtUser != null) {
             userInfo = new UserDto();
             BeanUtils.copyProperties(mtUser, userInfo);
-            if (StringUtil.isNotEmpty(mtUser.getPassword())) {
+            if (StringUtils.isNotEmpty(mtUser.getPassword())) {
                 userInfo.setHasPassword(YesOrNoEnum.YES.getKey());
             } else {
                 userInfo.setHasPassword(YesOrNoEnum.NO.getKey());
@@ -138,7 +138,7 @@ public class ClientUserController extends BaseController {
         // 是否店铺员工
         boolean isMerchant = false;
         if (mtUser != null) {
-            if (mtUser.getMobile() != null && StringUtil.isNotEmpty(mtUser.getMobile())) {
+            if (mtUser.getMobile() != null && StringUtils.isNotEmpty(mtUser.getMobile())) {
                 MtStaff staffInfo = staffService.queryStaffByMobile(mtUser.getMobile());
                 if (staffInfo != null && staffInfo.getAuditedStatus().equals(StatusEnum.ENABLED.getKey())) {
                     isMerchant = true;
@@ -148,7 +148,7 @@ public class ClientUserController extends BaseController {
 
         // 是否开通微信会员卡
         boolean openWxCard = false;
-        if (platform.equals(PlatformTypeEnum.H5.getCode()) && isWechat.equals(YesOrNoEnum.YES.getKey()) && mtUser != null && StringUtil.isNotEmpty(mtUser.getOpenId())) {
+        if (platform.equals(PlatformTypeEnum.H5.getCode()) && isWechat.equals(YesOrNoEnum.YES.getKey()) && mtUser != null && StringUtils.isNotEmpty(mtUser.getOpenId())) {
             MtSetting cardSetting = settingService.querySettingByName(mtUser.getMerchantId(), SettingTypeEnum.USER.getKey(), UserSettingEnum.OPEN_WX_CARD.getKey());
             if (cardSetting != null && cardSetting.getValue().equals(YesOrNoEnum.TRUE.getKey())) {
                 MtSetting cardIdSetting = settingService.querySettingByName(mtUser.getMerchantId(), SettingTypeEnum.USER.getKey(), UserSettingEnum.WX_MEMBER_CARD_ID.getKey());
@@ -264,7 +264,7 @@ public class ClientUserController extends BaseController {
             return getFailureResult(1001);
         }
 
-        if (StringUtil.isNotEmpty(code)) {
+        if (StringUtils.isNotEmpty(code)) {
             JSONObject loginInfo = weixinService.getWxProfile(merchantId, code);
             if (loginInfo != null) {
                 mobile = weixinService.getPhoneNumber(param.get("encryptedData").toString(), loginInfo.get("session_key").toString(), param.get("iv").toString());
@@ -272,11 +272,11 @@ public class ClientUserController extends BaseController {
         }
 
         MtUser mtUser = memberService.queryMemberById(userInfo.getId());
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             mtUser.setName(name);
         }
-        if (StringUtil.isNotEmpty(password)) {
-            if (StringUtil.isNotEmpty(passwordOld) && StringUtil.isNotEmpty(mtUser.getSalt())) {
+        if (StringUtils.isNotEmpty(password)) {
+            if (StringUtils.isNotEmpty(passwordOld) && StringUtils.isNotEmpty(mtUser.getSalt())) {
                 String pass = memberService.deCodePassword(passwordOld, mtUser.getSalt());
                 if (!pass.equals(mtUser.getPassword())) {
                     return getFailureResult(201, "旧密码输入有误");
@@ -288,13 +288,13 @@ public class ClientUserController extends BaseController {
         if (sex.equals(1) || sex.equals(0) || sex.equals(2)) {
             mtUser.setSex(sex);
         }
-        if (StringUtil.isNotEmpty(birthday)) {
+        if (StringUtils.isNotEmpty(birthday)) {
             mtUser.setBirthday(birthday);
         }
-        if (StringUtil.isNotEmpty(mobile)) {
+        if (StringUtils.isNotEmpty(mobile)) {
             mtUser.setMobile(mobile);
         }
-        if (StringUtil.isNotEmpty(avatar)) {
+        if (StringUtils.isNotEmpty(avatar)) {
             mtUser.setAvatar(avatar);
         }
 

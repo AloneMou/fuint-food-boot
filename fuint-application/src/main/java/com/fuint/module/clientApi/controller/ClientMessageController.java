@@ -12,10 +12,10 @@ import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtMessage;
 import com.fuint.repository.model.MtSetting;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -58,7 +58,7 @@ public class ClientMessageController extends BaseController {
     public ResponseObject getOne(HttpServletRequest request) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
 
-        if (StringUtil.isEmpty(token)) {
+        if (StringUtils.isEmpty(token)) {
             return getSuccessResult(false);
         }
 
@@ -111,7 +111,7 @@ public class ClientMessageController extends BaseController {
     public String wxPush(HttpServletRequest request) {
         String echostr =  request.getParameter("echostr") == null ? "" : request.getParameter("echostr");
 
-        if (StringUtil.isNotEmpty(echostr)) {
+        if (StringUtils.isNotEmpty(echostr)) {
             return echostr;
         }
 
@@ -137,7 +137,7 @@ public class ClientMessageController extends BaseController {
                     JSONObject jsonObject = JSONObject.parseObject(mtSetting.getValue());
                     if (jsonObject != null) {
                         String templateId = jsonObject.get("templateId").toString();
-                        if (StringUtil.isNotEmpty(templateId)) {
+                        if (StringUtils.isNotEmpty(templateId)) {
                             dataList.add(templateId);
                         }
                     }

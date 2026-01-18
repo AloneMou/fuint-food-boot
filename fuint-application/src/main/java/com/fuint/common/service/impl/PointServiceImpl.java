@@ -19,10 +19,9 @@ import com.fuint.repository.mapper.MtPointMapper;
 import com.fuint.repository.mapper.MtUserMapper;
 import com.fuint.repository.model.MtPoint;
 import com.fuint.repository.model.MtUser;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import com.github.pagehelper.Page;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,8 +91,8 @@ public class PointServiceImpl extends ServiceImpl<MtPointMapper, MtPoint> implem
             lambdaQueryWrapper.eq(MtPoint::getMerchantId, merchantId);
         }
         String userNo = paginationRequest.getSearchParams().get("userNo") == null ? "" : paginationRequest.getSearchParams().get("userNo").toString();
-        if (StringUtil.isNotEmpty(userNo)) {
-            if (StringUtil.isEmpty(merchantId)) {
+        if (StringUtils.isNotEmpty(userNo)) {
+            if (StringUtils.isEmpty(merchantId)) {
                 merchantId = "0";
             }
             MtUser userInfo = memberService.queryMemberByUserNo(Integer.parseInt(merchantId), userNo);
@@ -199,7 +198,7 @@ public class PointServiceImpl extends ServiceImpl<MtPointMapper, MtPoint> implem
         params.put("remark", "您的积分发生了变动，请留意~");
         weixinService.sendSubscribeMessage(mtPoint.getMerchantId(), mtPoint.getUserId(), mtUser.getOpenId(), WxMessageEnum.POINT_CHANGE.getKey(), "pages/user/index", params, sendTime);
 
-        if (StringUtil.isNotBlank(mtUser.getMpOpenId())) {
+        if (StringUtils.isNotBlank(mtUser.getMpOpenId())) {
             weixinService.sendTemplateMessage(mtPoint.getMerchantId(), mtPoint.getUserId(), mtUser.getMpOpenId(), WxMessageEnum.POINT_CHANGE.getKey(), "pages/user/index", params, sendTime);
         }else{
             weixinService.sendTemplateMessage(mtPoint.getMerchantId(), mtPoint.getUserId(), mtUser.getOpenId(), WxMessageEnum.POINT_CHANGE.getKey(), "pages/user/index", params, sendTime);
@@ -220,7 +219,7 @@ public class PointServiceImpl extends ServiceImpl<MtPointMapper, MtPoint> implem
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean doGift(Integer userId, String mobile, Integer amount, String remark) throws BusinessCheckException {
-        if (userId < 0 || StringUtil.isEmpty(mobile) || amount <= 0) {
+        if (userId < 0 || StringUtils.isEmpty(mobile) || amount <= 0) {
             return false;
         }
 

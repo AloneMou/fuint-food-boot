@@ -21,11 +21,10 @@ import com.fuint.repository.mapper.MtCouponGroupMapper;
 import com.fuint.repository.mapper.MtCouponMapper;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -320,7 +319,7 @@ public class CouponGroupServiceImpl extends ServiceImpl<MtCouponGroupMapper, MtC
             String mobile = rowContent.get(0);
             String merchantId = rowContent.get(1);
 
-            if (StringUtil.isBlank(mobile) || mobile.length() < 11 || mobile.length() > 11) {
+            if (StringUtils.isBlank(mobile) || mobile.length() < 11 || mobile.length() > 11) {
                 errorMsg.append("第" + i + "行错误,手机号有误:"+mobile);
                 continue;
             }
@@ -387,7 +386,7 @@ public class CouponGroupServiceImpl extends ServiceImpl<MtCouponGroupMapper, MtC
             }
 
             if (null == userInfo || !userInfo.getStatus().equals(StatusEnum.ENABLED.getKey())) {
-                if (StringUtil.isNotBlank(errorMsgNoGroup.toString())) {
+                if (StringUtils.isNotBlank(errorMsgNoGroup.toString())) {
                     errorMsgNoGroup.append("，" + dto.getMobile());
                 } else {
                     errorMsgNoGroup.append("手机号没有注册或已禁用："+dto.getMobile());
@@ -401,14 +400,14 @@ public class CouponGroupServiceImpl extends ServiceImpl<MtCouponGroupMapper, MtC
             }
         }
 
-        if (StringUtil.isNotBlank(errorMsgNoRegister.toString())) {
+        if (StringUtils.isNotBlank(errorMsgNoRegister.toString())) {
             throw new BusinessCheckException(errorMsgNoRegister.toString());
         }
 
         for (String couponId : couponIdMap.keySet()) {
              MtCoupon couponInfo = couponService.queryCouponById(Integer.parseInt(couponId));
              if (null == couponInfo) {
-                 if (StringUtil.isNotBlank(errorMsgNoGroup.toString())) {
+                 if (StringUtils.isNotBlank(errorMsgNoGroup.toString())) {
                      errorMsgNoGroup.append("," + couponId);
                  } else {
                      errorMsgNoGroup.append("卡券ID不存在："+couponId);
@@ -425,7 +424,7 @@ public class CouponGroupServiceImpl extends ServiceImpl<MtCouponGroupMapper, MtC
              Integer hasSendNum = getSendNum(Integer.parseInt(couponId));
              if (totalNum > 0 && ((totalNum - hasSendNum) < sendNum)) {
                  Integer needNum = sendNum - (totalNum - hasSendNum);
-                 if (StringUtil.isNotBlank(errorMsgNoNum.toString())) {
+                 if (StringUtils.isNotBlank(errorMsgNoNum.toString())) {
                      errorMsgNoNum.append(";卡券ID:" + couponId + "存量不足,至少再添加" + needNum + "套");
                  } else {
                      errorMsgNoNum.append("卡券ID:" + couponId + "存量不足,至少再添加" + needNum + "套");
@@ -433,15 +432,15 @@ public class CouponGroupServiceImpl extends ServiceImpl<MtCouponGroupMapper, MtC
              }
         }
 
-        if (StringUtil.isNotBlank(errorMsgNoGroup.toString())) {
+        if (StringUtils.isNotBlank(errorMsgNoGroup.toString())) {
             throw new BusinessCheckException(errorMsgNoGroup.toString());
         }
 
-        if (StringUtil.isNotBlank(errorMsgNoNum.toString())) {
+        if (StringUtils.isNotBlank(errorMsgNoNum.toString())) {
             throw new BusinessCheckException(errorMsgNoNum.toString());
         }
 
-        if (StringUtil.isNotBlank(errorMsg.toString())) {
+        if (StringUtils.isNotBlank(errorMsg.toString())) {
             throw new BusinessCheckException(errorMsg.toString());
         }
 
@@ -514,7 +513,7 @@ public class CouponGroupServiceImpl extends ServiceImpl<MtCouponGroupMapper, MtC
 
         String imageName = fileName.substring(fileName.lastIndexOf("."));
         String pathRoot = env.getProperty("images.root");
-        if (pathRoot == null || StringUtil.isEmpty(pathRoot)) {
+        if (pathRoot == null || StringUtils.isEmpty(pathRoot)) {
             pathRoot = ResourceUtils.getURL("classpath:").getPath();
         }
         String uuid = UUID.randomUUID().toString().replaceAll("-", "");

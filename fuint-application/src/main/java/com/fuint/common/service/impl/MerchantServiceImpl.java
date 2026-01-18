@@ -14,11 +14,10 @@ import com.fuint.repository.mapper.MtMerchantMapper;
 import com.fuint.repository.mapper.MtStoreMapper;
 import com.fuint.repository.model.MtMerchant;
 import com.fuint.repository.model.MtStore;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageImpl;
@@ -99,7 +98,7 @@ public class MerchantServiceImpl extends ServiceImpl<MtMerchantMapper, MtMerchan
             mtMerchant = queryMerchantById(merchant.getId());
         }
 
-        if (merchant.getNo() == null || StringUtil.isEmpty(merchant.getNo())) {
+        if (merchant.getNo() == null || StringUtils.isEmpty(merchant.getNo())) {
             mtMerchant.setNo(CommonUtil.createMerchantNo());
         } else {
             mtMerchant.setNo(merchant.getNo());
@@ -182,7 +181,7 @@ public class MerchantServiceImpl extends ServiceImpl<MtMerchantMapper, MtMerchan
      */
     @Override
     public Integer getMerchantId(String merchantNo) {
-       if (merchantNo == null || StringUtil.isEmpty(merchantNo)) {
+       if (merchantNo == null || StringUtils.isEmpty(merchantNo)) {
            return 0;
        }
        MtMerchant mtMerchant = queryMerchantByNo(merchantNo);
@@ -234,7 +233,7 @@ public class MerchantServiceImpl extends ServiceImpl<MtMerchantMapper, MtMerchan
             lambdaQueryWrapper.eq(MtMerchant::getId, merchantId);
         }
         String storeId = params.get("storeId") == null ? "" : params.get("storeId").toString();
-        if (StringUtils.isNotBlank(storeId) && StringUtil.isEmpty(merchantId)) {
+        if (StringUtils.isNotBlank(storeId) && StringUtils.isEmpty(merchantId)) {
             MtStore mtStore = mtStoreMapper.selectById(storeId);
             if (mtStore != null && mtStore.getMerchantId() > 0) {
                 lambdaQueryWrapper.eq(MtMerchant::getId, mtStore.getMerchantId());

@@ -1,6 +1,6 @@
 package com.fuint.common.util;
 
-import com.fuint.utils.StringUtil;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,7 +30,7 @@ public class PhoneFormatCheckUtils {
      * 147
      */
     public static boolean isChinaPhoneLegal(String str) throws PatternSyntaxException {
-        if (str == null || StringUtil.isEmpty(str)) {
+        if (str == null || StringUtils.isEmpty(str)) {
             return false;
         }
         String regExp = "^[1][3,4,5,6,7,8,9][0-9]{9}$";

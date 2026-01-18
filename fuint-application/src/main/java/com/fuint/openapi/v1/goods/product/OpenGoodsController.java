@@ -9,8 +9,6 @@ import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.alibaba.fastjson.JSONArray;
 import com.fuint.common.dto.CouponDto;
 import com.fuint.common.dto.GoodsDto;
-import com.fuint.common.dto.GoodsSpecValueDto;
-import com.fuint.common.enums.OrderModeEnum;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.enums.YesOrNoEnum;
 import com.fuint.common.service.*;
@@ -21,7 +19,6 @@ import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.util.object.BeanUtils;
 import com.fuint.framework.util.object.ObjectUtils;
 import com.fuint.framework.web.BaseController;
-import com.fuint.openapi.v1.goods.product.vo.model.CGoodsSkuVO;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSkuVO;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecChildVO;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecItemVO;
@@ -34,10 +31,10 @@ import com.fuint.openapi.v1.goods.product.vo.response.MtGoodsPageRespVO;
 import com.fuint.openapi.v1.goods.product.vo.response.MtGoodsRespVO;
 import com.fuint.repository.model.*;
 import com.fuint.framework.pojo.PageResult;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.validation.annotation.Validated;
@@ -51,7 +48,6 @@ import java.util.stream.Collectors;
 
 import static com.fuint.framework.exception.enums.GlobalErrorCodeConstants.BAD_REQUEST;
 import static com.fuint.framework.util.collection.CollectionUtils.convertMap;
-import static com.fuint.framework.util.object.BeanUtils.buildPaginationRequest;
 import static com.fuint.framework.util.string.StrUtils.splitToInt;
 import static com.fuint.openapi.enums.GoodsErrorCodeConstants.GOODS_GET_DETAIL_FAILED;
 import static com.fuint.openapi.enums.GoodsErrorCodeConstants.GOODS_NOT_FOUND;
@@ -88,7 +84,7 @@ public class OpenGoodsController extends BaseController {
     }
 
     @ApiOperation(value = "更新商品", notes = "根据ID更新商品信息")
-    @PutMapping(value = "/update")
+    @PostMapping(value = "/update")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> updateGoods(@Valid @RequestBody MtGoodsUpdateReqVO updateReqVO) throws BusinessCheckException {
@@ -332,7 +328,7 @@ public class OpenGoodsController extends BaseController {
         respVO.setLogo(goodsDto.getLogo());
 
         // 图片列表
-        if (StringUtil.isNotEmpty(goodsDto.getImages())) {
+        if (StringUtils.isNotEmpty(goodsDto.getImages())) {
             try {
                 List<String> imageList = JSONArray.parseArray(goodsDto.getImages(), String.class);
                 respVO.setImages(imageList);

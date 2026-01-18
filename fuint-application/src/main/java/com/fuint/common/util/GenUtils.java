@@ -2,9 +2,10 @@ package com.fuint.common.util;
 
 import java.util.Arrays;
 import com.fuint.repository.model.TGenCode;
-import com.fuint.utils.StringUtil;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import static com.fuint.framework.util.string.StrUtils.convertToCamelCase;
 
 /**
  * 代码生成器 工具类
@@ -71,7 +72,7 @@ public class GenUtils {
             String[] searchList = StringUtils.split(tablePrefix, ",");
             tableName = replaceFirst(tableName, searchList);
         }
-        return StringUtil.convertToCamelCase(tableName);
+        return convertToCamelCase(tableName);
     }
 
     /**

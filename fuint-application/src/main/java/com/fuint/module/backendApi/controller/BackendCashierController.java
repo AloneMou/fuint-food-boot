@@ -14,10 +14,10 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -291,7 +291,7 @@ public class BackendCashierController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
-        if (StringUtil.isEmpty(keyword)) {
+        if (StringUtils.isEmpty(keyword)) {
             return getFailureResult(201);
         }
 
@@ -331,7 +331,7 @@ public class BackendCashierController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
-        if (StringUtil.isEmpty(userId)) {
+        if (StringUtils.isEmpty(userId)) {
             return getFailureResult(201);
         }
 
@@ -365,11 +365,11 @@ public class BackendCashierController extends BaseController {
         }
 
         String isVisitor = YesOrNoEnum.NO.getKey();
-        if (StringUtil.isEmpty(userId)) {
+        if (StringUtils.isEmpty(userId)) {
             isVisitor = YesOrNoEnum.YES.getKey();
         }
 
-        if (StringUtil.isNotEmpty(cartIds)) {
+        if (StringUtils.isNotEmpty(cartIds)) {
             String[] ids = cartIds.split(",");
             if (ids.length > 0) {
                 for (int i = 0; i < ids.length; i++) {

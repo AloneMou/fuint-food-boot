@@ -15,10 +15,10 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtStaff;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -80,19 +80,19 @@ public class BackendStaffController extends BaseController {
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
             params.put("merchantId", accountInfo.getMerchantId());
         }
-        if (StringUtil.isNotEmpty(realName)) {
+        if (StringUtils.isNotEmpty(realName)) {
             params.put("name", realName);
         }
-        if (StringUtil.isNotEmpty(mobile)) {
+        if (StringUtils.isNotEmpty(mobile)) {
             params.put("mobile", mobile);
         }
-        if (StringUtil.isNotEmpty(auditedStatus)) {
+        if (StringUtils.isNotEmpty(auditedStatus)) {
             params.put("status", auditedStatus);
         }
-        if (StringUtil.isNotEmpty(storeId)) {
+        if (StringUtils.isNotEmpty(storeId)) {
             params.put("storeId", storeId);
         }
-        if (StringUtil.isNotEmpty(category)) {
+        if (StringUtils.isNotEmpty(category)) {
             params.put("category", category);
         }
         paginationRequest.setSearchParams(params);
@@ -168,11 +168,11 @@ public class BackendStaffController extends BaseController {
         }
 
         MtStaff mtStaff = new MtStaff();
-        if (StringUtil.isNotEmpty(id)) {
+        if (StringUtils.isNotEmpty(id)) {
             mtStaff = staffService.queryStaffById(Integer.parseInt(id));
         }
 
-        if (mtStaff == null && StringUtil.isNotEmpty(id)) {
+        if (mtStaff == null && StringUtils.isNotEmpty(id)) {
             return getFailureResult(201, "员工信息不存在");
         }
         mtStaff.setMerchantId(accountInfo.getMerchantId());
@@ -185,7 +185,7 @@ public class BackendStaffController extends BaseController {
         mtStaff.setDescription(description);
         mtStaff.setCategory(Integer.parseInt(category));
 
-        if (StringUtil.isEmpty(mtStaff.getMobile())) {
+        if (StringUtils.isEmpty(mtStaff.getMobile())) {
             return getFailureResult(201, "手机号码不能为空");
         } else {
             MtStaff tempUser = staffService.queryStaffByMobile(mtStaff.getMobile());
@@ -219,7 +219,7 @@ public class BackendStaffController extends BaseController {
         if (staffInfo != null) {
             // 隐藏手机号中间四位
             String phone = staffInfo.getMobile();
-            if (phone != null && StringUtil.isNotEmpty(phone) && phone.length() == 11) {
+            if (phone != null && StringUtils.isNotEmpty(phone) && phone.length() == 11) {
                 staffInfo.setMobile(phone.substring(0, 3) + "****" + phone.substring(7));
             }
         }

@@ -13,10 +13,10 @@ import com.fuint.repository.model.MtMerchant;
 import com.fuint.repository.model.MtStore;
 import com.fuint.repository.model.MtTable;
 import com.fuint.repository.model.MtUser;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -100,7 +100,7 @@ public class ClientSystemController extends BaseController {
         }
 
         // 扫码下单
-        if (StringUtil.isNotEmpty(tableId)) {
+        if (StringUtils.isNotEmpty(tableId)) {
             MtTable mtTable = tableService.queryTableById(Integer.parseInt(tableId));
             if (mtTable != null && mtTable.getStoreId() != null) {
                 storeId = mtTable.getStoreId().toString();
@@ -108,7 +108,7 @@ public class ClientSystemController extends BaseController {
         }
 
         // 默认的店铺
-        if (StringUtil.isNotEmpty(storeId)) {
+        if (StringUtils.isNotEmpty(storeId)) {
             storeInfo = storeService.queryStoreById(Integer.parseInt(storeId));
             // 店铺是否已关闭
             if (storeInfo != null) {
@@ -119,7 +119,7 @@ public class ClientSystemController extends BaseController {
         }
 
         // 取距离最近的
-        if (storeInfo == null && StringUtil.isNotEmpty(latitude) && StringUtil.isNotEmpty(longitude)) {
+        if (storeInfo == null && StringUtils.isNotEmpty(latitude) && StringUtils.isNotEmpty(longitude)) {
             List<MtStore> storeList = storeService.queryByDistance(merchantNo, "", latitude, longitude);
             if (storeList.size() > 0) {
                 storeInfo = storeList.get(0);

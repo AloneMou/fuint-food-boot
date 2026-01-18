@@ -95,5 +95,5 @@ public class MtGoodsUpdateReqVO {
     private List<GoodsSpecItemVO> specData;
 
     @ApiModelProperty(value = "商品SKU列表")
-    private List<GoodsSkuVO> skuData;
+    private List<GoodsSkuCreateReqVO> skuData;
 }

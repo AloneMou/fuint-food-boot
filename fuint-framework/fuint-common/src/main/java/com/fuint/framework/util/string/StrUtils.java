@@ -18,6 +18,8 @@ import java.util.stream.Collectors;
  */
 public class StrUtils {
 
+    public static final String EMPTY_STRING = "";
+
     public static String maxLength(CharSequence str, int maxLength) {
         return StrUtil.maxLength(str, maxLength - 3); // -3 的原因，是该方法会补充 ... 恰好
     }
@@ -65,7 +67,7 @@ public class StrUtils {
     /**
      * 移除字符串中，包含指定字符串的行
      *
-     * @param content 字符串
+     * @param content  字符串
      * @param sequence 包含的字符串
      * @return 移除后的字符串
      */
@@ -80,7 +82,7 @@ public class StrUtils {
 
     /**
      * 拼接方法的参数
-     *
+     * <p>
      * 特殊：排除一些无法序列化的参数，如 ServletRequest、ServletResponse、MultipartFile
      *
      * @param joinPoint 连接点
@@ -109,6 +111,36 @@ public class StrUtils {
             return null;
         }
         return StrUtils.splitToInteger(value, separator);
+    }
+
+    /**
+     * 将下划线大写方式命名的字符串转换为驼峰式。如果转换前的下划线大写方式命名的字符串为空，则返回空字符串。 例如：HELLO_WORLD->HelloWorld
+     *
+     * @param name 转换前的下划线大写方式命名的字符串
+     * @return 转换后的驼峰式命名的字符串
+     */
+    public static String convertToCamelCase(String name) {
+        StringBuilder result = new StringBuilder();
+        // 快速检查
+        if (name == null || name.isEmpty()) {
+            // 没必要转换
+            return "";
+        } else if (!name.contains("_")) {
+            // 不含下划线，仅将首字母大写
+            return name.substring(0, 1).toUpperCase() + name.substring(1);
+        }
+        // 用下划线将原始字符串分割
+        String[] camels = name.split("_");
+        for (String camel : camels) {
+            // 跳过原始字符串中开头、结尾的下换线或双重下划线
+            if (camel.isEmpty()) {
+                continue;
+            }
+            // 首字母大写
+            result.append(camel.substring(0, 1).toUpperCase());
+            result.append(camel.substring(1).toLowerCase());
+        }
+        return result.toString();
     }
 
 }

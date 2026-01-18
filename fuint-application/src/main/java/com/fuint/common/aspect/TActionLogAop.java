@@ -9,8 +9,7 @@ import com.fuint.common.util.CommonUtil;
 import com.fuint.common.util.TokenUtil;
 import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.repository.model.TActionLog;
-import com.fuint.utils.StringUtil;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.apache.ibatis.javassist.*;
 import org.apache.ibatis.javassist.bytecode.CodeAttribute;
 import org.apache.ibatis.javassist.bytecode.LocalVariableAttribute;
@@ -158,7 +157,7 @@ public class TActionLogAop {
                     storeId = accountInfo.getStoreId() == null ? 0 : accountInfo.getStoreId();
                 }
             } else {
-                if (StringUtil.isNotEmpty(param) && param.length() > 10) {
+                if (StringUtils.isNotEmpty(param) && param.length() > 10) {
                     JSONObject jsonObject = JSON.parseObject(param);
                     if (jsonObject != null) {
                         JSONObject tAccount = jsonObject.getJSONObject("tAccount");

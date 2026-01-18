@@ -15,10 +15,10 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtMerchant;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -81,13 +81,13 @@ public class BackendMerchantController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> params = new HashMap<>();
-        if (StringUtil.isNotEmpty(merchantId)) {
+        if (StringUtils.isNotEmpty(merchantId)) {
             params.put("id", merchantId);
         }
-        if (StringUtil.isNotEmpty(merchantName)) {
+        if (StringUtils.isNotEmpty(merchantName)) {
             params.put("name", merchantName);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
         paginationRequest.setSearchParams(params);
@@ -125,10 +125,10 @@ public class BackendMerchantController extends BaseController {
         String name = request.getParameter("name") == null ? "" : request.getParameter("name");
 
         Map<String, Object> params = new HashMap<>();
-        if (StringUtil.isNotEmpty(merchantId)) {
+        if (StringUtils.isNotEmpty(merchantId)) {
             params.put("merchantId", merchantId);
         }
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             params.put("name", name);
         }
 
@@ -186,7 +186,7 @@ public class BackendMerchantController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
-        Integer merchantId = StringUtil.isEmpty(params.get("id").toString()) ? Integer.parseInt("0") : Integer.parseInt(params.get("id").toString());
+        Integer merchantId = StringUtils.isEmpty(params.get("id").toString()) ? Integer.parseInt("0") : Integer.parseInt(params.get("id").toString());
         String name = CommonUtil.replaceXSS(params.get("name").toString());
         String merchantNo = CommonUtil.replaceXSS(params.get("no").toString());
         String contact = params.get("contact") == null ? "" : CommonUtil.replaceXSS(params.get("contact").toString());
@@ -219,7 +219,7 @@ public class BackendMerchantController extends BaseController {
             merchantInfo.setId(accountInfo.getMerchantId());
         }
 
-        if (StringUtil.isEmpty(name)) {
+        if (StringUtils.isEmpty(name)) {
             return getFailureResult(201, "商户名称不能为空");
         } else {
             MtMerchant merchant = merchantService.queryMerchantByName(name);

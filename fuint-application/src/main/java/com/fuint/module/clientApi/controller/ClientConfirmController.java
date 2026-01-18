@@ -15,10 +15,10 @@ import com.fuint.repository.model.MtCoupon;
 import com.fuint.repository.model.MtStaff;
 import com.fuint.repository.model.MtUser;
 import com.fuint.repository.model.MtUserCoupon;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
@@ -69,7 +69,7 @@ public class ClientConfirmController extends BaseController {
         String amount = (confirmParam.getAmount() == null || confirmParam.getAmount() == "") ? "0" : confirmParam.getAmount();
         String remark = confirmParam.getRemark() == null ? "" : confirmParam.getRemark();
 
-        if (StringUtil.isEmpty(token)) {
+        if (StringUtils.isEmpty(token)) {
             return getFailureResult(1001);
         }
 
@@ -102,7 +102,7 @@ public class ClientConfirmController extends BaseController {
                     storeId = staff.getStoreId();
                 }
                 String storeIdsStr = couponInfo.getStoreIds();
-                if (StringUtil.isNotEmpty(storeIdsStr)) {
+                if (StringUtils.isNotEmpty(storeIdsStr)) {
                     String[] storeIds = couponInfo.getStoreIds().split(",");
                     Boolean isSameStore = false;
                     for (String hid : storeIds) {

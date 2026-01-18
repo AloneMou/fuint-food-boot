@@ -18,8 +18,6 @@ import com.fuint.common.util.*;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.*;
-import com.fuint.utils.QRCodeUtil;
-import com.fuint.utils.StringUtil;
 import com.ijpay.core.enums.SignType;
 import com.ijpay.core.enums.TradeType;
 import com.ijpay.core.kit.HttpKit;
@@ -32,6 +30,7 @@ import com.ijpay.wxpay.model.OrderQueryModel;
 import com.ijpay.wxpay.model.RefundModel;
 import com.ijpay.wxpay.model.UnifiedOrderModel;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +50,8 @@ import java.math.BigDecimal;
 import java.security.AlgorithmParameters;
 import java.security.Security;
 import java.util.*;
+
+import static com.fuint.framework.util.QRCodeUtil.saveQrCodeToLocal;
 
 /**
  * 微信相关接口
@@ -125,7 +126,7 @@ public class WeixinServiceImpl implements WeixinService {
         String tokenKey = FUINT_ACCESS_TOKEN_PRE + platForm;
         if (merchantId != null && merchantId > 0) {
             MtMerchant mtMerchant = merchantService.queryMerchantById(merchantId);
-            if (mtMerchant != null && StringUtil.isNotEmpty(mtMerchant.getWxAppId()) && StringUtil.isNotEmpty(mtMerchant.getWxAppSecret())) {
+            if (mtMerchant != null && StringUtils.isNotEmpty(mtMerchant.getWxAppId()) && StringUtils.isNotEmpty(mtMerchant.getWxAppSecret())) {
                 wxAppId = mtMerchant.getWxAppId();
                 wxAppSecret = mtMerchant.getWxAppSecret();
                 tokenKey = tokenKey + merchantId;
@@ -140,7 +141,7 @@ public class WeixinServiceImpl implements WeixinService {
             token = RedisUtil.get(tokenKey);
         }
 
-        if (token == null || StringUtil.isEmpty(token)) {
+        if (token == null || StringUtils.isEmpty(token)) {
             try {
                 String response = HttpRESTDataClient.requestGet(url);
                 JSONObject json = (JSONObject) JSONObject.parse(response);
@@ -198,7 +199,7 @@ public class WeixinServiceImpl implements WeixinService {
         }
 
         // 刷卡支付
-        if (StringUtil.isNotEmpty(authCode)) {
+        if (StringUtils.isNotEmpty(authCode)) {
             reqData.put("auth_code", authCode);
         }
 
@@ -211,7 +212,7 @@ public class WeixinServiceImpl implements WeixinService {
         orderService.updateOrder(reqDto);
 
         Map<String, String> respData;
-        if (reqData.get("auth_code") != null && StringUtil.isNotEmpty(reqData.get("auth_code"))) {
+        if (reqData.get("auth_code") != null && StringUtils.isNotEmpty(reqData.get("auth_code"))) {
             respData = microPay(orderInfo.getStoreId(), reqData, ip, platform);
         } else {
             if (platform.equals(PlatformTypeEnum.H5.getCode()) && isWechat.equals(YesOrNoEnum.NO.getKey())) {
@@ -264,7 +265,7 @@ public class WeixinServiceImpl implements WeixinService {
 
             Integer storeId = 0;
             String platform = PlatformTypeEnum.MP_WEIXIN.getCode();
-            if (StringUtil.isNotEmpty(orderSn)) {
+            if (StringUtils.isNotEmpty(orderSn)) {
                 MtOrder mtOrder = orderService.getOrderInfoByOrderSn(orderSn);
                 if (mtOrder != null) {
                     storeId = mtOrder.getStoreId();
@@ -334,7 +335,7 @@ public class WeixinServiceImpl implements WeixinService {
 
         if (merchantId != null && merchantId > 0) {
             MtMerchant mtMerchant = merchantService.queryMerchantById(merchantId);
-            if (mtMerchant != null && StringUtil.isNotEmpty(mtMerchant.getWxAppId()) && StringUtil.isNotEmpty(mtMerchant.getWxAppSecret())) {
+            if (mtMerchant != null && StringUtils.isNotEmpty(mtMerchant.getWxAppId()) && StringUtils.isNotEmpty(mtMerchant.getWxAppSecret())) {
                 wxAppId = mtMerchant.getWxAppId();
                 wxAppSecret = mtMerchant.getWxAppSecret();
             }
@@ -372,7 +373,7 @@ public class WeixinServiceImpl implements WeixinService {
 
         if (merchantId != null && merchantId > 0) {
             MtMerchant mtMerchant = merchantService.queryMerchantById(merchantId);
-            if (mtMerchant != null && StringUtil.isNotEmpty(mtMerchant.getWxOfficialAppId()) && StringUtil.isNotEmpty(mtMerchant.getWxOfficialAppSecret())) {
+            if (mtMerchant != null && StringUtils.isNotEmpty(mtMerchant.getWxOfficialAppId()) && StringUtils.isNotEmpty(mtMerchant.getWxOfficialAppSecret())) {
                 wxAppId = mtMerchant.getWxOfficialAppId();
                 wxAppSecret = mtMerchant.getWxOfficialAppSecret();
             }
@@ -455,7 +456,7 @@ public class WeixinServiceImpl implements WeixinService {
      */
     @Override
     public Boolean sendSubscribeMessage(Integer merchantId, Integer userId, String toUserOpenId, String key, String page, Map<String, Object> params, Date sendTime) throws BusinessCheckException {
-        if (StringUtil.isEmpty(toUserOpenId) || StringUtil.isEmpty(key) || userId < 1) {
+        if (StringUtils.isEmpty(toUserOpenId) || StringUtils.isEmpty(key) || userId < 1) {
             return false;
         }
 
@@ -479,7 +480,7 @@ public class WeixinServiceImpl implements WeixinService {
             logger.info("WeixinService sendSubscribeMessage parse setting error={}", mtSetting);
         }
 
-        if (StringUtil.isEmpty(templateId) || paramArray.size() < 1) {
+        if (StringUtils.isEmpty(templateId) || paramArray.size() < 1) {
             logger.info("WeixinService sendSubscribeMessage setting error={}", mtSetting);
             return false;
         }
@@ -488,7 +489,7 @@ public class WeixinServiceImpl implements WeixinService {
         jsonData.put("touser", toUserOpenId); // 接收者的openid
         jsonData.put("template_id", templateId);
 
-        if (StringUtil.isEmpty(page)) {
+        if (StringUtils.isEmpty(page)) {
             page = "pages/index/index";
         }
         jsonData.put("page", page);
@@ -527,7 +528,7 @@ public class WeixinServiceImpl implements WeixinService {
 
     @Override
     public Boolean sendTemplateMessage(Integer merchantId, Integer userId, String toUserOpenId, String key, String page, Map<String, Object> params, Date sendTime) throws BusinessCheckException {
-        if (StringUtil.isEmpty(toUserOpenId) || StringUtil.isEmpty(key) || userId < 1) {
+        if (StringUtils.isEmpty(toUserOpenId) || StringUtils.isEmpty(key) || userId < 1) {
             return false;
         }
 
@@ -551,7 +552,7 @@ public class WeixinServiceImpl implements WeixinService {
             logger.info("WeixinService sendTemplateMessage parse setting error={}", mtSetting);
         }
 
-        if (StringUtil.isEmpty(templateId) || paramArray.size() < 1) {
+        if (StringUtils.isEmpty(templateId) || paramArray.size() < 1) {
             logger.info("WeixinService sendTemplateMessage setting error={}", mtSetting);
             return false;
         }
@@ -560,7 +561,7 @@ public class WeixinServiceImpl implements WeixinService {
         jsonData.put("touser", toUserOpenId); // 接收者的openid
         jsonData.put("template_id", templateId);
 
-        if (StringUtil.isEmpty(page)) {
+        if (StringUtils.isEmpty(page)) {
             page = "pages/index/index";
         }
         jsonData.put("page", page);
@@ -706,7 +707,7 @@ public class WeixinServiceImpl implements WeixinService {
     public Boolean doRefund(Integer storeId, String orderSn, BigDecimal totalAmount, BigDecimal refundAmount, String platform) throws BusinessCheckException {
         try {
             logger.info("WeixinService.doRefund orderSn = {}, totalFee = {}, refundFee = {}", orderSn, totalAmount, refundAmount);
-            if (StringUtil.isEmpty(orderSn)) {
+            if (StringUtils.isEmpty(orderSn)) {
                 throw new BusinessCheckException("退款订单号不能为空...");
             }
 
@@ -764,7 +765,7 @@ public class WeixinServiceImpl implements WeixinService {
     public String createQrCode(Integer merchantId, String type, Integer id, String page, Integer width) throws BusinessCheckException {
         try {
             String accessToken = getAccessToken(merchantId, true, true);
-            if (StringUtil.isEmpty(accessToken)) {
+            if (StringUtils.isEmpty(accessToken)) {
                 throw new BusinessCheckException("生成二维码出错，请检查小程序配置");
             }
 
@@ -804,7 +805,7 @@ public class WeixinServiceImpl implements WeixinService {
 
                 String filePath = "Qr" + type + id + ".png";
                 String path = pathRoot + baseImage + filePath;
-                QRCodeUtil.saveQrCodeToLocal(bytes, path);
+                saveQrCodeToLocal(bytes, path);
 
                 // 上传阿里云oss
                 String mode = env.getProperty("aliyun.oss.mode");
@@ -852,80 +853,80 @@ public class WeixinServiceImpl implements WeixinService {
 
             Map<String, Object> params = new HashMap<>();
             Map<String, Object> card = new HashMap<>();
-            if (StringUtil.isEmpty(wxCardId)) {
+            if (StringUtils.isEmpty(wxCardId)) {
                 card.put("card_type", "MEMBER_CARD");
             }
             Map<String, Object> memberCard = new HashMap<>();
             String baseImage = settingService.getUploadBasePath();
-            if (StringUtil.isNotEmpty(wxCardDto.getBackgroundUrl())) {
+            if (StringUtils.isNotEmpty(wxCardDto.getBackgroundUrl())) {
                 // memberCard.put("background_pic_url", baseImage + wxCardDto.getBackgroundUrl());
             }
 
             // baseInfo
             Map<String, Object> baseInfo = new HashMap<>();
-            if (StringUtil.isNotEmpty(wxCardDto.getLogoUrl())) {
+            if (StringUtils.isNotEmpty(wxCardDto.getLogoUrl())) {
                 baseInfo.put("logo_url", baseImage + wxCardDto.getLogoUrl());
             }
-            if (StringUtil.isEmpty(wxCardId)) {
+            if (StringUtils.isEmpty(wxCardId)) {
                 baseInfo.put("brand_name", wxCardDto.getBrandName());
             }
             baseInfo.put("code_type", "CODE_TYPE_TEXT");
             baseInfo.put("title", wxCardDto.getTitle());
             baseInfo.put("color", wxCardDto.getColor());
             baseInfo.put("notice", wxCardDto.getNotice());
-            if (StringUtil.isNotEmpty(wxCardDto.getServicePhone())) {
+            if (StringUtils.isNotEmpty(wxCardDto.getServicePhone())) {
                 baseInfo.put("service_phone", wxCardDto.getServicePhone());
             }
             baseInfo.put("description", wxCardDto.getDescription());
             Map<String, Object> dateInfo = new HashMap<>();
             dateInfo.put("type", "DATE_TYPE_PERMANENT");
-            if (StringUtil.isEmpty(wxCardId)) {
+            if (StringUtils.isEmpty(wxCardId)) {
                 baseInfo.put("date_info", dateInfo);
             }
             Map<String, Object> sku = new HashMap<>();
             sku.put("quantity", Constants.ALL_ROWS);
-            if (StringUtil.isEmpty(wxCardId)) {
+            if (StringUtils.isEmpty(wxCardId)) {
                 baseInfo.put("sku", sku);
                 baseInfo.put("get_limit", 1);
             }
-            if (StringUtil.isEmpty(wxCardId)) {
+            if (StringUtils.isEmpty(wxCardId)) {
                 baseInfo.put("use_custom_code", false);
                 baseInfo.put("bind_openid", false);
             }
             baseInfo.put("can_give_friend", false);
-            if (StringUtil.isEmpty(wxCardId)) {
+            if (StringUtils.isEmpty(wxCardId)) {
                 baseInfo.put("location_id_list", null);
             }
-            if (StringUtil.isNotEmpty(wxCardDto.getCustomUrlName())) {
+            if (StringUtils.isNotEmpty(wxCardDto.getCustomUrlName())) {
                 baseInfo.put("custom_url_name", wxCardDto.getCustomUrlName());
             }
-            if (StringUtil.isNotEmpty(wxCardDto.getCustomUrl())) {
+            if (StringUtils.isNotEmpty(wxCardDto.getCustomUrl())) {
                 baseInfo.put("custom_url", wxCardDto.getCustomUrl());
             }
-            if (StringUtil.isNotEmpty(wxCardDto.getCustomUrlSubTitle())) {
+            if (StringUtils.isNotEmpty(wxCardDto.getCustomUrlSubTitle())) {
                 baseInfo.put("custom_url_sub_title", wxCardDto.getCustomUrlSubTitle());
             }
             baseInfo.put("need_push_on_view", true);
             memberCard.put("base_info", baseInfo);
 
             // 特权说明
-            if (StringUtil.isNotEmpty(wxCardDto.getPrerogative())) {
+            if (StringUtils.isNotEmpty(wxCardDto.getPrerogative())) {
                 memberCard.put("prerogative", wxCardDto.getPrerogative());
             }
             // 自动激活
             memberCard.put("auto_activate", true);
             memberCard.put("supply_bonus", wxCardDto.getSupplyBonus());
-            if (StringUtil.isNotEmpty(wxCardDto.getBonusUrl())) {
+            if (StringUtils.isNotEmpty(wxCardDto.getBonusUrl())) {
                 memberCard.put("bonus_url", wxCardDto.getBonusUrl());
             }
-            if (StringUtil.isEmpty(wxCardId)) {
+            if (StringUtils.isEmpty(wxCardId)) {
                 memberCard.put("supply_balance", wxCardDto.getSupplyBalance());
             }
-            if (StringUtil.isNotEmpty(wxCardDto.getBalanceUrl())) {
+            if (StringUtils.isNotEmpty(wxCardDto.getBalanceUrl())) {
                 memberCard.put("balance_url", wxCardDto.getBalanceUrl());
             }
             card.put("member_card", memberCard);
-            if (StringUtil.isEmpty(wxCardId)) {
+            if (StringUtils.isEmpty(wxCardId)) {
                 params.put("card", card);
             } else {
                 card.put("card_id", wxCardId);
@@ -935,7 +936,7 @@ public class WeixinServiceImpl implements WeixinService {
             ObjectMapper mapper = new ObjectMapper();
             String reqDataJson = mapper.writeValueAsString(params);
             String url = createUrl;
-            if (StringUtil.isNotEmpty(wxCardId)) {
+            if (StringUtils.isNotEmpty(wxCardId)) {
                 url = updateUrl;
             }
             logger.info("开通微信卡券接口url：{}，请求参数：{}", url, reqDataJson);
@@ -943,7 +944,7 @@ public class WeixinServiceImpl implements WeixinService {
             logger.info("开通微信卡券接口返回：{}", response);
             JSONObject data = (JSONObject) JSONObject.parse(response);
             if (data.get("errcode").toString().equals("0")) {
-                if (StringUtil.isEmpty(wxCardId)) {
+                if (StringUtils.isEmpty(wxCardId)) {
                     cardId = data.get("card_id").toString();
                 } else {
                     cardId = wxCardId;
@@ -1034,7 +1035,7 @@ public class WeixinServiceImpl implements WeixinService {
             JSONObject data = (JSONObject) JSONObject.parse(response);
             if (data.get("errcode").toString().equals("0")) {
                 Object cards = data.get("card_list");
-                if (cards != null && StringUtil.isNotEmpty(cards.toString())) {
+                if (cards != null && StringUtils.isNotEmpty(cards.toString())) {
                     return true;
                 }
                 return false;
@@ -1058,7 +1059,7 @@ public class WeixinServiceImpl implements WeixinService {
         String link = "";
         try {
             String accessToken = getAccessToken(merchantId, true, true);
-            if (StringUtil.isEmpty(accessToken)) {
+            if (StringUtils.isEmpty(accessToken)) {
                 return "";
             }
             String url = "https://api.weixin.qq.com/wxa/genwxashortlink?access_token=" + accessToken + "&";
@@ -1073,7 +1074,7 @@ public class WeixinServiceImpl implements WeixinService {
 
             if (data.get("errcode").toString().equals("0")) {
                 Object linkObject = data.get("link");
-                if (linkObject != null && StringUtil.isNotEmpty(linkObject.toString())) {
+                if (linkObject != null && StringUtils.isNotEmpty(linkObject.toString())) {
                     link = linkObject.toString();
                 }
             }
@@ -1127,7 +1128,7 @@ public class WeixinServiceImpl implements WeixinService {
                 // 通讯失败
                 Map<String, String> payResult = null;
                 String errCode = respMap.get("err_code");
-                if (StringUtil.isNotEmpty(errCode)) {
+                if (StringUtils.isNotEmpty(errCode)) {
                     // 用户支付中，需要输入密码
                     if (errCode.equals("USERPAYING")) {
                         // 等待10秒后查询订单
@@ -1155,7 +1156,7 @@ public class WeixinServiceImpl implements WeixinService {
             // 支付成功
             logger.info("刷卡支付返回>>" + respMap.toString());
 
-            if (StringUtil.isNotEmpty(orderSn)) {
+            if (StringUtils.isNotEmpty(orderSn)) {
                 UserOrderDto orderInfo = orderService.getOrderByOrderSn(orderSn);
                 if (orderInfo != null) {
                     if (!orderInfo.getStatus().equals(OrderStatusEnum.DELETED.getKey())) {
@@ -1303,13 +1304,13 @@ public class WeixinServiceImpl implements WeixinService {
         MtStore mtStore = storeService.queryStoreById(storeId);
 
         logger.info("微信支付店铺信息：{}", JsonUtil.toJSONString(mtStore));
-        if (mtStore != null && StringUtil.isNotEmpty(mtStore.getWxApiV2()) && StringUtil.isNotEmpty(mtStore.getWxMchId())) {
+        if (mtStore != null && StringUtils.isNotEmpty(mtStore.getWxApiV2()) && StringUtils.isNotEmpty(mtStore.getWxMchId())) {
             mchId = mtStore.getWxMchId();
             apiV2 = mtStore.getWxApiV2();
             String basePath = env.getProperty("images.root");
             certPath = basePath + mtStore.getWxCertPath();
             MtMerchant mtMerchant = merchantService.queryMerchantById(mtStore.getMerchantId());
-            if (mtMerchant != null && StringUtil.isNotEmpty(mtMerchant.getWxAppId())) {
+            if (mtMerchant != null && StringUtils.isNotEmpty(mtMerchant.getWxAppId())) {
                 appId = mtMerchant.getWxAppId();
             }
         }
@@ -1329,13 +1330,13 @@ public class WeixinServiceImpl implements WeixinService {
 
             if (mtStore != null) {
                 MtMerchant mtMerchant = merchantService.queryMerchantById(mtStore.getMerchantId());
-                if (mtMerchant != null && StringUtil.isNotEmpty(mtMerchant.getWxOfficialAppId()) && StringUtil.isNotEmpty(mtMerchant.getWxOfficialAppSecret())) {
+                if (mtMerchant != null && StringUtils.isNotEmpty(mtMerchant.getWxOfficialAppId()) && StringUtils.isNotEmpty(mtMerchant.getWxOfficialAppSecret())) {
                     wxAppId = mtMerchant.getWxOfficialAppId();
                     wxAppSecret = mtMerchant.getWxOfficialAppSecret();
                 }
             }
 
-            if (StringUtil.isNotEmpty(wxAppId) && StringUtil.isNotEmpty(wxAppSecret)) {
+            if (StringUtils.isNotEmpty(wxAppId) && StringUtils.isNotEmpty(wxAppSecret)) {
                 apiConfig.setAppId(wxAppId);
                 apiConfig.setApiKey(wxAppSecret);
             }

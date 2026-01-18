@@ -69,7 +69,7 @@ public class fuintApplication {
         System.out.println("==================================================\n" +
                 "恭喜，fuint系统启动成功啦！  \n" +
                 "系统官网：https://www.fuint.cn  \n" +
-                "接口文档：http://localhost:8080/swagger-ui.html \n" +
+                "接口文档：http://localhost:7800/swagger-ui.html \n" +
                 "==================================================\n  \n");
     }
 

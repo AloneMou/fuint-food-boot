@@ -9,10 +9,10 @@ import com.fuint.common.util.PhoneFormatCheckUtils;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtVerifyCode;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -66,13 +66,13 @@ public class ClientSmsController extends BaseController {
         String mobile = param.get("mobile") == null ? "" : param.get("mobile").toString();
         String captchaCode = param.get("captchaCode") == null ? "" : param.get("captchaCode").toString();
         String uuid = param.get("uuid") == null ? "" : param.get("uuid").toString();
-        if (StringUtil.isEmpty(captchaCode)) {
+        if (StringUtils.isEmpty(captchaCode)) {
             return getFailureResult(201,"图形验证码不能为空");
         }
 
         HttpSession session = request.getSession();
         boolean captchaVerify;
-        if (StringUtil.isNotEmpty(uuid)) {
+        if (StringUtils.isNotEmpty(uuid)) {
             captchaVerify = captchaService.checkCodeByUuid(captchaCode, uuid);
         } else {
             captchaVerify = captchaService.checkCode(captchaCode, session);
@@ -87,7 +87,7 @@ public class ClientSmsController extends BaseController {
             Integer.parseInt(second);
         }
 
-        if (StringUtil.isEmpty(mobile)) {
+        if (StringUtils.isEmpty(mobile)) {
             return getFailureResult(201,"手机号码不能为空");
         } else {
             if (!PhoneFormatCheckUtils.isChinaPhoneLegal(mobile)) {

@@ -9,10 +9,10 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.TActionLog;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -64,19 +64,19 @@ public class BackendActionLogController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> searchParams = new HashMap<>();
-        if (StringUtil.isNotEmpty(accountName)) {
+        if (StringUtils.isNotEmpty(accountName)) {
             searchParams.put("name", accountName);
         }
-        if (StringUtil.isNotEmpty(keyword)) {
+        if (StringUtils.isNotEmpty(keyword)) {
             searchParams.put("module", keyword);
         }
-        if (StringUtil.isNotEmpty(beginTime)) {
+        if (StringUtils.isNotEmpty(beginTime)) {
             searchParams.put("startTime", beginTime);
         }
-        if (StringUtil.isNotEmpty(endTime)) {
+        if (StringUtils.isNotEmpty(endTime)) {
             searchParams.put("endTime", endTime);
         }
-        if (StringUtil.isNotEmpty(ip)) {
+        if (StringUtils.isNotEmpty(ip)) {
             searchParams.put("ip", ip);
         }
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {

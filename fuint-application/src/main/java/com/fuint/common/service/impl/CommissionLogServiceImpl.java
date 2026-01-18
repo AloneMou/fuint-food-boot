@@ -14,10 +14,9 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.module.backendApi.request.CommissionLogRequest;
 import com.fuint.repository.mapper.*;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.pagehelper.Page;
@@ -130,10 +129,10 @@ public class CommissionLogServiceImpl extends ServiceImpl<MtCommissionLogMapper,
         // 开始时间、结束时间
         String startTime = paginationRequest.getSearchParams().get("startTime") == null ? "" : paginationRequest.getSearchParams().get("startTime").toString();
         String endTime = paginationRequest.getSearchParams().get("endTime") == null ? "" : paginationRequest.getSearchParams().get("endTime").toString();
-        if (StringUtil.isNotEmpty(startTime)) {
+        if (StringUtils.isNotEmpty(startTime)) {
             lambdaQueryWrapper.ge(MtCommissionLog::getCreateTime, startTime);
         }
-        if (StringUtil.isNotEmpty(endTime)) {
+        if (StringUtils.isNotEmpty(endTime)) {
             lambdaQueryWrapper.le(MtCommissionLog::getCreateTime, endTime);
         }
 

@@ -16,10 +16,10 @@ import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.mapper.MtCouponMapper;
 import com.fuint.repository.model.MtCoupon;
 import com.fuint.repository.model.MtCouponGroup;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -90,13 +90,13 @@ public class BackendCouponGroupController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> searchParams = new HashMap<>();
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             searchParams.put("name", name);
         }
-        if (StringUtil.isNotEmpty(id)) {
+        if (StringUtils.isNotEmpty(id)) {
             searchParams.put("id", id);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             searchParams.put("status", status);
         }
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {

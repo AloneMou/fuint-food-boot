@@ -18,7 +18,7 @@ public class GoodsSkuCreateReqVO {
     @ApiModelProperty(value = "SKU编码", example = "SKU001")
     private String skuNo;
 
-    @ApiModelProperty(value = "规格名称，用^分隔", example = "冰^500ml^40")
+    @ApiModelProperty(value = "规格名称")
     private List<Spec> specLs;
 
 

@@ -17,10 +17,10 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.repository.model.MtBook;
 import com.fuint.repository.model.MtBookCate;
 import com.fuint.repository.model.MtStore;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -96,16 +96,16 @@ public class BackendBookController extends BaseController {
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
             params.put("merchantId", accountInfo.getMerchantId());
         }
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             params.put("name", name);
         }
-        if (StringUtil.isNotEmpty(cateId)) {
+        if (StringUtils.isNotEmpty(cateId)) {
             params.put("cateId", cateId);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
-        if (StringUtil.isNotEmpty(searchStoreId)) {
+        if (StringUtils.isNotEmpty(searchStoreId)) {
             params.put("storeId", searchStoreId);
         }
         if (storeId != null && storeId > 0) {
@@ -189,8 +189,8 @@ public class BackendBookController extends BaseController {
         String description = params.get("description") == null ? "" : params.get("description").toString();
         String logo = params.get("logo") == null ? "" : params.get("logo").toString();
         String status = params.get("status") == null ? "" : params.get("status").toString();
-        String storeId = (params.get("storeId") == null || StringUtil.isEmpty(params.get("storeId").toString())) ? "0" : params.get("storeId").toString();
-        String sort = (params.get("sort") == null || StringUtil.isEmpty(params.get("sort").toString())) ? "0" : params.get("sort").toString();
+        String storeId = (params.get("storeId") == null || StringUtils.isEmpty(params.get("storeId").toString())) ? "0" : params.get("storeId").toString();
+        String sort = (params.get("sort") == null || StringUtils.isEmpty(params.get("sort").toString())) ? "0" : params.get("sort").toString();
         String dates = params.get("dates") == null ? "" : params.get("dates").toString();
         List<LinkedHashMap> times = params.get("times") == null ? new ArrayList<>() : (List) params.get("times");
 
@@ -213,7 +213,7 @@ public class BackendBookController extends BaseController {
         mtBook.setSort(Integer.parseInt(sort));
         mtBook.setMerchantId(accountInfo.getMerchantId());
         mtBook.setServiceDates(dates);
-        if (StringUtil.isNotEmpty(cateId)) {
+        if (StringUtils.isNotEmpty(cateId)) {
             mtBook.setCateId(Integer.parseInt(cateId));
         }
         String timeStr = "";
@@ -223,7 +223,7 @@ public class BackendBookController extends BaseController {
                  String startTime = time.get("startTime") == null ? "" : time.get("startTime").toString();
                  String endTime = time.get("endTime") == null ? "" : time.get("endTime").toString();
                  String num = time.get("num") == null ? "" : time.get("num").toString();
-                 if (StringUtil.isNotEmpty(startTime) && StringUtil.isNotEmpty(endTime) && StringUtil.isNotEmpty(num)) {
+                 if (StringUtils.isNotEmpty(startTime) && StringUtils.isNotEmpty(endTime) && StringUtils.isNotEmpty(num)) {
                      String item = startTime + "-" + endTime + "-" + num;
                      if (!timeArr.contains(item)) {
                          timeArr.add(item);
@@ -236,7 +236,7 @@ public class BackendBookController extends BaseController {
             }
         }
         mtBook.setServiceTimes(timeStr);
-        if (StringUtil.isNotEmpty(id)) {
+        if (StringUtils.isNotEmpty(id)) {
             mtBook.setId(Integer.parseInt(id));
             bookService.updateBook(mtBook);
         } else {

@@ -1,6 +1,6 @@
 package com.fuint.common.util;
 
-import com.fuint.utils.ContextUtils;
+import com.fuint.framework.util.ContextUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.util.CollectionUtils;

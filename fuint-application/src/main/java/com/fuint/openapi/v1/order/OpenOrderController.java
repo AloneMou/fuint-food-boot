@@ -21,7 +21,6 @@ import com.fuint.openapi.v1.order.vo.*;
 import com.fuint.repository.mapper.MtOrderGoodsMapper;
 import com.fuint.repository.mapper.MtUserActionMapper;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import io.swagger.annotations.Api;
@@ -104,8 +103,8 @@ public class OpenOrderController extends BaseController {
         // 设置默认值
         Integer merchantId = reqVO.getMerchantId() != null ? reqVO.getMerchantId() : 1;
         Integer storeId = reqVO.getStoreId() != null ? reqVO.getStoreId() : 0;
-        String orderMode = StringUtil.isNotEmpty(reqVO.getOrderMode()) ? reqVO.getOrderMode() : OrderModeEnum.ONESELF.getKey();
-        String platform = StringUtil.isNotEmpty(reqVO.getPlatform()) ? reqVO.getPlatform() : "MP-WEIXIN";
+        String orderMode = StringUtils.isNotEmpty(reqVO.getOrderMode()) ? reqVO.getOrderMode() : OrderModeEnum.ONESELF.getKey();
+        String platform = StringUtils.isNotEmpty(reqVO.getPlatform()) ? reqVO.getPlatform() : "MP-WEIXIN";
         Integer userCouponId = reqVO.getUserCouponId() != null ? reqVO.getUserCouponId() : 0;
         Integer usePoint = reqVO.getUsePoint() != null ? reqVO.getUsePoint() : 0;
 
@@ -113,7 +112,7 @@ public class OpenOrderController extends BaseController {
         List<MtCart> cartList = new ArrayList<>();
 
         // 从购物车ID获取
-//        if (StringUtil.isNotEmpty(reqVO.getCartIds())) {
+//        if (StringUtils.isNotEmpty(reqVO.getCartIds())) {
 //            Map<String, Object> params = new java.util.HashMap<>();
 //            params.put("status", StatusEnum.ENABLED.getKey());
 //            params.put("ids", reqVO.getCartIds());
@@ -214,7 +213,7 @@ public class OpenOrderController extends BaseController {
                     goodsVO.setLinePrice(goodsInfo.getLinePrice());
 
                     String logo = goodsInfo.getLogo();
-                    if (StringUtil.isNotEmpty(logo) && !logo.startsWith("http")) {
+                    if (StringUtils.isNotEmpty(logo) && !logo.startsWith("http")) {
                         logo = basePath + logo;
                     }
                     goodsVO.setGoodsImage(logo);
@@ -265,8 +264,8 @@ public class OpenOrderController extends BaseController {
 
         Integer merchantId = reqVO.getMerchantId() != null ? reqVO.getMerchantId() : 1;
         Integer storeId = reqVO.getStoreId() != null ? reqVO.getStoreId() : 0;
-        String orderMode = StringUtil.isNotEmpty(reqVO.getOrderMode()) ? reqVO.getOrderMode() : OrderModeEnum.ONESELF.getKey();
-        String platform = StringUtil.isNotEmpty(reqVO.getPlatform()) ? reqVO.getPlatform() : "MP-WEIXIN";
+        String orderMode = StringUtils.isNotEmpty(reqVO.getOrderMode()) ? reqVO.getOrderMode() : OrderModeEnum.ONESELF.getKey();
+        String platform = StringUtils.isNotEmpty(reqVO.getPlatform()) ? reqVO.getPlatform() : "MP-WEIXIN";
         Integer userCouponId = reqVO.getUserCouponId() != null ? reqVO.getUserCouponId() : 0;
         Integer usePoint = reqVO.getUsePoint() != null ? reqVO.getUsePoint() : 0;
 

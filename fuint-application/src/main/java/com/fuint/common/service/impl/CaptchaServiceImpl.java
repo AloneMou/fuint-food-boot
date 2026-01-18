@@ -4,8 +4,8 @@ import com.fuint.common.util.RedisUtil;
 import com.fuint.common.service.CaptchaService;
 import com.google.code.kaptcha.Constants;
 import com.google.code.kaptcha.Producer;
-import com.fuint.utils.StringUtil;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -56,7 +56,7 @@ public class CaptchaServiceImpl implements CaptchaService {
      */
     public Boolean checkCode(String code, HttpSession session){
         String sessionCode = (String) session.getAttribute(Constants.KAPTCHA_SESSION_KEY);
-        if (StringUtil.isEmpty(code) || StringUtil.isEmpty(sessionCode)) {
+        if (StringUtils.isEmpty(code) || StringUtils.isEmpty(sessionCode)) {
             return false;
         } else {
             if (code.equalsIgnoreCase(sessionCode)) {
@@ -92,7 +92,7 @@ public class CaptchaServiceImpl implements CaptchaService {
      */
     public Boolean checkCodeByUuid(String code, String uuid){
         String vCode = RedisUtil.get(uuid);
-        if (StringUtil.isEmpty(code) || StringUtil.isEmpty(vCode)) {
+        if (StringUtils.isEmpty(code) || StringUtils.isEmpty(vCode)) {
             return false;
         } else {
             if (code.equalsIgnoreCase(vCode)) {

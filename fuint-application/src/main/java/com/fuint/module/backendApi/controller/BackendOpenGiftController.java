@@ -12,10 +12,10 @@ import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtOpenGift;
 import com.fuint.repository.model.MtUserGrade;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -73,13 +73,13 @@ public class BackendOpenGiftController extends BaseController {
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
             param.put("merchantId", accountInfo.getMerchantId());
         }
-        if (StringUtil.isNotEmpty(couponId)) {
+        if (StringUtils.isNotEmpty(couponId)) {
             param.put("couponId", couponId);
         }
-        if (StringUtil.isNotEmpty(gradeId)) {
+        if (StringUtils.isNotEmpty(gradeId)) {
             param.put("gradeId", gradeId);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             param.put("status", status);
         }
         param.put("pageNumber", page);
@@ -157,31 +157,31 @@ public class BackendOpenGiftController extends BaseController {
         String point = param.get("point").toString();
         String status = param.get("status") == null ? StatusEnum.ENABLED.getKey() : param.get("status").toString();
 
-        if (StringUtil.isEmpty(couponId) && StringUtil.isEmpty(couponNum) && StringUtil.isEmpty(point)) {
+        if (StringUtils.isEmpty(couponId) && StringUtils.isEmpty(couponNum) && StringUtils.isEmpty(point)) {
             return getFailureResult(201, "积分和卡券必须填写一项");
         }
 
-        if (StringUtil.isEmpty(gradeId)) {
+        if (StringUtils.isEmpty(gradeId)) {
             return getFailureResult(201, "会员等级不能为空");
         }
 
         MtOpenGift reqDto = new MtOpenGift();
-        if (StringUtil.isNotEmpty(couponId)) {
+        if (StringUtils.isNotEmpty(couponId)) {
             reqDto.setCouponId(Integer.parseInt(couponId));
         } else {
             reqDto.setCouponId(0);
         }
-        if (StringUtil.isNotEmpty(couponNum)) {
+        if (StringUtils.isNotEmpty(couponNum)) {
             reqDto.setCouponNum(Integer.parseInt(couponNum));
         } else {
             reqDto.setCouponNum(0);
         }
-        if (StringUtil.isNotEmpty(gradeId)) {
+        if (StringUtils.isNotEmpty(gradeId)) {
             reqDto.setGradeId(Integer.parseInt(gradeId));
         } else {
             reqDto.setGradeId(0);
         }
-        if (StringUtil.isNotEmpty(point)) {
+        if (StringUtils.isNotEmpty(point)) {
             reqDto.setPoint(Integer.parseInt(point));
         } else {
             reqDto.setPoint(0);
@@ -192,7 +192,7 @@ public class BackendOpenGiftController extends BaseController {
         String operator = accountInfo.getAccountName();
         reqDto.setOperator(operator);
 
-        if (StringUtil.isNotEmpty(id)) {
+        if (StringUtils.isNotEmpty(id)) {
             reqDto.setId(Integer.parseInt(id));
             openGiftService.updateOpenGift(reqDto);
         } else {

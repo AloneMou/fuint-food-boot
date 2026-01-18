@@ -5,7 +5,7 @@ import com.fuint.common.service.SourceService;
 import com.fuint.common.util.AuthUserUtil;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.repository.model.TSource;
-import com.fuint.utils.StringUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -40,7 +40,7 @@ public class PermissionService {
      * @return 用户是否具备某权限
      */
     public boolean hasPermission(String permission) throws BusinessCheckException {
-        if (StringUtil.isEmpty(permission)) {
+        if (StringUtils.isEmpty(permission)) {
             return false;
         }
 
@@ -68,6 +68,6 @@ public class PermissionService {
      * @return boolean
      */
     private boolean hasPermissions(Set<String> permissions, String permission) {
-        return permissions.contains(ALL_PERMISSION) || permissions.contains(StringUtil.trim(permission));
+        return permissions.contains(ALL_PERMISSION) || permissions.contains(StringUtils.trim(permission));
     }
 }

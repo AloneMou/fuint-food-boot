@@ -12,11 +12,12 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.mapper.MtArticleMapper;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import java.lang.reflect.InvocationTargetException;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -60,10 +61,10 @@ public class ClientArticleController extends BaseController {
 
         Map<String, Object> params = new HashMap<>();
         params.put("status", StatusEnum.ENABLED.getKey());
-        if (StringUtil.isNotEmpty(title)) {
+        if (StringUtils.isNotEmpty(title)) {
             params.put("title", title);
         }
-        if (StringUtil.isNotEmpty(merchantNo)) {
+        if (StringUtils.isNotEmpty(merchantNo)) {
             params.put("merchantNo", merchantNo);
         }
         paginationRequest.setSearchParams(params);
@@ -88,7 +89,7 @@ public class ClientArticleController extends BaseController {
     public ResponseObject detail(@RequestBody ArticleDetailParam articleDetailParam) throws BusinessCheckException, InvocationTargetException, IllegalAccessException {
         String articleIdStr = articleDetailParam.getArticleId() == null ? "" : articleDetailParam.getArticleId();
         Integer articleId = 0;
-        if (StringUtil.isNotEmpty(articleIdStr)) {
+        if (StringUtils.isNotEmpty(articleIdStr)) {
             articleId = Integer.parseInt(articleIdStr);
         }
 

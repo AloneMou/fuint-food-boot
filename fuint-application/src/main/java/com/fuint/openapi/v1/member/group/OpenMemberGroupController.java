@@ -16,10 +16,10 @@ import com.fuint.framework.util.object.BeanUtils;
 import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.v1.member.group.vo.*;
 import com.fuint.repository.model.MtUserGroup;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -171,13 +171,13 @@ public class OpenMemberGroupController extends BaseController {
         
         // 构建查询参数
         Map<String, Object> params = new HashMap<>();
-        if (StringUtil.isNotEmpty(pageReqVO.getName())) {
+        if (StringUtils.isNotEmpty(pageReqVO.getName())) {
             params.put("name", pageReqVO.getName());
         }
         if (pageReqVO.getId() != null) {
             params.put("id", pageReqVO.getId().toString());
         }
-        if (StringUtil.isNotEmpty(pageReqVO.getStatus())) {
+        if (StringUtils.isNotEmpty(pageReqVO.getStatus())) {
             params.put("status", pageReqVO.getStatus());
         }
         if (pageReqVO.getMerchantId() != null) {

@@ -16,10 +16,10 @@ import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.mapper.MtCouponGoodsMapper;
 import com.fuint.repository.mapper.MtCouponGroupMapper;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -93,8 +93,8 @@ public class BackendCouponController extends BaseController {
         String token = request.getHeader("Access-Token");
         Integer page = request.getParameter("page") == null ? Constants.PAGE_NUMBER : Integer.parseInt(request.getParameter("page"));
         Integer pageSize = request.getParameter("pageSize") == null ? Constants.PAGE_SIZE : Integer.parseInt(request.getParameter("pageSize"));
-        Integer groupId = (request.getParameter("groupId") == null || StringUtil.isEmpty(request.getParameter("groupId"))) ? 0 : Integer.parseInt(request.getParameter("groupId"));
-        Integer couponId = (request.getParameter("id") == null || StringUtil.isEmpty(request.getParameter("id"))) ? 0 : Integer.parseInt(request.getParameter("id"));
+        Integer groupId = (request.getParameter("groupId") == null || StringUtils.isEmpty(request.getParameter("groupId"))) ? 0 : Integer.parseInt(request.getParameter("groupId"));
+        Integer couponId = (request.getParameter("id") == null || StringUtils.isEmpty(request.getParameter("id"))) ? 0 : Integer.parseInt(request.getParameter("id"));
         String name = request.getParameter("name") == null ? "" : request.getParameter("name");
         String type = request.getParameter("type") == null ? "" : request.getParameter("type");
         String status = request.getParameter("status") == null ? "" : request.getParameter("status");
@@ -121,13 +121,13 @@ public class BackendCouponController extends BaseController {
         if (couponId > 0) {
             params.put("id", couponId.toString());
         }
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             params.put("name", name);
         }
-        if (StringUtil.isNotEmpty(type)) {
+        if (StringUtils.isNotEmpty(type)) {
             params.put("type", type);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
@@ -338,7 +338,7 @@ public class BackendCouponController extends BaseController {
 
         List<MtStore> storeList = new ArrayList<>();
 
-        if (StringUtil.isNotEmpty(mtCouponInfo.getStoreIds())) {
+        if (StringUtils.isNotEmpty(mtCouponInfo.getStoreIds())) {
             String[] ids = mtCouponInfo.getStoreIds().split(",");
             for (String storeId : ids) {
                  MtStore info = storeService.queryStoreById(Integer.parseInt(storeId));
@@ -364,7 +364,7 @@ public class BackendCouponController extends BaseController {
 
         // 不可用日期
         List<DateDto> exceptTimeList = new ArrayList<>();
-        if (StringUtil.isNotEmpty(mtCouponInfo.getExceptTime())) {
+        if (StringUtils.isNotEmpty(mtCouponInfo.getExceptTime())) {
             String[] exceptTimeArr = mtCouponInfo.getExceptTime().split(",");
             if (exceptTimeArr.length > 0) {
                 for (int i = 0; i < exceptTimeArr.length; i++) {
@@ -381,11 +381,11 @@ public class BackendCouponController extends BaseController {
 
         // 储值卡的预存规则
         List<PreStoreRuleDto> preStoreList = new ArrayList<>();
-        if (StringUtil.isNotEmpty(mtCouponInfo.getInRule()) && mtCouponInfo.getType().equals(CouponTypeEnum.PRESTORE.getKey())) {
+        if (StringUtils.isNotEmpty(mtCouponInfo.getInRule()) && mtCouponInfo.getType().equals(CouponTypeEnum.PRESTORE.getKey())) {
             String[] ruleArr = mtCouponInfo.getInRule().split(",");
             if (ruleArr.length > 0) {
                 for (int i = 0; i < ruleArr.length; i++) {
-                     if (StringUtil.isNotEmpty(ruleArr[i])) {
+                     if (StringUtils.isNotEmpty(ruleArr[i])) {
                          String[] ruleItem = ruleArr[i].split("_");
                          if (ruleItem.length == 2) {
                              PreStoreRuleDto dto = new PreStoreRuleDto();
@@ -433,7 +433,7 @@ public class BackendCouponController extends BaseController {
         if (couponId == null) {
             return getFailureResult(201, "系统参数有误");
         }
-        if (!PhoneFormatCheckUtils.isChinaPhoneLegal(mobile) && StringUtil.isNotEmpty(mobile)) {
+        if (!PhoneFormatCheckUtils.isChinaPhoneLegal(mobile) && StringUtils.isNotEmpty(mobile)) {
             return getFailureResult(201, "手机号格式有误");
         }
         Pattern pattern = Pattern.compile("[0-9]*");
@@ -446,16 +446,16 @@ public class BackendCouponController extends BaseController {
         // 导入批次
         String uuid = UUID.randomUUID().toString().replaceAll("-", "");
         List<Integer> userIdList = new ArrayList<>();
-        if (StringUtil.isNotEmpty(mobile)) {
+        if (StringUtils.isNotEmpty(mobile)) {
             MtUser mtUser = memberService.queryMemberByMobile(accountInfo.getMerchantId(), mobile);
             if (mtUser != null) {
                 userIdList.add(mtUser.getId());
             }
-        } else if (object.equals("part") && StringUtil.isNotEmpty(userIds)) {
+        } else if (object.equals("part") && StringUtils.isNotEmpty(userIds)) {
             List<String> ids = Arrays.asList(userIds.split(","));
             if (ids != null && ids.size() > 0) {
                 for (String userId : ids) {
-                     if (StringUtil.isNotEmpty(userId)) {
+                     if (StringUtils.isNotEmpty(userId)) {
                          userIdList.add(Integer.parseInt(userId));
                      }
                 }

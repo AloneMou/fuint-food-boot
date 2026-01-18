@@ -1,8 +1,8 @@
 package com.fuint.common.http;
 
 import com.alibaba.fastjson.JSONObject;
-import com.fuint.utils.StringUtil;
 import okhttp3.*;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -99,7 +99,7 @@ public class HttpRESTDataClient {
 
     public static String requestPost(String url, String contentType, String postData) throws IOException {
         MediaType mediaType = null;
-        if (StringUtil.isNotEmpty(contentType)) {
+        if (StringUtils.isNotEmpty(contentType)) {
             mediaType = MediaType.parse(contentType);
         }
         Request request = new Request.Builder()

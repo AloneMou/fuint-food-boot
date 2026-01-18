@@ -11,10 +11,10 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtRefund;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
@@ -66,7 +66,7 @@ public class ClientRefundController extends BaseController {
         }
         Map<String, Object> params = new HashMap();
         params.put("userId", userInfo.getId());
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
         params.put("pageNumber", param.get("page").toString());
@@ -138,7 +138,7 @@ public class ClientRefundController extends BaseController {
         }
 
         String refundId = request.getParameter("refundId");
-        if (StringUtil.isEmpty(refundId)) {
+        if (StringUtils.isEmpty(refundId)) {
             return getFailureResult(2000, "售后订单ID不能为空");
         }
 

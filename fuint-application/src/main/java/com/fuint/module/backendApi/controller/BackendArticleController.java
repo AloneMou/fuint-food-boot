@@ -15,10 +15,10 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.repository.model.MtArticle;
 import com.fuint.repository.model.MtStore;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -84,13 +84,13 @@ public class BackendArticleController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> params = new HashMap<>();
-        if (StringUtil.isNotEmpty(title)) {
+        if (StringUtils.isNotEmpty(title)) {
             params.put("title", title);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
-        if (StringUtil.isNotEmpty(searchStoreId)) {
+        if (StringUtils.isNotEmpty(searchStoreId)) {
             params.put("storeId", searchStoreId);
         }
         if (storeId != null && storeId > 0) {
@@ -196,13 +196,13 @@ public class BackendArticleController extends BaseController {
         if (accountInfo.getStoreId() != null && accountInfo.getStoreId() > 0) {
             storeId = accountInfo.getStoreId().toString();
         }
-        if (StringUtil.isNotEmpty(storeId)) {
+        if (StringUtils.isNotEmpty(storeId)) {
             articleDto.setStoreId(Integer.parseInt(storeId));
         }
         articleDto.setSort(Integer.parseInt(sort));
         articleDto.setBrief(brief);
 
-        if (StringUtil.isNotEmpty(id)) {
+        if (StringUtils.isNotEmpty(id)) {
             articleDto.setId(Integer.parseInt(id));
             articleService.updateArticle(articleDto);
         } else {

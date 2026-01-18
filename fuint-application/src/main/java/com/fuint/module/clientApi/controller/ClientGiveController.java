@@ -14,10 +14,10 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtUser;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
@@ -56,7 +56,7 @@ public class ClientGiveController extends BaseController {
     public ResponseObject doGive(HttpServletRequest request, @RequestBody GiveParam giveParam) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
 
-        if (StringUtil.isEmpty(token)) {
+        if (StringUtils.isEmpty(token)) {
             return getFailureResult(1001);
         }
 
@@ -72,7 +72,7 @@ public class ClientGiveController extends BaseController {
         try {
             /*
             String vcode = param.get("vcode") == null ? "" : param.get("vcode").toString();
-            if (StringUtil.isEmpty(vcode)) {
+            if (StringUtils.isEmpty(vcode)) {
                 return getFailureResult(3001, "验证码不能为空");
             }
             MtVerifyCode mtVerifyCode = verifyCodeService.checkVerifyCode(mtUser.getMobile(), vcode);
@@ -100,7 +100,7 @@ public class ClientGiveController extends BaseController {
     public ResponseObject giveLog(HttpServletRequest request, @RequestBody GiveListParam giveListParam) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
 
-        if (StringUtil.isEmpty(token)) {
+        if (StringUtils.isEmpty(token)) {
             return getFailureResult(1001);
         }
 
@@ -126,9 +126,9 @@ public class ClientGiveController extends BaseController {
             searchParams.put("giveUserId", mtUser.getId());
         }
 
-        if (StringUtil.isNotEmpty(mobile) && type.equals("give")) {
+        if (StringUtils.isNotEmpty(mobile) && type.equals("give")) {
             searchParams.put("mobile", mobile);
-        } else if(StringUtil.isNotEmpty(mobile) && type.equals("gived")) {
+        } else if(StringUtils.isNotEmpty(mobile) && type.equals("gived")) {
             searchParams.put("userMobile", mobile);
         }
         paginationRequest.setSearchParams(searchParams);

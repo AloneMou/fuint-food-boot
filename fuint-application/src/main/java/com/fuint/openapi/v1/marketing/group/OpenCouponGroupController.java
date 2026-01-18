@@ -16,10 +16,10 @@ import com.fuint.openapi.v1.marketing.group.vo.CouponGroupPageReqVO;
 import com.fuint.openapi.v1.marketing.group.vo.CouponGroupRespVO;
 import com.fuint.openapi.v1.marketing.group.vo.CouponGroupUpdateReqVO;
 import com.fuint.repository.model.MtCouponGroup;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -69,7 +69,7 @@ public class OpenCouponGroupController extends BaseController {
         log.info("[createCouponGroup] 创建优惠券分组，请求参数: {}", reqVO);
 
         // 参数校验
-        if (StringUtil.isEmpty(reqVO.getName())) {
+        if (StringUtils.isEmpty(reqVO.getName())) {
             return CommonResult.error(400001, "分组名称不能为空");
         }
 
@@ -242,10 +242,10 @@ public class OpenCouponGroupController extends BaseController {
         if (reqVO.getStoreId() != null && reqVO.getStoreId() > 0) {
             params.put("storeId", reqVO.getStoreId());
         }
-        if (StringUtil.isNotEmpty(reqVO.getName())) {
+        if (StringUtils.isNotEmpty(reqVO.getName())) {
             params.put("name", reqVO.getName());
         }
-        if (StringUtil.isNotEmpty(reqVO.getStatus())) {
+        if (StringUtils.isNotEmpty(reqVO.getStatus())) {
             params.put("status", reqVO.getStatus());
         }
         paginationRequest.setSearchParams(params);

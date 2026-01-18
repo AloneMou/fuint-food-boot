@@ -15,10 +15,10 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
@@ -107,40 +107,40 @@ public class MerchantMemberController extends BaseController {
         if (staffInfo.getStoreId() != null && staffInfo.getStoreId() > 0) {
             params.put("storeId", staffInfo.getStoreId());
         }
-        if (StringUtil.isNotEmpty(userId)) {
+        if (StringUtils.isNotEmpty(userId)) {
             params.put("id", userId);
         }
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             params.put("name", name);
         }
-        if (StringUtil.isNotEmpty(mobile)) {
+        if (StringUtils.isNotEmpty(mobile)) {
             params.put("mobile", mobile);
         }
-        if (StringUtil.isNotEmpty(birthday)) {
+        if (StringUtils.isNotEmpty(birthday)) {
             params.put("birthday", birthday);
         }
-        if (StringUtil.isNotEmpty(userNo)) {
+        if (StringUtils.isNotEmpty(userNo)) {
             params.put("userNo", userNo);
         }
-        if (StringUtil.isNotEmpty(gradeId)) {
+        if (StringUtils.isNotEmpty(gradeId)) {
             params.put("gradeId", gradeId);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
 
         // 注册时间比对
-        if (StringUtil.isNotEmpty(regTime)) {
+        if (StringUtils.isNotEmpty(regTime)) {
             params.put("regTime", regTime);
         }
 
         // 活跃时间比对
-        if (StringUtil.isNotEmpty(activeTime)) {
+        if (StringUtils.isNotEmpty(activeTime)) {
             params.put("activeTime", activeTime);
         }
 
         // 会员有效期比对
-        if (StringUtil.isNotEmpty(memberTime)) {
+        if (StringUtils.isNotEmpty(memberTime)) {
             params.put("memberTime", memberTime);
         }
 

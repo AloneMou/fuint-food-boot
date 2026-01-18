@@ -16,9 +16,9 @@ import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtOrder;
 import com.fuint.repository.model.MtSetting;
 import com.fuint.repository.model.MtUser;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
@@ -137,7 +137,7 @@ public class ClientBalanceController extends BaseController {
         String merchantNo = request.getHeader("merchantNo") == null ? "" : request.getHeader("merchantNo");
 
         String token = request.getHeader("Access-Token");
-        if (StringUtil.isEmpty(token)) {
+        if (StringUtils.isEmpty(token)) {
             return getFailureResult(1001);
         }
 
@@ -148,7 +148,7 @@ public class ClientBalanceController extends BaseController {
 
         String rechargeAmount = rechargeParam.getRechargeAmount() == null ? "" : rechargeParam.getRechargeAmount();
         String customAmount = rechargeParam.getCustomAmount() == null ? "" : rechargeParam.getCustomAmount();
-        if (StringUtil.isEmpty(rechargeAmount) && StringUtil.isEmpty(customAmount)) {
+        if (StringUtils.isEmpty(rechargeAmount) && StringUtils.isEmpty(customAmount)) {
             return getFailureResult(2000, "请确认充值金额");
         }
 
@@ -157,8 +157,8 @@ public class ClientBalanceController extends BaseController {
         // 充值赠送金额
         String ruleParam = "";
         MtSetting mtSetting = settingService.querySettingByName(merchantId, SettingTypeEnum.BALANCE.getKey(), BalanceSettingEnum.RECHARGE_RULE.getKey());
-        if (StringUtil.isNotEmpty(rechargeAmount) && mtSetting != null) {
-            if (mtSetting.getValue() != null && StringUtil.isNotEmpty(mtSetting.getValue())) {
+        if (StringUtils.isNotEmpty(rechargeAmount) && mtSetting != null) {
+            if (mtSetting.getValue() != null && StringUtils.isNotEmpty(mtSetting.getValue())) {
                 String rules[] = mtSetting.getValue().split(",");
                 for (String rule : rules) {
                      String amountArr[] = rule.split("_");
@@ -173,12 +173,12 @@ public class ClientBalanceController extends BaseController {
         }
 
         // 自定义充值没有赠送金额
-        if (StringUtil.isNotEmpty(customAmount) && Integer.parseInt(customAmount) > 0 && (StringUtil.isEmpty(rechargeAmount) || Integer.parseInt(rechargeAmount) <= 0)) {
+        if (StringUtils.isNotEmpty(customAmount) && Integer.parseInt(customAmount) > 0 && (StringUtils.isEmpty(rechargeAmount) || Integer.parseInt(rechargeAmount) <= 0)) {
             rechargeAmount = customAmount;
             ruleParam = customAmount + "_0";
         }
 
-        if (StringUtil.isEmpty(ruleParam)) {
+        if (StringUtils.isEmpty(ruleParam)) {
             ruleParam = rechargeAmount + "_0";
         }
 
@@ -237,7 +237,7 @@ public class ClientBalanceController extends BaseController {
         String token = request.getHeader("Access-Token");
         Integer page = balanceListParam.getPage() == null ? Constants.PAGE_NUMBER : balanceListParam.getPage();
         Integer pageSize = balanceListParam.getPageSize() == null ? Constants.PAGE_SIZE : balanceListParam.getPageSize();
-        if (StringUtil.isEmpty(token)) {
+        if (StringUtils.isEmpty(token)) {
             return getFailureResult(1001);
         }
 

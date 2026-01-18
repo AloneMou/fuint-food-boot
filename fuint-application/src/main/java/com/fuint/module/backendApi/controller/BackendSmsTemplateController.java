@@ -11,10 +11,10 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtSmsTemplate;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -66,10 +66,10 @@ public class BackendSmsTemplateController extends BaseController {
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
             searchParams.put("merchantId", accountInfo.getMerchantId());
         }
-        if (StringUtil.isNotEmpty(code)) {
+        if (StringUtils.isNotEmpty(code)) {
             searchParams.put("code", code);
         }
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             searchParams.put("name", name);
         }
         PaginationRequest paginationRequest = new PaginationRequest();

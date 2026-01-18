@@ -5,7 +5,7 @@ import com.fuint.common.service.MessageService;
 import com.fuint.common.service.WeixinService;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.repository.model.MtMessage;
-import com.fuint.utils.StringUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -62,7 +62,7 @@ public class MessageJob {
                 for (MtMessage mtMessage : dataList) {
                     Date nowTime = new Date();
                     // 如果到了发送时间，发送并删除该条消息
-                    if (dealNum <= MAX_SEND_NUM && mtMessage.getSendTime().before(nowTime) && StringUtil.isNotEmpty(mtMessage.getParams())) {
+                    if (dealNum <= MAX_SEND_NUM && mtMessage.getSendTime().before(nowTime) && StringUtils.isNotEmpty(mtMessage.getParams())) {
                         if (MessageEnum.TEMP_MSG.getKey().equals(mtMessage.getType())) {
                             boolean result = weixinService.doSendTemplateMessage(mtMessage.getMerchantId(), mtMessage.getParams());
                             messageService.sendMessage(mtMessage.getId(), result);

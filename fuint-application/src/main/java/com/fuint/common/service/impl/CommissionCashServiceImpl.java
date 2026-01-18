@@ -19,10 +19,9 @@ import com.fuint.repository.mapper.MtCommissionCashMapper;
 import com.fuint.common.dto.CommissionCashDto;
 import com.fuint.repository.mapper.MtCommissionLogMapper;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.pagehelper.Page;
@@ -120,10 +119,10 @@ public class CommissionCashServiceImpl extends ServiceImpl<MtCommissionCashMappe
         // 开始时间、结束时间
         String startTime = paginationRequest.getSearchParams().get("startTime") == null ? "" : paginationRequest.getSearchParams().get("startTime").toString();
         String endTime = paginationRequest.getSearchParams().get("endTime") == null ? "" : paginationRequest.getSearchParams().get("endTime").toString();
-        if (StringUtil.isNotEmpty(startTime)) {
+        if (StringUtils.isNotEmpty(startTime)) {
             lambdaQueryWrapper.ge(MtCommissionCash::getCreateTime, startTime);
         }
-        if (StringUtil.isNotEmpty(endTime)) {
+        if (StringUtils.isNotEmpty(endTime)) {
             lambdaQueryWrapper.le(MtCommissionCash::getCreateTime, endTime);
         }
         lambdaQueryWrapper.orderByDesc(MtCommissionCash::getId);
@@ -332,7 +331,7 @@ public class CommissionCashServiceImpl extends ServiceImpl<MtCommissionCashMappe
     @Transactional
     @OperationServiceLog(description = "结算确认")
     public void confirmCommissionCash(CommissionSettleConfirmRequest requestParam) throws BusinessCheckException {
-       if (StringUtil.isEmpty(requestParam.getUuid())) {
+       if (StringUtils.isEmpty(requestParam.getUuid())) {
            throw new BusinessCheckException("请求有误.");
        }
        boolean flag = mtCommissionCashMapper.confirmCommissionCash(requestParam.getMerchantId(), requestParam.getUuid(), requestParam.getOperator());
@@ -352,7 +351,7 @@ public class CommissionCashServiceImpl extends ServiceImpl<MtCommissionCashMappe
     @Transactional
     @OperationServiceLog(description = "取消结算")
     public void cancelCommissionCash(CommissionSettleConfirmRequest requestParam) throws BusinessCheckException {
-        if (StringUtil.isEmpty(requestParam.getUuid())) {
+        if (StringUtils.isEmpty(requestParam.getUuid())) {
             throw new BusinessCheckException("请求有误.");
         }
         boolean flag = mtCommissionCashMapper.cancelCommissionCash(requestParam.getMerchantId(), requestParam.getUuid(), requestParam.getOperator());

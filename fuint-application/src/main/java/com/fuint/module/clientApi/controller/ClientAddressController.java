@@ -14,10 +14,10 @@ import com.fuint.module.clientApi.request.AddressRequest;
 import com.fuint.repository.mapper.MtRegionMapper;
 import com.fuint.repository.model.MtAddress;
 import com.fuint.repository.model.MtRegion;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import java.lang.reflect.InvocationTargetException;
 import org.springframework.web.bind.annotation.*;
@@ -65,7 +65,7 @@ public class ClientAddressController extends BaseController {
         String isDefault = address.getIsDefault() == null ? "" : address.getIsDefault();
         Integer addressId = address.getAddressId() == null ? 0 : address.getAddressId();
 
-        if (StringUtil.isEmpty(token)) {
+        if (StringUtils.isEmpty(token)) {
             return getFailureResult(1001);
         }
 
@@ -159,13 +159,13 @@ public class ClientAddressController extends BaseController {
         String token = request.getHeader("Access-Token") == null ? "" : request.getHeader("Access-Token");
         String addressIdStr = addressDetailParam.getAddressId() == null ? "0" : addressDetailParam.getAddressId();
         Integer addressId = 0;
-        if (StringUtil.isNotEmpty(addressIdStr)) {
+        if (StringUtils.isNotEmpty(addressIdStr)) {
             addressId = Integer.parseInt(addressIdStr);
         }
 
         Map<String, Object> result = new HashMap<>();
         UserInfo mtUser = TokenUtil.getUserInfoByToken(token);
-        if (null == mtUser || StringUtil.isEmpty(token)) {
+        if (null == mtUser || StringUtils.isEmpty(token)) {
             return getFailureResult(1001);
         }
 

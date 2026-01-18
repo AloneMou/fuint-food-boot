@@ -8,8 +8,8 @@ import com.fuint.common.service.MessageService;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.repository.mapper.MtMessageMapper;
 import com.fuint.repository.model.MtMessage;
-import com.fuint.utils.StringUtil;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +38,7 @@ public class MessageServiceImpl extends ServiceImpl<MtMessageMapper, MtMessage> 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addMessage(MtMessage mtMsg) {
-        if (mtMsg.getUserId() < 0 || StringUtil.isEmpty(mtMsg.getContent())) {
+        if (mtMsg.getUserId() < 0 || StringUtils.isEmpty(mtMsg.getContent())) {
             return;
         }
 

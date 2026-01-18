@@ -20,10 +20,10 @@ import com.fuint.repository.model.MtMerchant;
 import com.fuint.repository.model.MtStore;
 import com.fuint.repository.model.TAccount;
 import com.fuint.repository.model.TDuty;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -92,16 +92,16 @@ public class BackendAccountController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> searchParams = new HashMap<>();
-        if (StringUtil.isNotEmpty(accountName)) {
+        if (StringUtils.isNotEmpty(accountName)) {
             searchParams.put("name", accountName);
         }
-        if (StringUtil.isNotEmpty(realName)) {
+        if (StringUtils.isNotEmpty(realName)) {
             searchParams.put("realName", realName);
         }
-        if (StringUtil.isNotEmpty(accountStatus)) {
+        if (StringUtils.isNotEmpty(accountStatus)) {
             searchParams.put("status", accountStatus);
         }
-        if (StringUtil.isNotEmpty(accountStatus)) {
+        if (StringUtils.isNotEmpty(accountStatus)) {
             searchParams.put("status", accountStatus);
         }
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
@@ -247,13 +247,13 @@ public class BackendAccountController extends BaseController {
         tAccount.setPassword(password);
         tAccount.setIsActive(1);
         tAccount.setLocked(0);
-        if (StringUtil.isNotEmpty(storeId)) {
+        if (StringUtils.isNotEmpty(storeId)) {
             tAccount.setStoreId(Integer.parseInt(storeId));
         }
-        if (StringUtil.isNotEmpty(merchantId)) {
+        if (StringUtils.isNotEmpty(merchantId)) {
             tAccount.setMerchantId(Integer.parseInt(merchantId));
         }
-        if (StringUtil.isNotEmpty(staffId)) {
+        if (StringUtils.isNotEmpty(staffId)) {
             tAccount.setStaffId(Integer.parseInt(staffId));
         }
 
@@ -292,19 +292,19 @@ public class BackendAccountController extends BaseController {
         tAccount.setAcctId(id.intValue());
         tAccount.setRealName(realName);
 
-        if (StringUtil.isNotEmpty(accountName)) {
+        if (StringUtils.isNotEmpty(accountName)) {
             tAccount.setAccountName(accountName);
         }
-        if (StringUtil.isNotEmpty(accountStatus)) {
+        if (StringUtils.isNotEmpty(accountStatus)) {
             tAccount.setAccountStatus(Integer.parseInt(accountStatus));
         }
-        if (StringUtil.isNotEmpty(storeId)) {
+        if (StringUtils.isNotEmpty(storeId)) {
             tAccount.setStoreId(Integer.parseInt(storeId));
         }
-        if (StringUtil.isNotEmpty(staffId)) {
+        if (StringUtils.isNotEmpty(staffId)) {
             tAccount.setStaffId(Integer.parseInt(staffId));
         }
-        if (StringUtil.isNotEmpty(merchantId)) {
+        if (StringUtils.isNotEmpty(merchantId)) {
             tAccount.setMerchantId(Integer.parseInt(merchantId));
         }
 
@@ -351,19 +351,19 @@ public class BackendAccountController extends BaseController {
         String ids[] = userIds.split(",");
         if (ids.length > 0) {
             for (int i = 0; i < ids.length; i++) {
-                 if (StringUtil.isNotEmpty(ids[i])) {
+                 if (StringUtils.isNotEmpty(ids[i])) {
                      Integer userId = Integer.parseInt(ids[i]);
                      TAccount tAccount = tAccountService.getAccountInfoById(userId.intValue());
                      if (tAccount == null) {
                          return getFailureResult(201, "账户不存在");
                      }
-                     if (StringUtil.equals(accountInfo.getAccountName(), tAccount.getAccountName())) {
+                     if (StringUtils.equals(accountInfo.getAccountName(), tAccount.getAccountName())) {
                          return getFailureResult(201, "您不能删除自己");
                      }
                  }
             }
             for (int i = 0; i < ids.length; i++) {
-                 if (StringUtil.isNotEmpty(ids[i])) {
+                 if (StringUtils.isNotEmpty(ids[i])) {
                      Long userId = Long.parseLong(ids[i]);
                      tAccountService.deleteAccount(userId);
                  }

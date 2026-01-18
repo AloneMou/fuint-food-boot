@@ -19,10 +19,10 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.repository.model.MtBookCate;
 import com.fuint.repository.model.MtBookItem;
 import com.fuint.repository.model.MtStore;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -99,19 +99,19 @@ public class BackendBookItemController extends BaseController {
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
             params.put("merchantId", accountInfo.getMerchantId());
         }
-        if (StringUtil.isNotEmpty(mobile)) {
+        if (StringUtils.isNotEmpty(mobile)) {
             params.put("mobile", mobile);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
-        if (StringUtil.isNotEmpty(userId)) {
+        if (StringUtils.isNotEmpty(userId)) {
             params.put("userId", userId);
         }
-        if (StringUtil.isNotEmpty(cateId)) {
+        if (StringUtils.isNotEmpty(cateId)) {
             params.put("cateId", cateId);
         }
-        if (StringUtil.isNotEmpty(contact)) {
+        if (StringUtils.isNotEmpty(contact)) {
             params.put("contact", contact);
         }
         if (storeId != null && storeId > 0) {
@@ -227,7 +227,7 @@ public class BackendBookItemController extends BaseController {
         mtBookItem.setStoreId(Integer.parseInt(storeId));
         mtBookItem.setMerchantId(accountInfo.getMerchantId());
 
-        if (StringUtil.isNotEmpty(id)) {
+        if (StringUtils.isNotEmpty(id)) {
             bookItemService.updateBookItem(mtBookItem);
         } else {
             bookItemService.addBookItem(mtBookItem);

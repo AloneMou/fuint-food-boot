@@ -12,20 +12,19 @@ import com.fuint.common.param.SettlementParam;
 import com.fuint.common.service.*;
 import com.fuint.common.util.CommonUtil;
 import com.fuint.common.util.DateUtil;
-import com.fuint.common.util.SeqUtil;
 import com.fuint.common.util.TokenUtil;
 import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.util.PropertiesUtil;
+import com.fuint.framework.util.SeqUtil;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.mapper.*;
 import com.fuint.repository.model.*;
-import com.fuint.utils.PropertiesUtil;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -220,7 +219,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
 
         Page<MtOpenGift> pageHelper = PageHelper.startPage(pageNumber, pageSize);
         LambdaQueryWrapper<MtOrder> lambdaQueryWrapper = Wrappers.lambdaQuery();
-        if (StringUtil.isNotEmpty(tableCode)) {
+        if (StringUtils.isNotEmpty(tableCode)) {
             Map<String, Object> params = new HashMap<>();
             params.put("code", tableCode);
             params.put("status", StatusEnum.ENABLED.getKey());
@@ -231,19 +230,19 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                 lambdaQueryWrapper.eq(MtOrder::getTableId, "00");
             }
         }
-        if (StringUtil.isNotEmpty(orderSn)) {
+        if (StringUtils.isNotEmpty(orderSn)) {
             lambdaQueryWrapper.eq(MtOrder::getOrderSn, orderSn);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             lambdaQueryWrapper.eq(MtOrder::getStatus, status);
         }
-        if (StringUtil.isNotEmpty(payStatus)) {
+        if (StringUtils.isNotEmpty(payStatus)) {
             lambdaQueryWrapper.eq(MtOrder::getPayStatus, payStatus);
         }
-        if (StringUtil.isNotEmpty(settleStatus)) {
+        if (StringUtils.isNotEmpty(settleStatus)) {
             lambdaQueryWrapper.eq(MtOrder::getSettleStatus, settleStatus);
         }
-        if (StringUtil.isNotEmpty(mobile)) {
+        if (StringUtils.isNotEmpty(mobile)) {
             MtUser userInfo = memberService.queryMemberByMobile(merchantId, mobile);
             if (userInfo != null) {
                 userId = userInfo.getId() + "";
@@ -251,7 +250,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                 userId = "0";
             }
         }
-        if (StringUtil.isNotEmpty(userId)) {
+        if (StringUtils.isNotEmpty(userId)) {
             lambdaQueryWrapper.eq(MtOrder::getUserId, userId);
         }
         if (merchantId != null && merchantId > 0) {
@@ -260,13 +259,13 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         if (storeId != null && storeId > 0) {
             lambdaQueryWrapper.eq(MtOrder::getStoreId, storeId);
         }
-        if (StringUtil.isNotEmpty(staffId)) {
+        if (StringUtils.isNotEmpty(staffId)) {
             lambdaQueryWrapper.eq(MtOrder::getStaffId, staffId);
         }
-        if (StringUtil.isNotEmpty(type)) {
+        if (StringUtils.isNotEmpty(type)) {
             lambdaQueryWrapper.eq(MtOrder::getType, type);
         }
-        if (StringUtil.isNotEmpty(orderMode)) {
+        if (StringUtils.isNotEmpty(orderMode)) {
             lambdaQueryWrapper.eq(MtOrder::getOrderMode, orderMode);
         }
         if (StringUtils.isNotBlank(couponId)) {
@@ -278,10 +277,10 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                 lambdaQueryWrapper.in(MtOrder::getStoreId, idList);
             }
         }
-        if (StringUtil.isNotEmpty(startTime)) {
+        if (StringUtils.isNotEmpty(startTime)) {
             lambdaQueryWrapper.ge(MtOrder::getCreateTime, startTime);
         }
-        if (StringUtil.isNotEmpty(endTime)) {
+        if (StringUtils.isNotEmpty(endTime)) {
             lambdaQueryWrapper.le(MtOrder::getCreateTime, endTime);
         }
         lambdaQueryWrapper.orderByDesc(MtOrder::getId);
@@ -417,7 +416,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         List<MtCart> cartList = new ArrayList<>();
         Map<String, Object> cartData = new HashMap<>();
         if (orderDto.getType().equals(OrderTypeEnum.GOODS.getKey())) {
-            if (StringUtil.isNotEmpty(orderDto.getCartIds())) {
+            if (StringUtils.isNotEmpty(orderDto.getCartIds())) {
                 Map<String, Object> param = new HashMap<>();
                 param.put("status", StatusEnum.ENABLED.getKey());
                 param.put("ids", orderDto.getCartIds());
@@ -484,7 +483,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                 updateOrder(mtOrder);
                 String useCode = couponService.useCoupon(mtOrder.getCouponId(), mtOrder.getUserId(), mtOrder.getStoreId(), mtOrder.getId(), mtOrder.getDiscount(), "购物使用卡券");
                 // 卡券使用失败
-                if (StringUtil.isEmpty(useCode)) {
+                if (StringUtils.isEmpty(useCode)) {
                     mtOrder.setDiscount(new BigDecimal("0"));
                     mtOrder.setCouponId(0);
                 }
@@ -656,7 +655,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         String selectNum = param.getSelectNum() == null ? "" : param.getSelectNum(); // 储值卡必填
         String remark = param.getRemark() == null ? "" : param.getRemark();
         String type = param.getType() == null ? "" : param.getType(); // 订单类型
-        String payAmount = param.getPayAmount() == null ? "0" : StringUtil.isEmpty(param.getPayAmount()) ? "0" : param.getPayAmount(); // 支付金额
+        String payAmount = param.getPayAmount() == null ? "0" : StringUtils.isEmpty(param.getPayAmount()) ? "0" : param.getPayAmount(); // 支付金额
         Integer usePoint = param.getUsePoint() == null ? 0 : param.getUsePoint(); // 使用积分数量
         Integer couponId = param.getCouponId() == null ? 0 : param.getCouponId(); // 会员卡券ID
         String payType = param.getPayType() == null ? PayTypeEnum.JSAPI.getKey() : param.getPayType();
@@ -667,7 +666,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         Integer goodsId = param.getGoodsId() == null ? 0 : param.getGoodsId(); // 立即购买商品ID
         Integer skuId = param.getSkuId() == null ? 0 : param.getSkuId(); // 立即购买商品skuId
         Integer buyNum = param.getBuyNum() == null ? 1 : param.getBuyNum(); // 立即购买商品数量
-        String orderMode = StringUtil.isEmpty(param.getOrderMode()) ? OrderModeEnum.ONESELF.getKey() : param.getOrderMode(); // 订单模式(配送or自取)
+        String orderMode = StringUtils.isEmpty(param.getOrderMode()) ? OrderModeEnum.ONESELF.getKey() : param.getOrderMode(); // 订单模式(配送or自取)
         Integer orderId = param.getOrderId() == null ? null : param.getOrderId(); // 订单ID
         Integer merchantId = merchantService.getMerchantId(merchantNo);
         UserInfo loginInfo = TokenUtil.getUserInfoByToken(token);
@@ -732,9 +731,9 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         }
 
         // 收银台通过手机号自动注册会员信息
-        if ((userInfo == null || StringUtil.isEmpty(token))) {
+        if ((userInfo == null || StringUtils.isEmpty(token))) {
             String mobile = param.getMobile() == null ? "" : param.getMobile();
-            if (StringUtil.isNotEmpty(operator) && StringUtil.isNotEmpty(mobile)) {
+            if (StringUtils.isNotEmpty(operator) && StringUtils.isNotEmpty(mobile)) {
                 userInfo = memberService.queryMemberByMobile(merchantId, mobile);
                 // 自动注册会员
                 if (userInfo == null) {
@@ -744,7 +743,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         }
 
         if (userInfo == null) {
-            if (StringUtil.isNotEmpty(operator)) {
+            if (StringUtils.isNotEmpty(operator)) {
                 throw new BusinessCheckException("该管理员还未关联店铺员工");
             } else {
                 throw new BusinessCheckException("请先登录");
@@ -754,7 +753,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         if (userId <= 0) {
             userId = userInfo.getId();
         } else {
-            if (StringUtil.isNotEmpty(operator)) {
+            if (StringUtils.isNotEmpty(operator)) {
                 userInfo = memberService.queryMemberById(userId);
             }
         }
@@ -813,7 +812,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
             String[] selectNumArr = selectNum.split(",");
             String[] ruleArr = inRule.split(",");
             for (int i = 0; i < ruleArr.length; i++) {
-                String item = ruleArr[i] + "_" + (StringUtil.isNotEmpty(selectNumArr[i]) ? selectNumArr[i] : 0);
+                String item = ruleArr[i] + "_" + (StringUtils.isNotEmpty(selectNumArr[i]) ? selectNumArr[i] : 0);
                 String[] itemArr = item.split("_");
                 // 预存金额
                 BigDecimal price = new BigDecimal(itemArr[0]);
@@ -821,7 +820,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                 BigDecimal num = new BigDecimal(selectNumArr[i]);
                 BigDecimal amount = price.multiply(num);
                 totalAmount = totalAmount.add(amount);
-                orderParam = StringUtil.isEmpty(orderParam) ? item : orderParam + "," + item;
+                orderParam = StringUtils.isEmpty(orderParam) ? item : orderParam + "," + item;
             }
 
             orderDto.setParam(orderParam);
@@ -855,7 +854,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         // 商品订单且配送要加上配送费用
         if (orderDto.getType().equals(OrderTypeEnum.GOODS.getKey()) && orderDto.getOrderMode().equals(OrderModeEnum.EXPRESS.getKey())) {
             MtSetting mtSetting = settingService.querySettingByName(merchantId, SettingTypeEnum.ORDER.getKey(), OrderSettingEnum.DELIVERY_FEE.getKey());
-            if (mtSetting != null && StringUtil.isNotEmpty(mtSetting.getValue())) {
+            if (mtSetting != null && StringUtils.isNotEmpty(mtSetting.getValue())) {
                 BigDecimal deliveryFee = new BigDecimal(mtSetting.getValue());
                 if (deliveryFee.compareTo(new BigDecimal("0")) > 0) {
                     orderDto.setDeliveryFee(deliveryFee);
@@ -899,7 +898,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         param.setOrderId(orderInfo.getId());
 
         // 收银台实付金额、优惠金额
-        if ((StringUtil.isNotEmpty(cashierPayAmount) || StringUtil.isNotEmpty(cashierDiscountAmount)) && StringUtil.isNotEmpty(operator)) {
+        if ((StringUtils.isNotEmpty(cashierPayAmount) || StringUtils.isNotEmpty(cashierDiscountAmount)) && StringUtils.isNotEmpty(operator)) {
             OrderDto reqOrder = new OrderDto();
             reqOrder.setId(orderInfo.getId());
             if (orderInfo.getAmount().compareTo(new BigDecimal("0")) <= 0) {
@@ -934,7 +933,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                             if (couponInfo.getType().equals(CouponTypeEnum.COUPON.getKey())) {
                                 // 检查是否会员升级专用卡券
                                 boolean canUse = true;
-                                if (couponInfo.getUseFor() != null && StringUtil.isNotEmpty(couponInfo.getUseFor())) {
+                                if (couponInfo.getUseFor() != null && StringUtils.isNotEmpty(couponInfo.getUseFor())) {
                                     if (orderDto.getType().equals(OrderTypeEnum.MEMBER.getKey())) {
                                         if (!couponInfo.getUseFor().equals(CouponUseForEnum.MEMBER_GRADE.getKey())) {
                                             canUse = false;
@@ -943,7 +942,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                                 }
                                 if (canUse) {
                                     String useCode = couponService.useCoupon(couponId, orderDto.getUserId(), orderDto.getStoreId(), orderInfo.getId(), userCouponInfo.getAmount(), "核销");
-                                    if (StringUtil.isNotEmpty(useCode)) {
+                                    if (StringUtils.isNotEmpty(useCode)) {
                                         orderDto.setCouponId(couponId);
                                         orderDto.setDiscount(orderInfo.getDiscount().add(userCouponInfo.getAmount()));
                                         updateOrder(orderDto);
@@ -957,7 +956,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                                 }
                                 try {
                                     String useCode = couponService.useCoupon(couponId, orderDto.getUserId(), orderDto.getStoreId(), orderInfo.getId(), useCouponAmount, "核销");
-                                    if (StringUtil.isNotEmpty(useCode)) {
+                                    if (StringUtils.isNotEmpty(useCode)) {
                                         orderDto.setCouponId(couponId);
                                         orderDto.setDiscount(orderInfo.getDiscount().add(useCouponAmount));
                                         orderDto.setPayAmount(orderInfo.getPayAmount().subtract(useCouponAmount));
@@ -983,7 +982,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
             if (userInfo.getBalance() == null || realPayAmount.compareTo(userInfo.getBalance()) > 0) {
                 throw new BusinessCheckException("会员余额不足");
             }
-            if (StringUtil.isNotEmpty(cashierPayAmount)) {
+            if (StringUtils.isNotEmpty(cashierPayAmount)) {
                 if (userInfo.getBalance() == null || new BigDecimal(cashierPayAmount).compareTo(userInfo.getBalance()) > 0) {
                     throw new BusinessCheckException("会员余额不足");
                 }
@@ -1005,7 +1004,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         // 应付金额大于0才提交微信支付，点餐不用支付
 //        if (tableId <= 0) {
         if (realPayAmount.compareTo(new BigDecimal("0")) > 0) {
-            if (payType.equals(PayTypeEnum.CASH.getKey()) && StringUtil.isNotEmpty(operator)) {
+            if (payType.equals(PayTypeEnum.CASH.getKey()) && StringUtils.isNotEmpty(operator)) {
                 // 收银台现金支付，更新为已支付
                 setOrderPayed(orderInfo.getId(), null);
             } else if (payType.equals(PayTypeEnum.BALANCE.getKey())) {
@@ -1026,13 +1025,13 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
             } else {
                 BigDecimal wxPayAmount = realPayAmount.multiply(new BigDecimal("100"));
                 // 扫码支付，先返回不处理，后面拿到支付二维码再处理
-                if ((payType.equals(PayTypeEnum.MICROPAY.getKey()) || payType.equals(PayTypeEnum.ALISCAN.getKey())) && StringUtil.isEmpty(authCode)) {
+                if ((payType.equals(PayTypeEnum.MICROPAY.getKey()) || payType.equals(PayTypeEnum.ALISCAN.getKey())) && StringUtils.isEmpty(authCode)) {
                     paymentInfo = new ResponseObject(200, "请求成功", new HashMap<>());
                 } else {
                     paymentInfo = paymentService.createPrepayOrder(userInfo, orderInfo, (wxPayAmount.intValue()), authCode, 0, ip, platform, isWechat);
                 }
                 if (paymentInfo.getData() == null) {
-                    errorMessage = StringUtil.isNotEmpty(paymentInfo.getMessage()) ? paymentInfo.getMessage() : PropertiesUtil.getResponseErrorMessageByCode(3000);
+                    errorMessage = StringUtils.isNotEmpty(paymentInfo.getMessage()) ? paymentInfo.getMessage() : PropertiesUtil.getResponseErrorMessageByCode(3000);
                 }
             }
         } else {
@@ -1064,14 +1063,14 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         params.put("remark", "您的订单已生成，请留意~");
         weixinService.sendSubscribeMessage(merchantId, userInfo.getId(), userInfo.getOpenId(), WxMessageEnum.ORDER_CREATED.getKey(), "pages/order/index", params, sendTime);
 
-        if (StringUtil.isNotBlank(userInfo.getMpOpenId())) {
+        if (StringUtils.isNotBlank(userInfo.getMpOpenId())) {
             //公众号消息
             weixinService.sendTemplateMessage(merchantId, userInfo.getId(), userInfo.getMpOpenId(), WxMessageEnum.ORDER_CREATED.getKey(), "pages/order/index", params, sendTime);
         } else {
             weixinService.sendTemplateMessage(merchantId, userInfo.getId(), userInfo.getOpenId(), WxMessageEnum.ORDER_CREATED.getKey(), "pages/order/index", params, sendTime);
         }
 
-        if (StringUtil.isNotEmpty(errorMessage)) {
+        if (StringUtils.isNotEmpty(errorMessage)) {
             throw new BusinessCheckException(errorMessage);
         } else {
             return outParams;
@@ -1148,7 +1147,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         logger.info("orderService.cancelOrder orderId = {}, remark = {}", orderId, remark);
 
         if (mtOrder != null && mtOrder.getStatus().equals(OrderStatusEnum.CREATED.getKey()) && mtOrder.getPayStatus().equals(PayStatusEnum.WAIT.getKey())) {
-            if (StringUtil.isNotEmpty(remark)) {
+            if (StringUtils.isNotEmpty(remark)) {
                 mtOrder.setRemark(remark);
             }
 
@@ -1322,7 +1321,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
             mtOrder.setAmount(orderDto.getAmount());
         }
 
-        if (null != orderDto.getVerifyCode() && StringUtil.isNotEmpty(orderDto.getVerifyCode())) {
+        if (null != orderDto.getVerifyCode() && StringUtils.isNotEmpty(orderDto.getVerifyCode())) {
             if (orderDto.getVerifyCode().equals(mtOrder.getVerifyCode())) {
                 mtOrder.setStatus(OrderStatusEnum.DELIVERED.getKey());
                 mtOrder.setVerifyCode("");
@@ -1425,7 +1424,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                         MtGoods mtGoods = goodsService.queryGoodsById(goodsDto.getGoodsId());
                         if (mtGoods != null) {
                             // 购买虚拟卡券商品发放处理
-                            if (mtGoods.getType().equals(GoodsTypeEnum.COUPON.getKey()) && mtGoods.getCouponIds() != null && StringUtil.isNotEmpty(mtGoods.getCouponIds())) {
+                            if (mtGoods.getType().equals(GoodsTypeEnum.COUPON.getKey()) && mtGoods.getCouponIds() != null && StringUtils.isNotEmpty(mtGoods.getCouponIds())) {
                                 String couponIds[] = mtGoods.getCouponIds().split(",");
                                 if (couponIds.length > 0) {
                                     for (int i = 0; i < couponIds.length; i++) {
@@ -1574,7 +1573,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         userOrderDto.setDeliveryFee(orderInfo.getDeliveryFee());
 
         // 核销码为空，说明已经核销
-        if (orderInfo.getVerifyCode() == null || StringUtil.isEmpty(orderInfo.getVerifyCode())) {
+        if (orderInfo.getVerifyCode() == null || StringUtils.isEmpty(orderInfo.getVerifyCode())) {
             userOrderDto.setIsVerify(true);
         } else {
             userOrderDto.setIsVerify(false);
@@ -1765,7 +1764,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         }
 
         // 物流信息
-        if (StringUtil.isNotEmpty(orderInfo.getExpressInfo())) {
+        if (StringUtils.isNotEmpty(orderInfo.getExpressInfo())) {
             JSONObject express = JSONObject.parseObject(orderInfo.getExpressInfo());
             ExpressDto expressInfo = new ExpressDto();
             expressInfo.setExpressNo(express.get("expressNo").toString());
@@ -1964,7 +1963,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                     List<GoodsSpecValueDto> specList = goodsService.getSpecListBySkuId(cart.getSkuId());
                     cartDto.setSpecList(specList);
                 }
-                if (StringUtil.isNotEmpty(mtGoodsInfo.getLogo()) && (mtGoodsInfo.getLogo().indexOf(basePath) == -1)) {
+                if (StringUtils.isNotEmpty(mtGoodsInfo.getLogo()) && (mtGoodsInfo.getLogo().indexOf(basePath) == -1)) {
                     mtGoodsInfo.setLogo(basePath + mtGoodsInfo.getLogo());
                 }
                 // 读取sku的数据
@@ -1973,7 +1972,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                     BeanUtils.copyProperties(mtGoodsInfo, mtGoods);
                     MtGoodsSku mtGoodsSku = mtGoodsSkuMapper.selectById(cart.getSkuId());
                     if (mtGoodsSku != null) {
-                        if (StringUtil.isNotEmpty(mtGoodsSku.getLogo()) && (mtGoodsSku.getLogo().indexOf(basePath) == -1)) {
+                        if (StringUtils.isNotEmpty(mtGoodsSku.getLogo()) && (mtGoodsSku.getLogo().indexOf(basePath) == -1)) {
                             mtGoods.setLogo(basePath + mtGoodsSku.getLogo());
                         }
                         if (mtGoodsSku.getWeight().compareTo(new BigDecimal("0")) > 0) {
@@ -2019,7 +2018,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                     couponDto.setAmount(userCoupon.getAmount());
                     couponDto.setStatus(UserCouponStatusEnum.DISABLE.getKey());
                     // 购物不能用专用的卡券
-                    if (couponInfo.getUseFor() != null && StringUtil.isNotEmpty(couponInfo.getUseFor())) {
+                    if (couponInfo.getUseFor() != null && StringUtils.isNotEmpty(couponInfo.getUseFor())) {
                         if (couponInfo.getUseFor().equals(CouponUseForEnum.MEMBER_GRADE.getKey())) {
                             continue;
                         }
@@ -2034,7 +2033,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                     // 优惠券
                     if (couponInfo.getType().equals(CouponTypeEnum.COUPON.getKey())) {
                         couponDto.setType(CouponTypeEnum.COUPON.getValue());
-                        if (StringUtil.isEmpty(couponInfo.getOutRule()) || couponInfo.getOutRule().equals("0")) {
+                        if (StringUtils.isEmpty(couponInfo.getOutRule()) || couponInfo.getOutRule().equals("0")) {
                             couponDto.setDescription("无使用门槛");
                             if (isEffective) {
                                 couponDto.setStatus(UserCouponStatusEnum.UNUSED.getKey());
@@ -2123,7 +2122,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         BigDecimal usePointAmount = new BigDecimal("0");
         MtSetting setting = settingService.querySettingByName(merchantId, SettingTypeEnum.POINT.getKey(), PointSettingEnum.EXCHANGE_NEED_POINT.getKey());
         if (myPoint > 0 && setting != null && isUsePoint) {
-            if (StringUtil.isNotEmpty(setting.getValue()) && !setting.getValue().equals("0")) {
+            if (StringUtils.isNotEmpty(setting.getValue()) && !setting.getValue().equals("0")) {
                 BigDecimal usePoints = new BigDecimal(myPoint);
                 usePointAmount = usePoints.divide(new BigDecimal(setting.getValue()), BigDecimal.ROUND_CEILING, 3);
                 usePoint = myPoint;
@@ -2150,7 +2149,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         // 配送费用
         BigDecimal deliveryFee = new BigDecimal("0");
         MtSetting mtSetting = settingService.querySettingByName(merchantId, SettingTypeEnum.ORDER.getKey(), OrderSettingEnum.DELIVERY_FEE.getKey());
-        if (mtSetting != null && StringUtil.isNotEmpty(mtSetting.getValue()) && orderMode.equals(OrderModeEnum.EXPRESS.getKey())) {
+        if (mtSetting != null && StringUtils.isNotEmpty(mtSetting.getValue()) && orderMode.equals(OrderModeEnum.EXPRESS.getKey())) {
             deliveryFee = new BigDecimal(mtSetting.getValue());
         }
 
@@ -2246,7 +2245,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         params.put("time", dateTime);
         weixinService.sendSubscribeMessage(mtOrder.getMerchantId(), mtOrder.getUserId(), userInfo.getOpenId(), WxMessageEnum.TAKE_FOOD.getKey(), "pages/order/index", params, sendTime);
 
-        if (StringUtil.isNotBlank(userInfo.getMpOpenId())) {
+        if (StringUtils.isNotBlank(userInfo.getMpOpenId())) {
             weixinService.sendTemplateMessage(mtOrder.getMerchantId(), mtOrder.getUserId(), userInfo.getMpOpenId(), WxMessageEnum.TAKE_FOOD.getKey(), "pages/order/index", params, sendTime);
         }else{
             weixinService.sendTemplateMessage(mtOrder.getMerchantId(), mtOrder.getUserId(), userInfo.getOpenId(), WxMessageEnum.TAKE_FOOD.getKey(), "pages/order/index", params, sendTime);

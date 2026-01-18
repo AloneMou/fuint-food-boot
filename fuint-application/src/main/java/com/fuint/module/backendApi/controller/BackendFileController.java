@@ -9,10 +9,10 @@ import com.fuint.common.util.DateUtil;
 import com.fuint.common.util.TokenUtil;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -96,7 +96,7 @@ public class BackendFileController extends BaseController {
 
         Map<String, String> resultMap = new HashMap<>();
         String originalFilename = file.getOriginalFilename();
-        if (StringUtil.isEmpty(originalFilename)) {
+        if (StringUtils.isEmpty(originalFilename)) {
             return getFailureResult(201, "上传出错啦");
         }
 
@@ -133,7 +133,7 @@ public class BackendFileController extends BaseController {
                 String domain = env.getProperty("aliyun.oss.domain");
                 OSS ossClient = AliyunOssUtil.getOSSClient(accessKeyId, accessKeySecret, endpoint);
                 String pathRoot = env.getProperty("images.root");
-                if (pathRoot == null || StringUtil.isEmpty(pathRoot)) {
+                if (pathRoot == null || StringUtils.isEmpty(pathRoot)) {
                     pathRoot = ResourceUtils.getURL("classpath:").getPath();
                 }
                 File ossFile = new File(pathRoot + fileName);
@@ -165,7 +165,7 @@ public class BackendFileController extends BaseController {
         String imageName = fileName.substring(fileName.lastIndexOf("."));
 
         String pathRoot = env.getProperty("images.root");
-        if (pathRoot == null || StringUtil.isEmpty(pathRoot)) {
+        if (pathRoot == null || StringUtils.isEmpty(pathRoot)) {
             pathRoot = ResourceUtils.getURL("classpath:").getPath();
         }
         String uuid = UUID.randomUUID().toString().replaceAll("-", "");

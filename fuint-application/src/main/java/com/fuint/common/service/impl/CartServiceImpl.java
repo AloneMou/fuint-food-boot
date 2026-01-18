@@ -12,8 +12,8 @@ import com.fuint.repository.mapper.MtGoodsSkuMapper;
 import com.fuint.repository.model.MtCart;
 import com.fuint.repository.model.MtGoods;
 import com.fuint.repository.model.MtGoodsSku;
-import com.fuint.utils.StringUtil;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Date;
@@ -48,13 +48,13 @@ public class CartServiceImpl extends ServiceImpl<MtCartMapper, MtCart> implement
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Boolean switchCartIds(Integer userId, String cartIds) {
-       if (userId == null || userId < 1 || StringUtil.isEmpty(cartIds)) {
+       if (userId == null || userId < 1 || StringUtils.isEmpty(cartIds)) {
            return false;
        }
        List<String> cartIdList = Arrays.asList(cartIds.split(","));
        if (cartIdList != null && cartIdList.size() > 0) {
            for (String cartId : cartIdList) {
-               if (StringUtil.isNotEmpty(cartId)) {
+               if (StringUtils.isNotEmpty(cartId)) {
                    MtCart mtCart = mtCartMapper.selectById(Integer.parseInt(cartId));
                    if (mtCart != null) {
                        mtCart.setUserId(userId);
@@ -230,7 +230,7 @@ public class CartServiceImpl extends ServiceImpl<MtCartMapper, MtCart> implement
     @OperationServiceLog(description = "删除挂单")
     @Transactional(rollbackFor = Exception.class)
     public void removeCartByHangNo(String hangNo) {
-        if (hangNo != null && StringUtil.isNotEmpty(hangNo)) {
+        if (hangNo != null && StringUtils.isNotEmpty(hangNo)) {
             mtCartMapper.deleteCartByHangNo(hangNo);
         }
     }
@@ -269,31 +269,31 @@ public class CartServiceImpl extends ServiceImpl<MtCartMapper, MtCart> implement
         LambdaQueryWrapper<MtCart> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(MtCart::getStatus, status);
 
-        if (StringUtil.isNotEmpty(userId)) {
+        if (StringUtils.isNotEmpty(userId)) {
             lambdaQueryWrapper.eq(MtCart::getUserId, userId);
         }
-        if (StringUtil.isNotEmpty(ids)) {
+        if (StringUtils.isNotEmpty(ids)) {
             List<String> idList = Arrays.asList(ids.split(","));
             lambdaQueryWrapper.in(MtCart::getId, idList);
-            if (StringUtil.isNotEmpty(hangNo)) {
+            if (StringUtils.isNotEmpty(hangNo)) {
                 lambdaQueryWrapper.eq(MtCart::getHangNo, hangNo);
             }
         } else {
             lambdaQueryWrapper.eq(MtCart::getHangNo, hangNo);
         }
-        if (StringUtil.isNotEmpty(goodsId)) {
+        if (StringUtils.isNotEmpty(goodsId)) {
             lambdaQueryWrapper.eq(MtCart::getGoodsId, goodsId);
         }
-        if (StringUtil.isNotEmpty(merchantId) && Integer.parseInt(merchantId) > 0) {
+        if (StringUtils.isNotEmpty(merchantId) && Integer.parseInt(merchantId) > 0) {
             lambdaQueryWrapper.eq(MtCart::getMerchantId, merchantId);
         }
-        if (StringUtil.isNotEmpty(storeId) && Integer.parseInt(storeId) > 0) {
+        if (StringUtils.isNotEmpty(storeId) && Integer.parseInt(storeId) > 0) {
             lambdaQueryWrapper.eq(MtCart::getStoreId, storeId);
         }
-        if (StringUtil.isNotEmpty(tableId) && Integer.parseInt(tableId) > 0) {
+        if (StringUtils.isNotEmpty(tableId) && Integer.parseInt(tableId) > 0) {
             lambdaQueryWrapper.eq(MtCart::getTableId, tableId);
         }
-        if (StringUtil.isNotEmpty(skuId)) {
+        if (StringUtils.isNotEmpty(skuId)) {
             lambdaQueryWrapper.eq(MtCart::getSkuId, skuId);
         }
 

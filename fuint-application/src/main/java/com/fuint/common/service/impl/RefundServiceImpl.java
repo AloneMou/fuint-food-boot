@@ -15,11 +15,10 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.mapper.*;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -128,10 +127,10 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
         }
         String startTime = paginationRequest.getSearchParams().get("startTime") == null ? "" : paginationRequest.getSearchParams().get("startTime").toString();
         String endTime = paginationRequest.getSearchParams().get("endTime") == null ? "" : paginationRequest.getSearchParams().get("endTime").toString();
-        if (StringUtil.isNotEmpty(startTime)) {
+        if (StringUtils.isNotEmpty(startTime)) {
             lambdaQueryWrapper.ge(MtRefund::getCreateTime, startTime);
         }
-        if (StringUtil.isNotEmpty(endTime)) {
+        if (StringUtils.isNotEmpty(endTime)) {
             lambdaQueryWrapper.le(MtRefund::getCreateTime, endTime);
         }
         lambdaQueryWrapper.orderByDesc(MtRefund::getId);
@@ -198,7 +197,7 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
                  RefundDto refundDto = new RefundDto();
                  BeanUtils.copyProperties(mtRefund, refundDto);
                  UserOrderDto orderDto = orderService.getOrderById(mtRefund.getOrderId());
-                 if (mtRefund.getImages() != null && StringUtil.isNotEmpty(mtRefund.getImages())) {
+                 if (mtRefund.getImages() != null && StringUtils.isNotEmpty(mtRefund.getImages())) {
                      List<String> images = Arrays.asList(mtRefund.getImages().split(",").clone());
                      refundDto.setImageList(images);
                  }
@@ -260,7 +259,7 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
         if (result.size() > 0) {
             refund = result.get(0);
             refund.setUpdateTime(new Date());
-            if (refundDto.getRemark() != null && StringUtil.isNotEmpty(refundDto.getRemark())) {
+            if (refundDto.getRemark() != null && StringUtils.isNotEmpty(refundDto.getRemark())) {
                 refund.setRemark(refund.getRemark() + "|" + refundDto.getRemark());
             }
             mtRefundMapper.updateById(refund);
@@ -274,7 +273,7 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
         refund.setMerchantId(refundDto.getMerchantId());
         refund.setStoreId(refundDto.getStoreId());
         refund.setAmount(refundDto.getAmount());
-        if (refundDto.getImages() != null && StringUtil.isNotEmpty(refundDto.getImages()) && refundDto.getImages().length() > 5) {
+        if (refundDto.getImages() != null && StringUtils.isNotEmpty(refundDto.getImages()) && refundDto.getImages().length() > 5) {
             refund.setImages(String.join(",", refundDto.getImages()));
         }
         refund.setStatus(RefundStatusEnum.CREATED.getKey());
@@ -299,7 +298,7 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
             RefundDto refundDto = new RefundDto();
             BeanUtils.copyProperties(mtRefund, refundDto);
             UserOrderDto orderDto = orderService.getOrderById(mtRefund.getOrderId());
-            if (mtRefund.getImages() != null && StringUtil.isNotEmpty(mtRefund.getImages())) {
+            if (mtRefund.getImages() != null && StringUtils.isNotEmpty(mtRefund.getImages())) {
                 List<String> images = Arrays.asList(mtRefund.getImages().split(",").clone());
                 refundDto.setImageList(images);
             }
@@ -385,7 +384,7 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
 
         // 已经同意过了
         if (refund.getStatus().equals(RefundStatusEnum.APPROVED.getKey())) {
-            if (StringUtil.isNotEmpty(refundDto.getRemark())) {
+            if (StringUtils.isNotEmpty(refundDto.getRemark())) {
                 refund.setRemark(refundDto.getRemark());
             }
             mtRefundMapper.updateById(refund);

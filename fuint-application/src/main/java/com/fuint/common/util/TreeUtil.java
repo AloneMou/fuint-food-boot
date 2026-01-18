@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.fuint.common.domain.TreeNode;
-import com.fuint.utils.StringUtil;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * 树形展示工具类
@@ -28,7 +28,7 @@ public class TreeUtil {
         for (TreeNode node1 : sourceTreeNodeList) {
             boolean mark = false;
             for (TreeNode node2 : sourceTreeNodeList) {
-                if (StringUtil.isNotEmpty(node1.getName()) && node1.getPId() == node2.getId()) {
+                if (StringUtils.isNotEmpty(node1.getName()) && node1.getPId() == node2.getId()) {
                     mark = true;
                     if (node2.getChildrens() == null) {
                         node2.setChildrens(new ArrayList<>());

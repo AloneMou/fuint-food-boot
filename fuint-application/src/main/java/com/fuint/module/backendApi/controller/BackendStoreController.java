@@ -17,10 +17,10 @@ import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtMerchant;
 import com.fuint.repository.model.MtStore;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -89,10 +89,10 @@ public class BackendStoreController extends BaseController {
         if (accountInfo.getStoreId() != null && accountInfo.getStoreId() > 0) {
             params.put("storeId", accountInfo.getStoreId());
         }
-        if (StringUtil.isNotEmpty(storeName)) {
+        if (StringUtils.isNotEmpty(storeName)) {
             params.put("name", storeName);
         }
-        if (StringUtil.isNotEmpty(storeStatus)) {
+        if (StringUtils.isNotEmpty(storeStatus)) {
             params.put("status", storeStatus);
         }
         paginationRequest.setSearchParams(params);
@@ -142,13 +142,13 @@ public class BackendStoreController extends BaseController {
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
             merchantId = accountInfo.getMerchantId().toString();
         }
-        if (StringUtil.isNotEmpty(merchantId)) {
+        if (StringUtils.isNotEmpty(merchantId)) {
             paramsStore.put("merchantId", merchantId);
         }
-        if (StringUtil.isNotEmpty(storeId)) {
+        if (StringUtils.isNotEmpty(storeId)) {
             paramsStore.put("storeId", storeId);
         }
-        if (StringUtil.isNotEmpty(storeName)) {
+        if (StringUtils.isNotEmpty(storeName)) {
             paramsStore.put("name", storeName);
         }
 
@@ -229,14 +229,14 @@ public class BackendStoreController extends BaseController {
         String status = params.get("status") != null ? params.get("status").toString() : StatusEnum.ENABLED.getKey();
         String merchantId = params.get("merchantId").toString();
 
-        if ((StringUtil.isEmpty(latitude) || StringUtil.isEmpty(longitude)) && StringUtil.isNotEmpty(address)) {
+        if ((StringUtils.isEmpty(latitude) || StringUtils.isEmpty(longitude)) && StringUtils.isNotEmpty(address)) {
             Map<String, Object> latAndLng = CommonUtil.getLatAndLngByAddress(address);
             latitude = latAndLng.get("lat").toString();
             longitude = latAndLng.get("lng").toString();
         }
 
         if (accountInfo.getStoreId() != null && accountInfo.getStoreId() > 0) {
-            if (StringUtil.isEmpty(storeId)) {
+            if (StringUtils.isEmpty(storeId)) {
                 return getFailureResult(201, "店铺帐号不能新增店铺，请使用商户帐号添加！");
             }
             storeId = accountInfo.getStoreId().toString();
@@ -267,13 +267,13 @@ public class BackendStoreController extends BaseController {
         storeInfo.setAlipayAppId(alipayAppId);
         storeInfo.setAlipayPrivateKey(alipayPrivateKey);
         storeInfo.setAlipayPublicKey(alipayPublicKey);
-        if (StringUtil.isNotEmpty(merchantId)) {
+        if (StringUtils.isNotEmpty(merchantId)) {
             storeInfo.setMerchantId(Integer.parseInt(merchantId));
         }
-        if (StringUtil.isEmpty(storeName)) {
+        if (StringUtils.isEmpty(storeName)) {
             return getFailureResult(201, "店铺名称不能为空");
         } else {
-            if (!StringUtil.isNotEmpty(storeName)) {
+            if (!StringUtils.isNotEmpty(storeName)) {
                 StoreDto storeDto = storeService.queryStoreByName(storeName);
                 if (null != storeDto && storeDto.getName().equals(storeName) && !storeDto.getId().equals(storeId)) {
                     return getFailureResult(201, "该店铺名称已经存在");
@@ -282,7 +282,7 @@ public class BackendStoreController extends BaseController {
         }
 
         // 修改店铺
-        if (StringUtil.isNotEmpty(storeId)) {
+        if (StringUtils.isNotEmpty(storeId)) {
             storeInfo.setId(Integer.parseInt(storeId));
         }
 

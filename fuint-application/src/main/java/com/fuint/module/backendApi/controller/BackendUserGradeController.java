@@ -14,10 +14,10 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtUserGrade;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -72,13 +72,13 @@ public class BackendUserGradeController extends BaseController {
         paginationRequest.setPageSize(pageSize);
 
         Map<String, Object> params = new HashMap<>();
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             params.put("name", name);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             params.put("status", status);
         }
-        if (StringUtil.isNotEmpty(catchTypeKey)) {
+        if (StringUtils.isNotEmpty(catchTypeKey)) {
             params.put("catchType", catchTypeKey);
         }
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
@@ -207,7 +207,7 @@ public class BackendUserGradeController extends BaseController {
             return getFailureResult(201, "平台方帐号无法执行该操作，请使用商户帐号操作");
         }
 
-        if (StringUtil.isEmpty(grade) || StringUtil.isEmpty(name)) {
+        if (StringUtils.isEmpty(grade) || StringUtils.isEmpty(name)) {
             return getFailureResult(201, "参数有误");
         }
         if (!CommonUtil.isNumeric(grade) || Integer.parseInt(grade) < 1) {
@@ -220,7 +220,7 @@ public class BackendUserGradeController extends BaseController {
             return getFailureResult(201, "积分加速必须为正整数");
         }
         MtUserGrade mtUserGrade;
-        if (StringUtil.isEmpty(id)) {
+        if (StringUtils.isEmpty(id)) {
             mtUserGrade = new MtUserGrade();
         } else {
             mtUserGrade = userGradeService.queryUserGradeById(accountInfo.getMerchantId(), Integer.parseInt(id), 0);
@@ -231,29 +231,29 @@ public class BackendUserGradeController extends BaseController {
         if (mtUserGrade.getMerchantId() == null) {
             mtUserGrade.setMerchantId(accountInfo.getMerchantId());
         }
-        if (StringUtil.isNotEmpty(catchType)) {
+        if (StringUtils.isNotEmpty(catchType)) {
             mtUserGrade.setCatchType(catchType);
         }
-        if (StringUtil.isNotEmpty(condition)) {
+        if (StringUtils.isNotEmpty(condition)) {
             mtUserGrade.setCatchCondition(condition);
         }
-        if (StringUtil.isNotEmpty(privilege)) {
+        if (StringUtils.isNotEmpty(privilege)) {
             mtUserGrade.setUserPrivilege(privilege);
         }
-        if (StringUtil.isNotEmpty(catchValue)) {
+        if (StringUtils.isNotEmpty(catchValue)) {
             mtUserGrade.setCatchValue(new BigDecimal(catchValue));
         }
-        if (StringUtil.isNotEmpty(validDay)) {
+        if (StringUtils.isNotEmpty(validDay)) {
             mtUserGrade.setValidDay(Integer.parseInt(validDay));
         }
-        if (StringUtil.isNotEmpty(discount)) {
+        if (StringUtils.isNotEmpty(discount)) {
             mtUserGrade.setDiscount(Float.parseFloat(discount));
         }
-        if (StringUtil.isNotEmpty(speedPoint)) {
+        if (StringUtils.isNotEmpty(speedPoint)) {
             mtUserGrade.setSpeedPoint(Float.parseFloat(speedPoint));
         }
         mtUserGrade.setStatus(status);
-        if (StringUtil.isEmpty(id)) {
+        if (StringUtils.isEmpty(id)) {
             userGradeService.addUserGrade(mtUserGrade);
         } else {
             mtUserGrade.setId(Integer.parseInt(id));

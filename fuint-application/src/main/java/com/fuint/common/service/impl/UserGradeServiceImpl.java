@@ -16,11 +16,10 @@ import com.fuint.repository.model.MtBanner;
 import com.fuint.repository.model.MtStaff;
 import com.fuint.repository.model.MtUser;
 import com.fuint.repository.model.MtUserGrade;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -219,7 +218,7 @@ public class UserGradeServiceImpl extends ServiceImpl<MtUserGradeMapper, MtUserG
 
         List<MtUserGrade> userGrades = mtUserGradeMapper.selectList(lambdaQueryWrapper);
         List<MtUserGrade> dataList = new ArrayList<>();
-        if (userGrades.size() > 0 && userInfo != null && StringUtil.isNotEmpty(userInfo.getGradeId())) {
+        if (userGrades.size() > 0 && userInfo != null && StringUtils.isNotEmpty(userInfo.getGradeId())) {
             MtUserGrade myGradeInfo = mtUserGradeMapper.selectById(userInfo.getGradeId());
             if (myGradeInfo != null) {
                 Integer myGrade = myGradeInfo.getGrade();

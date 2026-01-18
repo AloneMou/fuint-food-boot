@@ -1,7 +1,7 @@
 package com.fuint.framework.web;
 
 import com.fuint.framework.FrameworkConstants;
-import com.fuint.utils.PropertiesUtil;
+import com.fuint.framework.util.PropertiesUtil;
 
 /**
  * 控制器基类

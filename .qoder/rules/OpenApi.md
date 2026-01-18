@@ -335,7 +335,7 @@ respVO.setMobile(phone);
 ```java
 String basePath = settingService.getUploadBasePath();
 String logo = goodsInfo.getLogo();
-if (StringUtil.isNotEmpty(logo) && !logo.startsWith("http")) {
+if (StringUtils.isNotEmpty(logo) && !logo.startsWith("http")) {
     logo = basePath + logo;
 }
 ```

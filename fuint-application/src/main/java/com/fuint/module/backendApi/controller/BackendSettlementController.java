@@ -20,10 +20,10 @@ import com.fuint.module.backendApi.request.SettlementRequest;
 import com.fuint.repository.model.MtMerchant;
 import com.fuint.repository.model.MtSettlement;
 import com.fuint.repository.model.MtStore;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -79,13 +79,13 @@ public class BackendSettlementController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
         Map<String, Object> searchParams = new HashMap<>();
-        if (StringUtil.isNotEmpty(mobile)) {
+        if (StringUtils.isNotEmpty(mobile)) {
             searchParams.put("mobile", mobile);
         }
-        if (StringUtil.isNotEmpty(userId)) {
+        if (StringUtils.isNotEmpty(userId)) {
             searchParams.put("userId", userId);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             searchParams.put("status", status);
         }
         Integer storeId = accountInfo.getStoreId();
@@ -209,12 +209,12 @@ public class BackendSettlementController extends BaseController {
     @PreAuthorize("@pms.hasPermission('settlement:doConfirm')")
     public ResponseObject doConfirm(HttpServletRequest request, @RequestBody Map<String, Object> param) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
-        String settlementId = StringUtil.isEmpty(param.get("settlementId").toString())? "" : param.get("settlementId").toString();
+        String settlementId = StringUtils.isEmpty(param.get("settlementId").toString())? "" : param.get("settlementId").toString();
         AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
         if (accountInfo == null) {
             return getFailureResult(1001, "请先登录");
         }
-        if (StringUtil.isEmpty(settlementId)) {
+        if (StringUtils.isEmpty(settlementId)) {
             return getFailureResult(201, "参数有误");
         }
         String operator = accountInfo.getAccountName();

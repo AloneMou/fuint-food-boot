@@ -19,11 +19,11 @@ import com.fuint.openapi.enums.UserErrorCodeConstants;
 import com.fuint.openapi.v1.member.user.vo.*;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -176,16 +176,16 @@ public class OpenUserController extends BaseController {
         mtUser.setMobile(syncReqVO.getMobile());
         mtUser.setMerchantId(merchantId);
 
-        if (StringUtil.isNotEmpty(syncReqVO.getName())) {
+        if (StringUtils.isNotEmpty(syncReqVO.getName())) {
             mtUser.setName(syncReqVO.getName());
         }
-        if (StringUtil.isNotEmpty(syncReqVO.getUserNo())) {
+        if (StringUtils.isNotEmpty(syncReqVO.getUserNo())) {
             mtUser.setUserNo(syncReqVO.getUserNo());
         }
         if (syncReqVO.getGroupId() != null) {
             mtUser.setGroupId(syncReqVO.getGroupId());
         }
-        if (StringUtil.isNotEmpty(syncReqVO.getGradeId())) {
+        if (StringUtils.isNotEmpty(syncReqVO.getGradeId())) {
             mtUser.setGradeId(syncReqVO.getGradeId());
         }
         if (syncReqVO.getStoreId() != null) {
@@ -194,16 +194,16 @@ public class OpenUserController extends BaseController {
         if (syncReqVO.getSex() != null) {
             mtUser.setSex(syncReqVO.getSex());
         }
-        if (StringUtil.isNotEmpty(syncReqVO.getBirthday())) {
+        if (StringUtils.isNotEmpty(syncReqVO.getBirthday())) {
             mtUser.setBirthday(syncReqVO.getBirthday());
         }
-        if (StringUtil.isNotEmpty(syncReqVO.getIdcard())) {
+        if (StringUtils.isNotEmpty(syncReqVO.getIdcard())) {
             mtUser.setIdcard(syncReqVO.getIdcard());
         }
-        if (StringUtil.isNotEmpty(syncReqVO.getAddress())) {
+        if (StringUtils.isNotEmpty(syncReqVO.getAddress())) {
             mtUser.setAddress(syncReqVO.getAddress());
         }
-        if (StringUtil.isNotEmpty(syncReqVO.getAvatar())) {
+        if (StringUtils.isNotEmpty(syncReqVO.getAvatar())) {
             mtUser.setAvatar(syncReqVO.getAvatar());
         }
         if (syncReqVO.getBalance() != null) {
@@ -212,10 +212,10 @@ public class OpenUserController extends BaseController {
         if (syncReqVO.getPoint() != null) {
             mtUser.setPoint(syncReqVO.getPoint());
         }
-        if (StringUtil.isNotEmpty(syncReqVO.getStatus())) {
+        if (StringUtils.isNotEmpty(syncReqVO.getStatus())) {
             mtUser.setStatus(syncReqVO.getStatus());
         }
-        if (StringUtil.isNotEmpty(syncReqVO.getDescription())) {
+        if (StringUtils.isNotEmpty(syncReqVO.getDescription())) {
             mtUser.setDescription(syncReqVO.getDescription());
         }
         mtUser.setIsStaff(syncReqVO.getIsStaff());
@@ -298,7 +298,7 @@ public class OpenUserController extends BaseController {
 
             // 如果有优惠券状态筛选，需要额外过滤
             List<UserDto> filteredList = paginationResponse.getContent();
-            if (StringUtil.isNotEmpty(pageReqVO.getCouponStatus())) {
+            if (StringUtils.isNotEmpty(pageReqVO.getCouponStatus())) {
                 filteredList = filterByCouponStatus(filteredList, pageReqVO.getCouponStatus());
             }
 
@@ -367,7 +367,7 @@ public class OpenUserController extends BaseController {
         }
 
         // 设置等级名称
-        if (StringUtil.isNotEmpty(mtUser.getGradeId())) {
+        if (StringUtils.isNotEmpty(mtUser.getGradeId())) {
             try {
                 MtUserGrade mtGrade = userGradeService.queryUserGradeById(
                         mtUser.getMerchantId(),
@@ -447,7 +447,7 @@ public class OpenUserController extends BaseController {
 
             Map<String, Object> params = new HashMap<>();
             params.put("userId", userId.toString());
-            if (StringUtil.isNotEmpty(reqVO.getStatus())) {
+            if (StringUtils.isNotEmpty(reqVO.getStatus())) {
                 params.put("status", reqVO.getStatus());
             }
             paginationRequest.setSearchParams(params);
@@ -496,7 +496,7 @@ public class OpenUserController extends BaseController {
                 respVO.setCouponType(couponInfo.getType());
 
                 // 设置使用门槛说明
-                if (StringUtil.isEmpty(couponInfo.getOutRule()) || couponInfo.getOutRule().equals("0")) {
+                if (StringUtils.isEmpty(couponInfo.getOutRule()) || couponInfo.getOutRule().equals("0")) {
                     respVO.setDescription("无使用门槛");
                 } else {
                     respVO.setDescription("满" + couponInfo.getOutRule() + "元可用");

@@ -15,10 +15,10 @@ import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.MtCoupon;
 import com.fuint.repository.model.MtUserCoupon;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -135,7 +135,7 @@ public class ClientCouponController extends BaseController {
         String userCouponCode = params.getUserCouponCode() == null ? "" : params.getUserCouponCode();
 
         MtCoupon couponInfo = new MtCoupon();
-        if (StringUtil.isNotEmpty(userCouponCode)) {
+        if (StringUtils.isNotEmpty(userCouponCode)) {
             MtUserCoupon userCouponInfo = mtUserCouponMapper.findByCode(userCouponCode);
             if (userCouponInfo != null) {
                 couponInfo = couponService.queryCouponById(userCouponInfo.getCouponId());
@@ -153,7 +153,7 @@ public class ClientCouponController extends BaseController {
         couponDto.setIsReceive(false);
 
         // 是否需要领取码
-        if (couponInfo.getReceiveCode() != null && StringUtil.isNotEmpty(couponInfo.getReceiveCode())) {
+        if (couponInfo.getReceiveCode() != null && StringUtils.isNotEmpty(couponInfo.getReceiveCode())) {
             couponDto.setNeedReceiveCode(true);
         } else {
             couponDto.setNeedReceiveCode(false);

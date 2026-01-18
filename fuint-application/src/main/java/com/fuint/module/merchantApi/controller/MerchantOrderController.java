@@ -15,10 +15,10 @@ import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtOrder;
 import com.fuint.repository.model.MtStaff;
 import com.fuint.repository.model.MtUser;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 
@@ -93,7 +93,7 @@ public class MerchantOrderController extends BaseController {
         }
 
         String orderId = orderDetailParam.getOrderId();
-        if (orderId == null || StringUtil.isEmpty(orderId)) {
+        if (orderId == null || StringUtils.isEmpty(orderId)) {
             return getFailureResult(2000, "订单不能为空");
         }
 
@@ -117,7 +117,7 @@ public class MerchantOrderController extends BaseController {
         }
 
         String orderId = orderDetailParam.getOrderId();
-        if (orderId == null || StringUtil.isEmpty(orderId)) {
+        if (orderId == null || StringUtils.isEmpty(orderId)) {
             return getFailureResult(201, "订单不能为空");
         }
 

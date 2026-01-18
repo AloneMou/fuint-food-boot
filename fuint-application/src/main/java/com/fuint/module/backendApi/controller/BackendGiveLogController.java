@@ -19,12 +19,13 @@ import com.fuint.repository.mapper.MtCouponGroupMapper;
 import com.fuint.repository.mapper.MtCouponMapper;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
+
 import static com.fuint.common.util.XlsUtil.objectConvertToString;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -93,13 +94,13 @@ public class BackendGiveLogController extends BaseController {
         TAccount account = accountService.getAccountInfoById(accountInfo.getId());
         Integer storeId = account.getStoreId() == null ? 0 : account.getStoreId();
         Map<String, Object> params = new HashMap<>();
-        if (StringUtil.isNotEmpty(mobile)) {
+        if (StringUtils.isNotEmpty(mobile)) {
             params.put("mobile", mobile);
         }
-        if (StringUtil.isNotEmpty(userId)) {
+        if (StringUtils.isNotEmpty(userId)) {
             params.put("userId", userId);
         }
-        if (StringUtil.isNotEmpty(couponId)) {
+        if (StringUtils.isNotEmpty(couponId)) {
             params.put("couponId", couponId);
         }
         if (storeId > 0) {
@@ -132,7 +133,7 @@ public class BackendGiveLogController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
-        if (StringUtil.isEmpty(giveId)) {
+        if (StringUtils.isEmpty(giveId)) {
             return getFailureResult(201, "参数有误");
         }
 

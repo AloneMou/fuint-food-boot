@@ -16,11 +16,11 @@ import com.fuint.common.service.*;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import com.ijpay.alipay.AliPayApi;
 import com.ijpay.alipay.AliPayApiConfig;
 import com.ijpay.alipay.AliPayApiConfigKit;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -160,7 +160,7 @@ public class AlipayServiceImpl implements AlipayService {
 
         // 优先读取店铺的支付账号
         MtStore mtStore = storeService.queryStoreById(storeId);
-        if (mtStore != null && StringUtil.isNotEmpty(mtStore.getAlipayAppId()) && StringUtil.isNotEmpty(mtStore.getAlipayPrivateKey()) && StringUtil.isNotEmpty(mtStore.getAlipayPublicKey())) {
+        if (mtStore != null && StringUtils.isNotEmpty(mtStore.getAlipayAppId()) && StringUtils.isNotEmpty(mtStore.getAlipayPrivateKey()) && StringUtils.isNotEmpty(mtStore.getAlipayPublicKey())) {
             appId = mtStore.getAlipayAppId();
             privateKey = mtStore.getAlipayPrivateKey();
             publicKey = mtStore.getAlipayPublicKey();
@@ -193,10 +193,10 @@ public class AlipayServiceImpl implements AlipayService {
     public Map<String, String> queryPaidOrder(Integer storeId, String tradeNo, String orderSn) throws BusinessCheckException {
         try {
             AlipayTradeQueryModel model = new AlipayTradeQueryModel();
-            if (StringUtil.isNotEmpty(orderSn)) {
+            if (StringUtils.isNotEmpty(orderSn)) {
                 model.setOutTradeNo(orderSn);
             }
-            if (StringUtil.isNotEmpty(tradeNo)) {
+            if (StringUtils.isNotEmpty(tradeNo)) {
                 model.setTradeNo(tradeNo);
             }
             getApiConfig(storeId);
@@ -231,7 +231,7 @@ public class AlipayServiceImpl implements AlipayService {
     public Boolean doRefund(Integer storeId, String orderSn, BigDecimal totalAmount, BigDecimal refundAmount, String platform) throws BusinessCheckException {
         try {
             logger.info("AlipayService.doRefund orderSn = {}, totalFee = {}, refundFee = {}", orderSn, totalAmount, refundAmount);
-            if (StringUtil.isEmpty(orderSn)) {
+            if (StringUtils.isEmpty(orderSn)) {
                 throw new BusinessCheckException("退款订单号不能为空...");
             }
             if (refundAmount.compareTo(totalAmount) > 0) {

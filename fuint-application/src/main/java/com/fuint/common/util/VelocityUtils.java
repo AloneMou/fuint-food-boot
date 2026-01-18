@@ -2,10 +2,11 @@ package com.fuint.common.util;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import cn.hutool.core.util.StrUtil;
 import com.fuint.repository.bean.ColumnBean;
 import org.apache.commons.lang3.StringUtils;
 import com.fuint.repository.model.TGenCode;
-import com.fuint.utils.StringUtil;
 import org.apache.velocity.VelocityContext;
 
 /**
@@ -106,21 +107,21 @@ public class VelocityUtils {
         String tablePrefix = CommonUtil.firstLetterToUpperCase(genTable.getTablePrefix()).replaceAll("_", "");
         String vuePath = "/src";
         if (template.contains("model.java.vm")) {
-            fileName = StringUtil.format("{}/{}.java", REPOSITORY_PATH + MODEL_PATH, tablePrefix + tableName);
+            fileName = StrUtil.format("{}/{}.java", REPOSITORY_PATH + MODEL_PATH, tablePrefix + tableName);
         } else if (template.contains("mapper.java.vm")) {
-            fileName = StringUtil.format("{}/{}Mapper.java", REPOSITORY_PATH + MAPPER_PATH, tablePrefix + tableName);
+            fileName = StrUtil.format("{}/{}Mapper.java", REPOSITORY_PATH + MAPPER_PATH, tablePrefix + tableName);
         } else if (template.contains("service.java.vm")) {
-            fileName = StringUtil.format("{}/{}Service.java", SERVICE_PATH, tableName);
+            fileName = StrUtil.format("{}/{}Service.java", SERVICE_PATH, tableName);
         } else if (template.contains("serviceImpl.java.vm")) {
-            fileName = StringUtil.format("{}/impl/{}ServiceImpl.java", SERVICE_PATH, tableName);
+            fileName = StrUtil.format("{}/impl/{}ServiceImpl.java", SERVICE_PATH, tableName);
         } else if (template.contains("BackendController.java.vm")) {
-            fileName = StringUtil.format("{}/{}Controller.java", CONTROLLER_PATH, "Backend" + tableName);
+            fileName = StrUtil.format("{}/{}Controller.java", CONTROLLER_PATH, "Backend" + tableName);
         } else if (template.contains("mapper.xml.vm")) {
-            fileName = StringUtil.format("{}/{}Mapper.xml", REPOSITORY_PATH + MAPPER_XML_PATH, tablePrefix + tableName);
+            fileName = StrUtil.format("{}/{}Mapper.xml", REPOSITORY_PATH + MAPPER_XML_PATH, tablePrefix + tableName);
         } else if (template.contains("api.js.vm")) {
-            fileName = StringUtil.format("{}/api/{}/{}.js", vuePath, moduleName, tablePrefix + tableName);
+            fileName = StrUtil.format("{}/api/{}/{}.js", vuePath, moduleName, tablePrefix + tableName);
         } else if (template.contains("index.vue.vm")) {
-            fileName = StringUtil.format("{}/views/{}/{}/index.vue", vuePath, moduleName, tablePrefix + tableName);
+            fileName = StrUtil.format("{}/views/{}/{}/index.vue", vuePath, moduleName, tablePrefix + tableName);
         }
 
         return fileName;

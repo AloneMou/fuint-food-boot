@@ -12,7 +12,7 @@ import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.MtCoupon;
 import com.fuint.repository.model.MtUser;
 import com.fuint.repository.model.MtUserCoupon;
-import com.fuint.utils.StringUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -128,7 +128,7 @@ public class CouponExpireJob {
                                 params.put("tips", "您的卡券即将到期，请留意~");
                                 weixinService.sendSubscribeMessage(userInfo.getMerchantId(), userInfo.getId(), userInfo.getOpenId(), WxMessageEnum.COUPON_EXPIRE.getKey(), "pages/user/index", params, sendTime);
 
-                                if (StringUtil.isNotBlank(userInfo.getMpOpenId())) {
+                                if (StringUtils.isNotBlank(userInfo.getMpOpenId())) {
                                     weixinService.sendTemplateMessage(userInfo.getMerchantId(), userInfo.getId(), userInfo.getMpOpenId(), WxMessageEnum.COUPON_EXPIRE.getKey(), "pages/user/index", params, sendTime);
                                 }else{
                                     weixinService.sendTemplateMessage(userInfo.getMerchantId(), userInfo.getId(), userInfo.getOpenId(), WxMessageEnum.COUPON_EXPIRE.getKey(), "pages/user/index", params, sendTime);

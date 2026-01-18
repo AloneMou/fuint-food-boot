@@ -19,10 +19,10 @@ import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.mapper.MtSendLogMapper;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -171,7 +171,7 @@ public class BackendUserCouponController extends BaseController {
         String userCouponId = request.getParameter("userCouponId");
         MtUserCoupon mtUserCoupon = couponService.queryUserCouponById(Integer.parseInt(userCouponId));
 
-        if (mtUserCoupon == null || StringUtil.isEmpty(userCouponId)) {
+        if (mtUserCoupon == null || StringUtils.isEmpty(userCouponId)) {
             throw new BusinessCheckException("错误，用户卡券不存在！");
         }
 
@@ -266,19 +266,19 @@ public class BackendUserCouponController extends BaseController {
         paginationRequest.setPageSize(50000);
 
         Map<String, Object> searchParams = new HashMap<>();
-        if (StringUtil.isNotEmpty(userCouponId)) {
+        if (StringUtils.isNotEmpty(userCouponId)) {
             searchParams.put("userCouponId", userCouponId);
         }
-        if (StringUtil.isNotEmpty(mobile)) {
+        if (StringUtils.isNotEmpty(mobile)) {
             searchParams.put("mobile", mobile);
         }
-        if (StringUtil.isNotEmpty(userId)) {
+        if (StringUtils.isNotEmpty(userId)) {
             searchParams.put("userId", userId);
         }
-        if (StringUtil.isNotEmpty(couponId)) {
+        if (StringUtils.isNotEmpty(couponId)) {
             searchParams.put("couponId", couponId);
         }
-        if (StringUtil.isNotEmpty(status)) {
+        if (StringUtils.isNotEmpty(status)) {
             searchParams.put("status", status);
         }
 

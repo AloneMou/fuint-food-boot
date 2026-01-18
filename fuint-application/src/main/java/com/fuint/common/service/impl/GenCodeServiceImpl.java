@@ -61,11 +61,11 @@ public class GenCodeServiceImpl implements GenCodeService {
         lambdaQueryWrapper.ne(TGenCode::getStatus, StatusEnum.DISABLE.getKey());
 
         String tableName = paginationRequest.getSearchParams().get("tableName") == null ? "" : paginationRequest.getSearchParams().get("tableName").toString();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(tableName)) {
+        if (StringUtils.isNotBlank(tableName)) {
             lambdaQueryWrapper.like(TGenCode::getTableName, tableName);
         }
         String status = paginationRequest.getSearchParams().get("status") == null ? "" : paginationRequest.getSearchParams().get("status").toString();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(status)) {
+        if (StringUtils.isNotBlank(status)) {
             lambdaQueryWrapper.eq(TGenCode::getStatus, status);
         }
 

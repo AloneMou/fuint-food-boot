@@ -9,10 +9,10 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtUserCoupon;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
@@ -53,7 +53,7 @@ public class ClientMyCouponController extends BaseController {
         String status = request.getParameter("status") == null ? "" : request.getParameter("status");
         String type = request.getParameter("type") == null ? "" : request.getParameter("type");
 
-        if (StringUtil.isEmpty(token)) {
+        if (StringUtils.isEmpty(token)) {
             return getFailureResult(1001);
         }
 
@@ -84,7 +84,7 @@ public class ClientMyCouponController extends BaseController {
         String token = request.getHeader("Access-Token");
         Integer userCouponId = param.get("id") == null ? 0 : Integer.parseInt(param.get("id").toString());
 
-        if (StringUtil.isEmpty(token)) {
+        if (StringUtils.isEmpty(token)) {
             return getFailureResult(1001);
         }
 

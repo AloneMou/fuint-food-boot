@@ -11,10 +11,10 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.TSource;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -131,7 +131,7 @@ public class BackendSourceController extends BaseController {
         }
         addSource.setEname(eName);
 
-        if (StringUtil.isNotBlank(parentId)) {
+        if (StringUtils.isNotBlank(parentId)) {
             if (Integer.parseInt(parentId) > 0) {
                 TSource parentSource = sourceService.getById(parentId);
                 addSource.setParentId(parentSource.getSourceId());
@@ -191,7 +191,7 @@ public class BackendSourceController extends BaseController {
         }
         editSource.setEname(eName);
 
-        if (StringUtil.isNotBlank(parentId)) {
+        if (StringUtils.isNotBlank(parentId)) {
             try {
                 if (Integer.parseInt(parentId) > 0) {
                     TSource parentSource = sourceService.getById(Long.parseLong(parentId));

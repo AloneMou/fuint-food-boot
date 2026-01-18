@@ -13,11 +13,10 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.mapper.*;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -120,7 +119,7 @@ public class StockServiceImpl extends ServiceImpl<MtStockMapper, MtStock> implem
              Integer skuId = null;
              Integer num = Integer.parseInt(goods.get("num").toString());
              mtStockItem.setGoodsId(goodsId);
-             if (goods.get("skuId") != null && StringUtil.isNotEmpty(goods.get("skuId").toString())) {
+             if (goods.get("skuId") != null && StringUtils.isNotEmpty(goods.get("skuId").toString())) {
                  skuId = Integer.parseInt(goods.get("skuId").toString());
                  mtStockItem.setSkuId(skuId);
              }

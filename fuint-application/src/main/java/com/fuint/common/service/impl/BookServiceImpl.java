@@ -21,10 +21,9 @@ import com.fuint.common.service.SettingService;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.repository.model.MtBook;
 import com.fuint.repository.model.MtStore;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.pagehelper.Page;
@@ -139,10 +138,10 @@ public class BookServiceImpl extends ServiceImpl<MtBookMapper, MtBook> implement
         if (mtBook.getMerchantId() == null || mtBook.getMerchantId() <= 0) {
             throw new BusinessCheckException("新增预约失败：所属商户不能为空！");
         }
-        if (StringUtil.isEmpty(mtBook.getName())) {
+        if (StringUtils.isEmpty(mtBook.getName())) {
             throw new BusinessCheckException("新增预约失败：项目名称不能为空！");
         }
-        if (StringUtil.isEmpty(mtBook.getLogo())) {
+        if (StringUtils.isEmpty(mtBook.getLogo())) {
             throw new BusinessCheckException("新增预约失败：封面图片不能为空！");
         }
         mtBook.setStoreId(storeId);
@@ -175,7 +174,7 @@ public class BookServiceImpl extends ServiceImpl<MtBookMapper, MtBook> implement
 
         List<DayDto> dateList = new ArrayList<>();
         String serviceDates = mtBook.getServiceDates();
-        if (StringUtil.isNotEmpty(serviceDates)) {
+        if (StringUtils.isNotEmpty(serviceDates)) {
             List<String> dates = Arrays.asList(serviceDates.split(",").clone());
             if (dates.size() > 0) {
                 for (String date : dates) {
@@ -194,7 +193,7 @@ public class BookServiceImpl extends ServiceImpl<MtBookMapper, MtBook> implement
 
         List<TimeDto> timeList = new ArrayList<>();
         String serviceTimes = mtBook.getServiceTimes();
-        if (StringUtil.isNotEmpty(serviceTimes)) {
+        if (StringUtils.isNotEmpty(serviceTimes)) {
             List<String> times = Arrays.asList(serviceTimes.split(",").clone());
             if (times.size() > 0) {
                 for (String time : times) {
@@ -287,7 +286,7 @@ public class BookServiceImpl extends ServiceImpl<MtBookMapper, MtBook> implement
 
        Integer limit = 0;
        String serviceTime = mtBook.getServiceTimes();
-       if (StringUtil.isNotEmpty(serviceTime)) {
+       if (StringUtils.isNotEmpty(serviceTime)) {
            String[] times = serviceTime.split(",");
            if (times.length > 0) {
                for (String str : times) {
@@ -301,7 +300,7 @@ public class BookServiceImpl extends ServiceImpl<MtBookMapper, MtBook> implement
            }
        }
        if (bookNum < limit) {
-           if (StringUtil.isNotEmpty(param.getTime())) {
+           if (StringUtils.isNotEmpty(param.getTime())) {
                result.add(param.getTime());
            } else {
                String[] times = mtBook.getServiceTimes().split(",");

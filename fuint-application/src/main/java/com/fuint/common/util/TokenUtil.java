@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fuint.common.Constants;
 import com.fuint.common.dto.AccountInfo;
 import com.fuint.common.dto.UserInfo;
-import com.fuint.utils.StringUtil;
 import nl.bitwalker.useragentutils.UserAgent;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -98,7 +98,7 @@ public class TokenUtil {
      * @return
      * */
     public static UserInfo getUserInfoByToken(String token) {
-        if (token == null || StringUtil.isEmpty(token)) {
+        if (token == null || StringUtils.isEmpty(token)) {
             return null;
         }
         Object loginInfo = RedisUtil.get(Constants.SESSION_USER + token);

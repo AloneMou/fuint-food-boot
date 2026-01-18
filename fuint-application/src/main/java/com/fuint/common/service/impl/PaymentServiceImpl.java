@@ -9,8 +9,8 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.mapper.MtOrderMapper;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -129,14 +129,14 @@ public class PaymentServiceImpl implements PaymentService {
             // 余额支付
             MtBalance mtBalance = new MtBalance();
             OrderUserDto userDto = orderInfo.getUserInfo();
-            if (userDto.getMobile() != null && StringUtil.isNotEmpty(userDto.getMobile())) {
+            if (userDto.getMobile() != null && StringUtils.isNotEmpty(userDto.getMobile())) {
                 mtBalance.setMobile(userDto.getMobile());
             }
             mtBalance.setOrderSn(orderInfo.getOrderSn());
             mtBalance.setUserId(orderInfo.getUserId());
             mtBalance.setMerchantId(orderInfo.getMerchantId());
             String param = orderInfo.getParam();
-            if (StringUtil.isNotEmpty(param)) {
+            if (StringUtils.isNotEmpty(param)) {
                 String params[] = param.split("_");
                 if (params.length == 2) {
                     BigDecimal amount = new BigDecimal(params[0]).add(new BigDecimal(params[1]));
@@ -169,7 +169,7 @@ public class PaymentServiceImpl implements PaymentService {
         String orderId = request.getParameter("orderId");
         String userId = request.getParameter("userId");
         String authCode = request.getParameter("authCode");
-        if (StringUtil.isEmpty(orderId)) {
+        if (StringUtils.isEmpty(orderId)) {
             throw new BusinessCheckException("订单不能为空");
         }
 
@@ -193,7 +193,7 @@ public class PaymentServiceImpl implements PaymentService {
         AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
         if (loginInfo == null && accountInfo != null) {
             // 游客订单绑定到会员
-            if (orderInfo.getIsVisitor().equals(YesOrNoEnum.YES.getKey()) && StringUtil.isNotEmpty(userId)) {
+            if (orderInfo.getIsVisitor().equals(YesOrNoEnum.YES.getKey()) && StringUtils.isNotEmpty(userId)) {
                 mtUser = memberService.queryMemberById(Integer.parseInt(userId));
                 orderInfo.setUserId(Integer.parseInt(userId));
                 orderInfo.setIsVisitor(YesOrNoEnum.NO.getKey());
@@ -207,7 +207,7 @@ public class PaymentServiceImpl implements PaymentService {
             throw new BusinessCheckException("登录信息失效");
         }
 
-        if (accountInfo != null && StringUtil.isNotEmpty(cashierPayAmount) && StringUtil.isNotEmpty(cashierDiscountAmount)) {
+        if (accountInfo != null && StringUtils.isNotEmpty(cashierPayAmount) && StringUtils.isNotEmpty(cashierDiscountAmount)) {
             orderInfo.setDiscount(new BigDecimal(cashierDiscountAmount));
             if (loginInfo == null) {
                 MtUser user = memberService.queryMemberById(orderInfo.getUserId());

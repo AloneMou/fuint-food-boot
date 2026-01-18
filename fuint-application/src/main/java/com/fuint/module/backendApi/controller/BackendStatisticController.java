@@ -20,12 +20,12 @@ import com.fuint.repository.bean.MemberTopBean;
 import com.fuint.repository.model.MtUser;
 import com.fuint.repository.request.GoodsStatisticsReqVO;
 import com.fuint.repository.request.MemberStatisticsReqVO;
-import com.fuint.utils.StringUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -80,8 +80,8 @@ public class BackendStatisticController extends BaseController {
         String startTimeStr = param.get("startTime") == null ? "" : param.get("startTime").toString();
         String endTimeStr = param.get("endTime") == null ? "" : param.get("endTime").toString();
 
-        Date startTime = StringUtil.isNotEmpty(startTimeStr) ? DateUtil.parseDate(startTimeStr) : null;
-        Date endTime = StringUtil.isNotEmpty(endTimeStr) ? DateUtil.parseDate(endTimeStr) : null;
+        Date startTime = StringUtils.isNotEmpty(startTimeStr) ? DateUtil.parseDate(startTimeStr) : null;
+        Date endTime = StringUtils.isNotEmpty(endTimeStr) ? DateUtil.parseDate(endTimeStr) : null;
 
         AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
         if (accountInfo == null) {
@@ -139,8 +139,8 @@ public class BackendStatisticController extends BaseController {
         String startTimeStr = param.get("startTime") == null ? "" : param.get("startTime").toString();
         String endTimeStr = param.get("endTime") == null ? "" : param.get("endTime").toString();
 
-        Date startTime = StringUtil.isNotEmpty(startTimeStr) ? DateUtil.parseDate(startTimeStr) : null;
-        Date endTime = StringUtil.isNotEmpty(endTimeStr) ? DateUtil.parseDate(endTimeStr) : null;
+        Date startTime = StringUtils.isNotEmpty(startTimeStr) ? DateUtil.parseDate(startTimeStr) : null;
+        Date endTime = StringUtils.isNotEmpty(endTimeStr) ? DateUtil.parseDate(endTimeStr) : null;
 
         AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
         if (accountInfo == null) {

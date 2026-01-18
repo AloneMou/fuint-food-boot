@@ -16,10 +16,10 @@ import com.fuint.repository.model.MtMerchant;
 import com.fuint.repository.model.MtStore;
 import com.fuint.repository.model.MtUser;
 import com.fuint.repository.model.MtVerifyCode;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -101,12 +101,12 @@ public class ClientSignController extends BaseController {
         String encryptedData = userInfo.getString("encryptedData");
         userInfo.put("phone", "");
         userInfo.put("source", MemberSourceEnum.WECHAT_LOGIN.getKey());
-        if (type.equals("phone") && StringUtil.isNotEmpty(encryptedData)) {
+        if (type.equals("phone") && StringUtils.isNotEmpty(encryptedData)) {
             String phone = weixinService.getPhoneNumber(userInfo.get("encryptedData").toString(), loginInfo.get("session_key").toString(), userInfo.get("iv").toString());
             userInfo.put("phone", phone);
         }
         // 默认店铺
-        if (StringUtil.isEmpty(storeId)) {
+        if (StringUtils.isEmpty(storeId)) {
             MtStore mtStore = storeService.getDefaultStore(merchantNo);
             if (mtStore != null) {
                 storeId = mtStore.getId().toString();
@@ -188,13 +188,13 @@ public class ClientSignController extends BaseController {
         Integer storeId = request.getHeader("storeId") == null ? 0 : Integer.parseInt(request.getHeader("storeId"));
         String userAgent = request.getHeader("user-agent") == null ? "" : request.getHeader("user-agent");
 
-        if (StringUtil.isEmpty(account)) {
+        if (StringUtils.isEmpty(account)) {
             return getFailureResult(201, "用户名不能为空");
         }
-        if (StringUtil.isEmpty(password)) {
+        if (StringUtils.isEmpty(password)) {
             return getFailureResult(201, "密码不能为空");
         }
-        if (StringUtil.isEmpty(captchaCode)) {
+        if (StringUtils.isEmpty(captchaCode)) {
             return getFailureResult(201, "图形验证码不能为空");
         }
         boolean captchaVerify = captchaService.checkCodeByUuid(captchaCode, uuid);
@@ -233,7 +233,7 @@ public class ClientSignController extends BaseController {
             String domain = env.getProperty("website.url");
             String appId = env.getProperty("weixin.official.appId");
             MtMerchant mtMerchant = merchantService.queryMerchantById(merchantId);
-            if (mtMerchant != null && StringUtil.isNotEmpty(mtMerchant.getWxOfficialAppId())) {
+            if (mtMerchant != null && StringUtils.isNotEmpty(mtMerchant.getWxOfficialAppId())) {
                 appId = mtMerchant.getWxOfficialAppId();
             }
 
@@ -265,9 +265,9 @@ public class ClientSignController extends BaseController {
         MtUser mtUser = null;
         Integer merchantId = merchantService.getMerchantId(merchantNo);
         // 方式1：通过短信验证码登录
-        if (StringUtil.isNotEmpty(mobile) && StringUtil.isNotEmpty(verifyCode)) {
+        if (StringUtils.isNotEmpty(mobile) && StringUtils.isNotEmpty(verifyCode)) {
             // 如果已经登录，免输入验证码
-            if (StringUtil.isNotEmpty(token) && TokenUtil.checkTokenLogin(token)) {
+            if (StringUtils.isNotEmpty(token) && TokenUtil.checkTokenLogin(token)) {
                 dto.setIsLogin(YesOrNoEnum.TRUE.getKey());
                 dto.setToken(token);
                 return getSuccessResult(JSONObject.toJSONString(dto));
@@ -311,7 +311,7 @@ public class ClientSignController extends BaseController {
         }
 
         // 方式2：通过账号密码登录
-        if (StringUtil.isNotEmpty(account) && StringUtil.isNotEmpty(password) && StringUtil.isNotEmpty(captchaCode)) {
+        if (StringUtils.isNotEmpty(account) && StringUtils.isNotEmpty(password) && StringUtils.isNotEmpty(captchaCode)) {
             Boolean captchaVerify = captchaService.checkCodeByUuid(captchaCode, uuid);
             if (!captchaVerify) {
                 return getFailureResult(201, "图形验证码有误");
@@ -345,7 +345,7 @@ public class ClientSignController extends BaseController {
             String domain = env.getProperty("website.url");
             String appId = env.getProperty("weixin.official.appId");
             MtMerchant mtMerchant = merchantService.queryMerchantById(merchantId);
-            if (mtMerchant != null && StringUtil.isNotEmpty(mtMerchant.getWxOfficialAppId())) {
+            if (mtMerchant != null && StringUtils.isNotEmpty(mtMerchant.getWxOfficialAppId())) {
                 appId = mtMerchant.getWxOfficialAppId();
             }
             outParams.put("domain", domain);
@@ -385,7 +385,7 @@ public class ClientSignController extends BaseController {
         Map<String, Object> outParams = new HashMap<>();
         String domain = env.getProperty("website.url");
         String appId = env.getProperty("weixin.official.appId");
-        if (mtMerchant != null && StringUtil.isNotEmpty(mtMerchant.getWxOfficialAppId())) {
+        if (mtMerchant != null && StringUtils.isNotEmpty(mtMerchant.getWxOfficialAppId())) {
             appId = mtMerchant.getWxOfficialAppId();
         }
 

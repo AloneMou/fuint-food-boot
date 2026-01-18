@@ -13,10 +13,10 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.*;
-import com.fuint.utils.StringUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.InvocationTargetException;
@@ -156,7 +156,7 @@ public class ClientGoodsController extends BaseController {
         if (cateId > 0) {
             searchParams.put("cateId", cateId);
         }
-        if (StringUtil.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             searchParams.put("name", name);
         }
         Integer merchantId = merchantService.getMerchantId(merchantNo);
@@ -178,7 +178,7 @@ public class ClientGoodsController extends BaseController {
     @CrossOrigin
     public ResponseObject detail(@RequestBody GoodsInfoParam goodsInfoParam) throws BusinessCheckException, InvocationTargetException, IllegalAccessException {
         String goodsId = goodsInfoParam.getGoodsId() == null ? "0" : goodsInfoParam.getGoodsId();
-        if (StringUtil.isEmpty(goodsId)) {
+        if (StringUtils.isEmpty(goodsId)) {
             return getFailureResult(2000, "商品ID不能为空");
         }
 
@@ -250,7 +250,7 @@ public class ClientGoodsController extends BaseController {
         for (MtGoodsSku sku : goodsSkuList) {
              GoodsSkuDto dto = new GoodsSkuDto();
              dto.setId(sku.getId());
-             if (sku.getLogo() != null && StringUtil.isNotEmpty(sku.getLogo())) {
+             if (sku.getLogo() != null && StringUtils.isNotEmpty(sku.getLogo())) {
                  dto.setLogo(basePath + sku.getLogo());
              } else {
                  dto.setLogo(goodsDetailDto.getLogo());
@@ -294,7 +294,7 @@ public class ClientGoodsController extends BaseController {
     public ResponseObject getGoodsInfoBySkuNo(HttpServletRequest request, @RequestBody GoodsInfoParam goodsInfoParam) throws BusinessCheckException, InvocationTargetException, IllegalAccessException {
         String merchantNo = request.getHeader("merchantNo") == null ? "" : request.getHeader("merchantNo");
         String skuNo = goodsInfoParam.getSkuNo() == null ? "" : goodsInfoParam.getSkuNo();
-        if (StringUtil.isEmpty(skuNo)) {
+        if (StringUtils.isEmpty(skuNo)) {
             return getFailureResult(201, "商品编码不能为空");
         }
         Integer merchantId = merchantService.getMerchantId(merchantNo);
