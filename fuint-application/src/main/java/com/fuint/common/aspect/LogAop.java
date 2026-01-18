@@ -1,3 +1,4 @@
+/*
 package com.fuint.common.aspect;
 
 import javassist.ClassClassPath;
@@ -18,27 +19,33 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.stereotype.Component;
 
+*/
 /**
  * 控制器日志
  *
  * Created by FSQ
  * CopyRight https://www.fuint.cn
- */
+ *//*
+
 @Component  // 声明组件
 @Aspect // 声明切面
 @ComponentScan  //组件自动扫描
 @EnableAspectJAutoProxy // spring自动切换JDK动态代理和CGLIB
 public class LogAop {
 
-    /**
+    */
+/**
      *自定义日志
-     */
+     *//*
+
     private Logger logger = LoggerFactory.getLogger(LogAop.class);
 
-    /**
+    */
+/**
      * 打印类method的名称以及参数
      * @param point 切面
-     */
+     *//*
+
     public void printMethodParams(JoinPoint point){
         if (point == null) {
             return;
@@ -66,12 +73,14 @@ public class LogAop {
         }
     }
 
-    /**
+    */
+/**
      * 使用获取方法参数名称
      * @param class_name    类名
      * @param method_name   方法名
      * @throws Exception
-     */
+     *//*
+
     private String[] getFieldsName(String class_name, String method_name) throws Exception {
         Class<?> clazz = Class.forName(class_name);
         String clazz_name = clazz.getName();
@@ -98,9 +107,11 @@ public class LogAop {
         }
     }
 
-    /**
+    */
+/**
      * 判断是否为基本类型
-     */
+     *//*
+
     private boolean isPrimite(Class<?> clazz) {
         if (clazz.isPrimitive() || clazz == String.class){
             return true;
@@ -109,11 +120,13 @@ public class LogAop {
         }
     }
 
-    /**
+    */
+/**
      * 打印方法参数值  基本类型直接打印，非基本类型需要重写toString方法
      * @param paramsArgsName    方法参数名数组
      * @param paramsArgsValue   方法参数值数组
-     */
+     *//*
+
     private void printParams(String[] paramsArgsName, Object[] paramsArgsValue) {
         if (ArrayUtils.isEmpty(paramsArgsName) || ArrayUtils.isEmpty(paramsArgsValue)) {
             return;
@@ -135,13 +148,16 @@ public class LogAop {
         logger.info("-------------------------------------------------------------");
     }
 
-    /**
+    */
+/**
      * 在方法执行前进行切面
      * 定义切面表达式
      * @param point 切面
-     */
-    @Before("execution(public * com.fuint.module..*.*(..))")
+     *//*
+
+    @Before("execution(public * com.fuint.module.*.*.*(..))")
     public void before(JoinPoint point) {
         this.printMethodParams(point);
     }
 }
+*/

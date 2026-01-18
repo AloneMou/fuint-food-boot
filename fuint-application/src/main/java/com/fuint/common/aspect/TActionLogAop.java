@@ -9,7 +9,7 @@ import com.fuint.common.util.CommonUtil;
 import com.fuint.common.util.TokenUtil;
 import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.repository.model.TActionLog;
-import org.apache.commons.lang3.StringUtils;;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.javassist.*;
 import org.apache.ibatis.javassist.bytecode.CodeAttribute;
 import org.apache.ibatis.javassist.bytecode.LocalVariableAttribute;

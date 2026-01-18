@@ -93,13 +93,11 @@ public class OpenOrderController extends BaseController {
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<OrderPreCreateRespVO> preCreateOrder(@Valid @RequestBody OrderPreCreateReqVO reqVO) throws BusinessCheckException {
-
         // 验证用户是否存在
         MtUser userInfo = memberService.queryMemberById(reqVO.getUserId());
         if (userInfo == null) {
             return CommonResult.error(404, "用户不存在");
         }
-
         // 设置默认值
         Integer merchantId = reqVO.getMerchantId() != null ? reqVO.getMerchantId() : 1;
         Integer storeId = reqVO.getStoreId() != null ? reqVO.getStoreId() : 0;

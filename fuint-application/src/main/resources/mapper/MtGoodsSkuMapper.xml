@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.fuint.repository.mapper.MtGoodsSkuMapper">
-    <insert id="saveBatch"
-            useGeneratedKeys="true"
-            keyProperty="item.id"
-    >
+    <insert id="saveBatch">
         INSERT INTO mt_goods_sku (SKU_NO, LOGO, GOODS_ID, SPEC_IDS, STOCK, PRICE, LINE_PRICE, WEIGHT, STATUS)
         values
-        <foreach collection="list" item="item" separator=",">
+        <foreach collection="list" item="item" separator="," >
             (
             #{item.skuNo},
             #{item.logo},

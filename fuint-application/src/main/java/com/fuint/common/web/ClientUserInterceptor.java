@@ -7,7 +7,7 @@ import com.fuint.common.util.TokenUtil;
 import com.fuint.framework.util.PropertiesUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.commons.lang3.StringUtils;;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.servlet.AsyncHandlerInterceptor;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;

@@ -21,7 +21,7 @@ import com.fuint.repository.model.MtPoint;
 import com.fuint.repository.model.MtUser;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang3.StringUtils;;
+import org.apache.commons.lang3.StringUtils;
 import com.github.pagehelper.Page;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

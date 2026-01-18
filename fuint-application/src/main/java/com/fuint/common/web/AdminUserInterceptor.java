@@ -5,7 +5,7 @@ import com.fuint.common.dto.AccountInfo;
 import com.fuint.common.util.AuthUserUtil;
 import com.fuint.common.util.TokenUtil;
 import com.fuint.framework.util.PropertiesUtil;
-import org.apache.commons.lang3.StringUtils;;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.servlet.AsyncHandlerInterceptor;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

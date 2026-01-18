@@ -1,6 +1,6 @@
 package com.fuint.common.util;
 
-import org.apache.commons.lang3.StringUtils;;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
 import java.util.GregorianCalendar;

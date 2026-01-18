@@ -24,7 +24,7 @@ import com.fuint.repository.model.MtCommissionRuleItem;
 import com.fuint.repository.model.MtGoods;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang3.StringUtils;;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.pagehelper.Page;

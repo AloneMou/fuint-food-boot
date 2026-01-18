@@ -1,6 +1,6 @@
 package com.fuint.framework.util;
 
-import org.apache.commons.lang3.StringUtils;;
+import org.apache.commons.lang3.StringUtils;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;

@@ -25,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
@@ -32,11 +33,11 @@ import java.util.*;
 
 /**
  * 商品管理controller
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
-@Api(tags="管理端-商品相关接口")
+@Api(tags = "管理端-商品相关接口")
 @RestController
 @AllArgsConstructor
 @RequestMapping(value = "/backendApi/goods/goods")
@@ -68,15 +69,15 @@ public class BackendGoodsController extends BaseController {
 
     /**
      * 系统设置服务接口
-     * */
+     */
     private SettingService settingService;
 
     /**
      * 分页查询商品列表
      *
      * @param request
-     * @throws BusinessCheckException
      * @return
+     * @throws BusinessCheckException
      */
     @ApiOperation(value = "分页查询商品列表")
     @RequestMapping(value = "/list", method = RequestMethod.GET)
@@ -289,7 +290,7 @@ public class BackendGoodsController extends BaseController {
             for (int i = 0; i < specNameArr.size(); i++) {
                 GoodsSpecItemDto item = new GoodsSpecItemDto();
                 List<GoodsSpecChildDto> child = new ArrayList<>();
-                Integer specId = specIdArr.get(i) == null ? (i+1) : specIdArr.get(i);
+                Integer specId = specIdArr.get(i) == null ? (i + 1) : specIdArr.get(i);
                 String name = specNameArr.get(i);
                 for (MtGoodsSpec mtGoodsSpec : goods.getSpecList()) {
                     if (mtGoodsSpec.getName().equals(name)) {
@@ -308,18 +309,21 @@ public class BackendGoodsController extends BaseController {
 
             // 处理sku列表
             for (MtGoodsSku mtGoodsSku : goods.getSkuList()) {
-                 GoodsSkuDto skuDto = new GoodsSkuDto();
-                 BeanUtils.copyProperties(mtGoodsSku, skuDto);
-                 List<MtGoodsSpec> specList = new ArrayList<>();
-                 String[] specIds = skuDto.getSpecIds().split("-");
-                 for (String specId : specIds) {
-                      MtGoodsSpec spec = goodsService.getSpecDetail(Integer.parseInt(specId));
-                      if (spec != null) {
-                          specList.add(spec);
-                      }
-                 }
-                 skuDto.setSpecList(specList);
-                 skuArr.add(skuDto);
+                GoodsSkuDto skuDto = new GoodsSkuDto();
+                BeanUtils.copyProperties(mtGoodsSku, skuDto);
+                List<MtGoodsSpec> specList = new ArrayList<>();
+                if (StringUtils.isBlank(mtGoodsSku.getSpecIds())) {
+                    continue;
+                }
+                String[] specIds = skuDto.getSpecIds().split("-");
+                for (String specId : specIds) {
+                    MtGoodsSpec spec = goodsService.getSpecDetail(Integer.parseInt(specId));
+                    if (spec != null) {
+                        specList.add(spec);
+                    }
+                }
+                skuDto.setSpecList(specList);
+                skuArr.add(skuDto);
             }
         }
 
@@ -351,11 +355,11 @@ public class BackendGoodsController extends BaseController {
         GoodsTypeEnum[] typeListEnum = GoodsTypeEnum.values();
         List<ParamDto> typeList = new ArrayList<>();
         for (GoodsTypeEnum enumItem : typeListEnum) {
-             ParamDto paramDto = new ParamDto();
-             paramDto.setKey(enumItem.getKey());
-             paramDto.setName(enumItem.getValue());
-             paramDto.setValue(enumItem.getKey());
-             typeList.add(paramDto);
+            ParamDto paramDto = new ParamDto();
+            paramDto.setKey(enumItem.getKey());
+            paramDto.setName(enumItem.getValue());
+            paramDto.setValue(enumItem.getKey());
+            typeList.add(paramDto);
         }
 
         result.put("typeList", typeList);
@@ -413,22 +417,22 @@ public class BackendGoodsController extends BaseController {
         // 保存规格名称
         if (specList.size() > 0) {
             for (LinkedHashMap specDto : specList) {
-                 String specId = specDto.get("id") == null ? "" : specDto.get("id").toString();
-                 String specName = specDto.get("name") == null ? "" : specDto.get("name").toString();
-                 if (StringUtils.isNotEmpty(specId) && StringUtils.isNotEmpty(specName)) {
-                     MtGoodsSpec mtGoodsSpec = mtGoodsSpecMapper.selectById(Integer.parseInt(specId));
-                     String oldName = mtGoodsSpec.getName();
-                     Map<String, Object> paramSearch = new HashMap<>();
-                     paramSearch.put("goods_id", goodsId);
-                     paramSearch.put("name", oldName);
-                     List<MtGoodsSpec> dataList = mtGoodsSpecMapper.selectByMap(paramSearch);
-                     if (dataList.size() > 0 && !specName.equals(oldName)) {
-                         for (MtGoodsSpec mtSpec : dataList) {
-                              mtSpec.setName(specName);
-                              mtGoodsSpecMapper.updateById(mtSpec);
-                         }
-                     }
-                 }
+                String specId = specDto.get("id") == null ? "" : specDto.get("id").toString();
+                String specName = specDto.get("name") == null ? "" : specDto.get("name").toString();
+                if (StringUtils.isNotEmpty(specId) && StringUtils.isNotEmpty(specName)) {
+                    MtGoodsSpec mtGoodsSpec = mtGoodsSpecMapper.selectById(Integer.parseInt(specId));
+                    String oldName = mtGoodsSpec.getName();
+                    Map<String, Object> paramSearch = new HashMap<>();
+                    paramSearch.put("goods_id", goodsId);
+                    paramSearch.put("name", oldName);
+                    List<MtGoodsSpec> dataList = mtGoodsSpecMapper.selectByMap(paramSearch);
+                    if (dataList.size() > 0 && !specName.equals(oldName)) {
+                        for (MtGoodsSpec mtSpec : dataList) {
+                            mtSpec.setName(specName);
+                            mtGoodsSpecMapper.updateById(mtSpec);
+                        }
+                    }
+                }
             }
         }
 
@@ -436,7 +440,7 @@ public class BackendGoodsController extends BaseController {
         List<String> specIdList = new ArrayList<>();
         if (skuList.size() > 0) {
             for (LinkedHashMap skuDto : skuList) {
-                 specIdList.add(skuDto.get("specIds").toString());
+                specIdList.add(skuDto.get("specIds").toString());
             }
         }
 
@@ -447,9 +451,9 @@ public class BackendGoodsController extends BaseController {
             List<MtGoodsSku> goodsSkuList = mtGoodsSkuMapper.selectByMap(param0);
             if (goodsSkuList.size() > 0) {
                 for (MtGoodsSku mtGoodsSku : goodsSkuList) {
-                     if (!specIdList.contains(mtGoodsSku.getSpecIds())) {
-                         mtGoodsSkuMapper.deleteById(mtGoodsSku.getId());
-                     }
+                    if (!specIdList.contains(mtGoodsSku.getSpecIds())) {
+                        mtGoodsSkuMapper.deleteById(mtGoodsSku.getId());
+                    }
                 }
             }
         }
@@ -507,7 +511,7 @@ public class BackendGoodsController extends BaseController {
             // 库存等于所有sku库存相加
             Integer allStock = 0;
             for (LinkedHashMap item : skuList) {
-                 allStock = allStock + Integer.parseInt(item.get("stock").toString());
+                allStock = allStock + Integer.parseInt(item.get("stock").toString());
             }
             stock = allStock.toString();
         }
@@ -670,7 +674,7 @@ public class BackendGoodsController extends BaseController {
             return getFailureResult(201, "规格名称不能为空");
         }
 
-        if ( StringUtils.isEmpty(value)) {
+        if (StringUtils.isEmpty(value)) {
             return getFailureResult(201, "规格值不能为空");
         }
 
@@ -712,13 +716,13 @@ public class BackendGoodsController extends BaseController {
         List<MtGoodsSpec> dataCountList = mtGoodsSpecMapper.getGoodsSpecCountList(Integer.parseInt(goodsId));
         if (goodsSkuList.size() > 0) {
             for (MtGoodsSku mtGoodsSku : goodsSkuList) {
-                 String specIds = mtGoodsSku.getSpecIds();
-                 String[] specIdArr = specIds.split("-");
-                 if (specIdArr.length < dataCountList.size()) {
-                     specIds = specIds + "-" + id;
-                     mtGoodsSku.setSpecIds(specIds);
-                     mtGoodsSkuMapper.updateById(mtGoodsSku);
-                 }
+                String specIds = mtGoodsSku.getSpecIds();
+                String[] specIdArr = specIds.split("-");
+                if (specIdArr.length < dataCountList.size()) {
+                    specIds = specIds + "-" + id;
+                    mtGoodsSku.setSpecIds(specIds);
+                    mtGoodsSkuMapper.updateById(mtGoodsSku);
+                }
             }
         }
 
@@ -753,8 +757,8 @@ public class BackendGoodsController extends BaseController {
         List<MtGoodsSpec> dataList = mtGoodsSpecMapper.selectByMap(param);
         if (dataList.size() > 0) {
             for (MtGoodsSpec mtGoodsSpec : dataList) {
-                 mtGoodsSpec.setStatus(StatusEnum.DISABLE.getKey());
-                 mtGoodsSpecMapper.updateById(mtGoodsSpec);
+                mtGoodsSpec.setStatus(StatusEnum.DISABLE.getKey());
+                mtGoodsSpecMapper.updateById(mtGoodsSpec);
             }
         }
 
@@ -789,13 +793,13 @@ public class BackendGoodsController extends BaseController {
         Map<String, Object> param = new HashMap<>();
         param.put("goods_id", mtGoodsSpec.getGoodsId().toString());
         List<MtGoodsSku> goodsSkuList = mtGoodsSkuMapper.selectByMap(param);
-        for(MtGoodsSku mtGoodsSku : goodsSkuList) {
+        for (MtGoodsSku mtGoodsSku : goodsSkuList) {
             String[] ss = mtGoodsSku.getSpecIds().split("-");
             for (int i = 0; i < ss.length; i++) {
-                 if (ss[i].equals(specId+"")) {
-                     mtGoodsSku.setStatus(StatusEnum.DISABLE.getKey());
-                     mtGoodsSkuMapper.updateById(mtGoodsSku);
-                 }
+                if (ss[i].equals(specId + "")) {
+                    mtGoodsSku.setStatus(StatusEnum.DISABLE.getKey());
+                    mtGoodsSkuMapper.updateById(mtGoodsSku);
+                }
             }
         }
 

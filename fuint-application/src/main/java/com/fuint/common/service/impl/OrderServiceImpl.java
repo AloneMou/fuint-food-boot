@@ -2292,7 +2292,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         BigDecimal deliveryFee = new BigDecimal(cartData.get("deliveryFee").toString());
         List<CouponDto> couponList = (List<CouponDto>) cartData.get("couponList");
         Integer myPoint = Integer.parseInt(cartData.get("myPoint").toString());
-        Integer calculatedUsePoint = Integer.parseInt(cartData.get("usePoint").toString());
+        int calculatedUsePoint = Integer.parseInt(cartData.get("usePoint").toString());
         BigDecimal usePointAmount = new BigDecimal(cartData.get("usePointAmount").toString());
 
         // 处理优惠券列表，构建可用优惠券列表
@@ -2369,18 +2369,17 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         }
 
         // 计算最终金额
-        BigDecimal totalAmount = totalPrice;
         BigDecimal discountAmount = couponAmount;
         BigDecimal pointDiscountAmount = usePointAmount;
 
         // 应付金额 = 商品总额 - 优惠金额 - 积分抵扣金额 + 配送费
-        BigDecimal payableAmount = totalAmount.subtract(discountAmount).subtract(pointDiscountAmount).add(deliveryFee);
+        BigDecimal payableAmount = totalPrice.subtract(discountAmount).subtract(pointDiscountAmount).add(deliveryFee);
         if (payableAmount.compareTo(BigDecimal.ZERO) < 0) {
             payableAmount = BigDecimal.ZERO;
         }
 
         // 构建返回结果
-        result.put("totalAmount", totalAmount);
+        result.put("totalAmount", totalPrice);
         result.put("discountAmount", discountAmount);
         result.put("pointAmount", pointDiscountAmount);
         result.put("deliveryFee", deliveryFee);
@@ -2391,7 +2390,6 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         result.put("selectedCouponId", selectedCouponId);
         result.put("goodsList", cartData.get("list"));
         result.put("calculateTime", new Date());
-
         return result;
     }
 }
