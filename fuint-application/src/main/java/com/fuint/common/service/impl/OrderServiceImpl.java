@@ -15,6 +15,7 @@ import com.fuint.common.util.DateUtil;
 import com.fuint.common.util.TokenUtil;
 import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
+import com.fuint.framework.exception.ServiceException;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.util.PropertiesUtil;
 import com.fuint.framework.util.SeqUtil;
@@ -37,8 +38,12 @@ import weixin.popular.util.JsonUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.fuint.openapi.enums.OrderErrorCodeConstants.GOODS_NOT_EMPTY;
+import static com.fuint.openapi.enums.UserErrorCodeConstants.USER_NOT_FOUND;
 
 /**
  * 订单接口实现类
@@ -1929,7 +1934,6 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
     @Override
     public Map<String, Object> calculateCartGoods(Integer merchantId, Integer userId, List<MtCart> cartList, Integer couponId, boolean isUsePoint, String platform, String orderMode) throws BusinessCheckException {
         MtUser userInfo = memberService.queryMemberById(userId);
-
         // 设置是否不能用积分抵扣
         MtSetting pointSetting = settingService.querySettingByName(merchantId, SettingTypeEnum.POINT.getKey(), PointSettingEnum.CAN_USE_AS_MONEY.getKey());
         if (pointSetting != null && !pointSetting.getValue().equals(YesOrNoEnum.TRUE.getKey())) {
@@ -1938,18 +1942,17 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
 
         List<ResCartDto> cartDtoList = new ArrayList<>();
         String basePath = settingService.getUploadBasePath();
-        Integer totalNum = 0;
+        int totalNum = 0;
         BigDecimal totalPrice = new BigDecimal("0");
         BigDecimal totalCanUsePointAmount = new BigDecimal("0");
 
-        if (cartList.size() > 0) {
+        if (!cartList.isEmpty()) {
             for (MtCart cart : cartList) {
                 // 购物车商品信息
                 MtGoods mtGoodsInfo = goodsService.queryGoodsById(cart.getGoodsId());
                 if (mtGoodsInfo == null || !mtGoodsInfo.getStatus().equals(StatusEnum.ENABLED.getKey())) {
                     continue;
                 }
-
                 totalNum = totalNum + cart.getNum();
                 ResCartDto cartDto = new ResCartDto();
                 cartDto.setId(cart.getId());
@@ -1963,7 +1966,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                     List<GoodsSpecValueDto> specList = goodsService.getSpecListBySkuId(cart.getSkuId());
                     cartDto.setSpecList(specList);
                 }
-                if (StringUtils.isNotEmpty(mtGoodsInfo.getLogo()) && (mtGoodsInfo.getLogo().indexOf(basePath) == -1)) {
+                if (StringUtils.isNotEmpty(mtGoodsInfo.getLogo()) && (!mtGoodsInfo.getLogo().contains(basePath))) {
                     mtGoodsInfo.setLogo(basePath + mtGoodsInfo.getLogo());
                 }
                 // 读取sku的数据
@@ -1972,7 +1975,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                     BeanUtils.copyProperties(mtGoodsInfo, mtGoods);
                     MtGoodsSku mtGoodsSku = mtGoodsSkuMapper.selectById(cart.getSkuId());
                     if (mtGoodsSku != null) {
-                        if (StringUtils.isNotEmpty(mtGoodsSku.getLogo()) && (mtGoodsSku.getLogo().indexOf(basePath) == -1)) {
+                        if (StringUtils.isNotEmpty(mtGoodsSku.getLogo()) && (!mtGoodsSku.getLogo().contains(basePath))) {
                             mtGoods.setLogo(basePath + mtGoodsSku.getLogo());
                         }
                         if (mtGoodsSku.getWeight().compareTo(new BigDecimal("0")) > 0) {
@@ -2004,9 +2007,9 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
 
         // 可用卡券列表
         List<CouponDto> couponList = new ArrayList<>();
-        List<String> statusList = Arrays.asList(UserCouponStatusEnum.UNUSED.getKey());
+        List<String> statusList = Collections.singletonList(UserCouponStatusEnum.UNUSED.getKey());
         List<MtUserCoupon> userCouponList = userCouponService.getUserCouponList(userId, statusList);
-        if (userCouponList.size() > 0) {
+        if (!userCouponList.isEmpty()) {
             for (MtUserCoupon userCoupon : userCouponList) {
                 MtCoupon couponInfo = couponService.queryCouponById(userCoupon.getCouponId());
                 // 优惠券和储值卡才能使用
@@ -2056,24 +2059,22 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                         }
                     }
                     // 适用商品
-                    if (userCoupon != null) {
-                        if (couponInfo.getApplyGoods() != null && couponInfo.getApplyGoods().equals(ApplyGoodsEnum.PARK_GOODS.getKey())) {
-                            List<MtCouponGoods> couponGoodsList = mtCouponGoodsMapper.getCouponGoods(couponInfo.getId());
-                            if (couponGoodsList != null && couponGoodsList.size() > 0 && cartList.size() > 0) {
-                                List<Integer> applyGoodsIds = new ArrayList<>();
-                                List<Integer> goodsIds = new ArrayList<>();
-                                for (MtCouponGoods mtCouponGoods : couponGoodsList) {
-                                    applyGoodsIds.add(mtCouponGoods.getGoodsId());
-                                }
-                                for (MtCart mtCart : cartList) {
-                                    goodsIds.add(mtCart.getGoodsId());
-                                }
-                                List<Integer> intersection = applyGoodsIds.stream()
-                                        .filter(goodsIds::contains)
-                                        .collect(Collectors.toList());
-                                if (intersection.size() == 0) {
-                                    couponDto.setStatus(UserCouponStatusEnum.DISABLE.getKey());
-                                }
+                    if (couponInfo.getApplyGoods() != null && couponInfo.getApplyGoods().equals(ApplyGoodsEnum.PARK_GOODS.getKey())) {
+                        List<MtCouponGoods> couponGoodsList = mtCouponGoodsMapper.getCouponGoods(couponInfo.getId());
+                        if (couponGoodsList != null && !couponGoodsList.isEmpty() && !cartList.isEmpty()) {
+                            List<Integer> applyGoodsIds = new ArrayList<>();
+                            List<Integer> goodsIds = new ArrayList<>();
+                            for (MtCouponGoods mtCouponGoods : couponGoodsList) {
+                                applyGoodsIds.add(mtCouponGoods.getGoodsId());
+                            }
+                            for (MtCart mtCart : cartList) {
+                                goodsIds.add(mtCart.getGoodsId());
+                            }
+                            List<Integer> intersection = applyGoodsIds.stream()
+                                    .filter(goodsIds::contains)
+                                    .collect(Collectors.toList());
+                            if (intersection.isEmpty()) {
+                                couponDto.setStatus(UserCouponStatusEnum.DISABLE.getKey());
                             }
                         }
                     }
@@ -2117,14 +2118,14 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         BigDecimal payPrice = totalPrice.subtract(couponAmount);
 
         // 可用积分、可用积分金额
-        Integer myPoint = userInfo.getPoint() == null ? 0 : userInfo.getPoint();
-        Integer usePoint = 0;
+        int myPoint = userInfo.getPoint() == null ? 0 : userInfo.getPoint();
+        int usePoint = 0;
         BigDecimal usePointAmount = new BigDecimal("0");
         MtSetting setting = settingService.querySettingByName(merchantId, SettingTypeEnum.POINT.getKey(), PointSettingEnum.EXCHANGE_NEED_POINT.getKey());
         if (myPoint > 0 && setting != null && isUsePoint) {
             if (StringUtils.isNotEmpty(setting.getValue()) && !setting.getValue().equals("0")) {
                 BigDecimal usePoints = new BigDecimal(myPoint);
-                usePointAmount = usePoints.divide(new BigDecimal(setting.getValue()), BigDecimal.ROUND_CEILING, 3);
+                usePointAmount = usePoints.divide(new BigDecimal(setting.getValue()), BigDecimal.ROUND_CEILING, RoundingMode.FLOOR);
                 usePoint = myPoint;
                 if (usePointAmount.compareTo(totalCanUsePointAmount) >= 0) {
                     usePointAmount = totalCanUsePointAmount;
@@ -2136,6 +2137,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         // 积分金额不能大于支付金额
         if (usePointAmount.compareTo(payPrice) > 0 && isUsePoint) {
             usePointAmount = payPrice;
+            assert setting != null;
             BigDecimal usePoints = payPrice.multiply(new BigDecimal(setting.getValue()));
             usePoint = usePoints.intValue();
         }
@@ -2158,7 +2160,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         MtUserGrade userGrade = userGradeService.queryUserGradeById(merchantId, Integer.parseInt(userInfo.getGradeId()), userInfo.getId());
         if (userGrade != null) {
             if (userGrade.getDiscount() > 0) {
-                payDiscount = new BigDecimal(userGrade.getDiscount()).divide(new BigDecimal("10"), BigDecimal.ROUND_CEILING, 3);
+                payDiscount = BigDecimal.valueOf(userGrade.getDiscount()).divide(new BigDecimal("10"), BigDecimal.ROUND_CEILING, RoundingMode.FLOOR);
                 if (payDiscount.compareTo(new BigDecimal("0")) <= 0) {
                     payDiscount = new BigDecimal("1");
                 }
@@ -2177,7 +2179,6 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         result.put("couponAmount", couponAmount);
         result.put("usePointAmount", usePointAmount);
         result.put("deliveryFee", deliveryFee);
-
         return result;
     }
 
@@ -2272,18 +2273,15 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
     @Override
     public Map<String, Object> preCreateOrder(Integer merchantId, Integer userId, List<MtCart> cartList, Integer userCouponId, Integer usePoint, String platform, String orderMode, Integer storeId) throws BusinessCheckException {
         Map<String, Object> result = new HashMap<>();
-
         // 获取用户信息
         MtUser userInfo = memberService.queryMemberById(userId);
         if (userInfo == null) {
-            throw new BusinessCheckException("用户不存在");
+            throw new ServiceException(USER_NOT_FOUND);
         }
-
         // 检查购物车是否为空
         if (cartList == null || cartList.isEmpty()) {
-            throw new BusinessCheckException("购物车为空");
+            throw new ServiceException(GOODS_NOT_EMPTY);
         }
-
         // 计算商品总价和购物车详情
         boolean isUsePoint = (usePoint != null && usePoint > 0);
         Map<String, Object> cartData = calculateCartGoods(merchantId, userId, cartList, 0, isUsePoint, platform, orderMode);

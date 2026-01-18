@@ -5,12 +5,13 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**
  * 订单预创建请求VO
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -31,6 +32,7 @@ public class OrderPreCreateReqVO {
     @ApiModelProperty(value = "订单类型：googs-商品订单；payment-付款订单", example = "googs")
     private OrderTypeEnum type;
 
+    @NotEmpty(message = "订单商品列表不能为空")
     @ApiModelProperty(value = "订单商品列表")
     private List<OrderGoodsItemVO> items;
 

@@ -52,4 +52,16 @@ public class OrderPreCreateRespVO {
     @ApiModelProperty(value = "计算时间")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date calculateTime;
+
+    @ApiModelProperty(value = "会员折扣金额（元）", example = "2.00")
+    private BigDecimal memberDiscountAmount;
+
+    @ApiModelProperty(value = "商品总数量", example = "5")
+    private Integer totalQuantity;
+
+    @ApiModelProperty(value = "订单模式：express-配送；oneself-自取", example = "oneself")
+    private String orderMode;
+
+    @ApiModelProperty(value = "店铺ID", example = "1")
+    private Integer storeId;
 }
