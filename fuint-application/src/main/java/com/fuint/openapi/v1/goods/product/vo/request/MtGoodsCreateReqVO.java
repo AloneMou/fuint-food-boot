@@ -27,7 +27,7 @@ public class MtGoodsCreateReqVO {
     @ApiModelProperty(value = "商品编码", example = "G001")
     private String goodsNo;
 
-    @ApiModelProperty(value = "商品类型", example = "food")
+    @ApiModelProperty(value = "商品类型", example = "goods")
     private String type;
 
     @NotNull(message = "商品分类不能为空")

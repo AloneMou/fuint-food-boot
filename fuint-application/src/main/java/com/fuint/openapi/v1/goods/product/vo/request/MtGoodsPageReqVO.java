@@ -30,7 +30,7 @@ public class MtGoodsPageReqVO {
     @ApiModelProperty(value = "商品编码", example = "G001")
     private String goodsNo;
 
-    @ApiModelProperty(value = "商品类型", example = "food")
+    @ApiModelProperty(value = "商品类型", example = "goods")
     private String type;
 
     @ApiModelProperty(value = "分类ID", example = "1")
