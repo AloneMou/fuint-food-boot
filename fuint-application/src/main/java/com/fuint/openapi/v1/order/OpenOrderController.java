@@ -42,6 +42,7 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.fuint.openapi.enums.OrderErrorCodeConstants.GOODS_NOT_BELONG_TO_STORE;
 import static com.fuint.openapi.enums.OrderErrorCodeConstants.GOODS_NOT_EMPTY;
 import static com.fuint.openapi.enums.UserErrorCodeConstants.USER_NOT_FOUND;
 
@@ -140,6 +141,38 @@ public class OpenOrderController extends BaseController {
                 cartList.add(cart);
             }
         }
+        
+        // 验证商品是否属于公共商品或当前门店
+        if (CollUtil.isNotEmpty(cartList) && storeId != null) {
+            for (MtCart cart : cartList) {
+                try {
+                    MtGoods goodsInfo = goodsService.queryGoodsById(cart.getGoodsId());
+                    if (goodsInfo != null) {
+                        Integer goodsStoreId = goodsInfo.getStoreId();
+                        // 如果当前门店ID为0（公共订单），商品必须是公共商品（storeId = 0）
+                        // 如果当前门店ID > 0（指定门店），商品必须是公共商品（storeId = 0）或属于当前门店（storeId = storeId）
+                        if (goodsStoreId == null) {
+                            return CommonResult.error(GOODS_NOT_BELONG_TO_STORE);
+                        }
+                        if (storeId == 0) {
+                            // 公共订单，商品必须是公共商品
+                            if (goodsStoreId != 0) {
+                                return CommonResult.error(GOODS_NOT_BELONG_TO_STORE);
+                            }
+                        } else {
+                            // 指定门店订单，商品必须是公共商品或属于该门店
+                            if (goodsStoreId != 0 && !goodsStoreId.equals(storeId)) {
+                                return CommonResult.error(GOODS_NOT_BELONG_TO_STORE);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("验证商品归属失败: goodsId={}, error={}", cart.getGoodsId(), e.getMessage());
+                    return CommonResult.error(GOODS_NOT_BELONG_TO_STORE);
+                }
+            }
+        }
+        
         // 调用订单预创建服务
         Map<String, Object> preCreateResult = openApiOrderService.preCreateOrder(
                 merchantId,
