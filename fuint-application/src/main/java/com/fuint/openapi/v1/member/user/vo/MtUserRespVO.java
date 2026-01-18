@@ -1,5 +1,6 @@
 package com.fuint.openapi.v1.member.user.vo;
 
+import cn.hutool.core.date.DatePattern;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -10,7 +11,7 @@ import java.util.Date;
 
 /**
  * 员工响应VO
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -72,8 +73,8 @@ public class MtUserRespVO {
     @ApiModelProperty(value = "积分", example = "100")
     private Integer point;
 
-//    @ApiModelProperty(value = "来源渠道", example = "backend_add")
-//    private String source;
+    @ApiModelProperty(value = "来源渠道", example = "backend_add")
+    private String source;
 
     @ApiModelProperty(value = "状态：A-激活；N-禁用；D-删除", example = "A")
     private String status;
@@ -81,24 +82,30 @@ public class MtUserRespVO {
     @ApiModelProperty(value = "备注信息", example = "员工备注")
     private String description;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = DatePattern.NORM_DATETIME_PATTERN, timezone = "GMT+8")
     @ApiModelProperty(value = "创建时间", example = "2024-01-01 12:00:00")
     private Date createTime;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = DatePattern.NORM_DATETIME_PATTERN, timezone = "GMT+8")
     @ApiModelProperty(value = "更新时间", example = "2024-01-01 12:00:00")
     private Date updateTime;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = DatePattern.NORM_DATETIME_PATTERN, timezone = "GMT+8")
     @ApiModelProperty(value = "会员开始时间", example = "2024-01-01 00:00:00")
     private Date startTime;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = DatePattern.NORM_DATETIME_PATTERN, timezone = "GMT+8")
     @ApiModelProperty(value = "会员结束时间", example = "2025-01-01 00:00:00")
     private Date endTime;
 
-    @ApiModelProperty(value = "是否员工",example = "Y")
+    @ApiModelProperty(value = "是否员工", example = "Y")
     private String isStaff;
+
+    @ApiModelProperty(value = "员工ID", example = "1")
+    private Integer staffId;
+
+    @ApiModelProperty(value = "员工等级", example = "1")
+    private Integer staffLevel;
 
 //    @ApiModelProperty(value = "最后操作人", example = "openapi")
 //    private String operator;

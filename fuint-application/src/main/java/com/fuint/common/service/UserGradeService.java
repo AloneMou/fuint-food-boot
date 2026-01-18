@@ -6,11 +6,13 @@ import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.repository.model.MtUser;
 import com.fuint.repository.model.MtUserGrade;
+
+import java.util.Collection;
 import java.util.List;
 
 /**
  * 会员等级业务接口
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -27,18 +29,18 @@ public interface UserGradeService extends IService<MtUserGrade> {
     /**
      * 添加会员等级
      *
-     * @param  reqDto
-     * @throws BusinessCheckException
+     * @param reqDto
      * @return
+     * @throws BusinessCheckException
      */
     MtUserGrade addUserGrade(MtUserGrade reqDto) throws BusinessCheckException;
 
     /**
      * 修改会员等级
      *
-     * @param  reqDto
-     * @throws BusinessCheckException
+     * @param reqDto
      * @return
+     * @throws BusinessCheckException
      */
     MtUserGrade updateUserGrade(MtUserGrade reqDto) throws BusinessCheckException;
 
@@ -46,20 +48,20 @@ public interface UserGradeService extends IService<MtUserGrade> {
      * 根据ID获取会员等级信息
      *
      * @param merchantId
-     * @param gradeId ID
+     * @param gradeId    ID
      * @param userId
-     * @throws BusinessCheckException
      * @return
+     * @throws BusinessCheckException
      */
     MtUserGrade queryUserGradeById(Integer merchantId, Integer gradeId, Integer userId) throws BusinessCheckException;
 
     /**
      * 根据ID删除会员等级
      *
-     * @param  id      ID
-     * @param  operator 操作人
-     * @throws BusinessCheckException
+     * @param id       ID
+     * @param operator 操作人
      * @return
+     * @throws BusinessCheckException
      */
     Integer deleteUserGrade(Integer id, String operator) throws BusinessCheckException;
 
@@ -67,18 +69,26 @@ public interface UserGradeService extends IService<MtUserGrade> {
      * 获取默认的会员等级
      *
      * @param merchantId
-     * @throws BusinessCheckException
      * @return
+     * @throws BusinessCheckException
      */
     MtUserGrade getInitUserGrade(Integer merchantId);
 
     /**
      * 获取付费会员等级列表
      *
-     * @param  merchantId
-     * @param  userInfo
-     * @throws BusinessCheckException
+     * @param merchantId
+     * @param userInfo
      * @return
-     * */
+     * @throws BusinessCheckException
+     */
     List<MtUserGrade> getPayUserGradeList(Integer merchantId, MtUser userInfo) throws BusinessCheckException;
+
+    /**
+     * 根据ID集合获取会员等级列表
+     *
+     * @param ids ID集合
+     * @return 会员等级列表
+     */
+    List<MtUserGrade> getUserGradeListByIds(Collection<Integer> ids);
 }

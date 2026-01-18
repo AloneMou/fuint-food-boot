@@ -10,7 +10,9 @@ public enum StaffCategoryEnum {
     MANAGER("1", "店长","admin"),
     CASHIER("2", "收银人员","cashier"),
     SALE("3", "销售人员","sale"),
-    SERVICE("4", "服务人员","service");
+    SERVICE("4", "服务人员","service"),
+    OTHER("5", "普通员工","other"),
+    ;
 
     private String key;
     private String name;

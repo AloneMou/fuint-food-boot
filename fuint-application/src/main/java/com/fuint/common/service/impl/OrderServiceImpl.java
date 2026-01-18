@@ -1,5 +1,6 @@
 package com.fuint.common.service.impl;
 
+import cn.hutool.core.util.NumberUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -497,7 +498,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
 
         // 会员付款类订单
         if (orderDto.getType().equals(OrderTypeEnum.PAYMENT.getKey())) {
-            if (userInfo != null && userInfo.getGradeId() != null && orderDto.getIsVisitor().equals(YesOrNoEnum.NO.getKey())) {
+            if (userInfo.getGradeId() != null && orderDto.getIsVisitor().equals(YesOrNoEnum.NO.getKey())) {
                 if (percent.compareTo(new BigDecimal("0")) > 0) {
                     // 会员折扣
                     BigDecimal payAmountDiscount = mtOrder.getPayAmount().multiply(percent);
@@ -548,7 +549,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                 orderGoods.setNum(cart.getNum());
                 // 计算会员折扣
                 BigDecimal price = cart.getGoodsInfo().getPrice();
-                boolean isDiscount = cart.getGoodsInfo().getIsMemberDiscount().equals(YesOrNoEnum.YES.getKey()) ? true : false;
+                boolean isDiscount = cart.getGoodsInfo().getIsMemberDiscount().equals(YesOrNoEnum.YES.getKey());
                 if (percent.compareTo(new BigDecimal("0")) > 0 && isDiscount) {
                     orderGoods.setPrice(price.multiply(percent));
                     BigDecimal discount = price.subtract(price.multiply(percent)).multiply(new BigDecimal(cart.getNum()));
@@ -1945,7 +1946,18 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         int totalNum = 0;
         BigDecimal totalPrice = new BigDecimal("0");
         BigDecimal totalCanUsePointAmount = new BigDecimal("0");
-
+        // 会员折扣
+        BigDecimal payDiscount = new BigDecimal("1");
+        MtUserGrade userGrade = userGradeService.queryUserGradeById(merchantId, Integer.parseInt(userInfo.getGradeId()), userInfo.getId());
+        if (userGrade != null) {
+            if (userGrade.getDiscount() > 0) {
+                payDiscount = BigDecimal.valueOf(userGrade.getDiscount()).divide(new BigDecimal("10"), BigDecimal.ROUND_CEILING, RoundingMode.FLOOR);
+                if (payDiscount.compareTo(new BigDecimal("0")) <= 0) {
+                    payDiscount = new BigDecimal("1");
+                }
+            }
+        }
+        BigDecimal discountPrice = BigDecimal.ZERO;
         if (!cartList.isEmpty()) {
             for (MtCart cart : cartList) {
                 // 购物车商品信息
@@ -1953,6 +1965,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                 if (mtGoodsInfo == null || !mtGoodsInfo.getStatus().equals(StatusEnum.ENABLED.getKey())) {
                     continue;
                 }
+
                 totalNum = totalNum + cart.getNum();
                 ResCartDto cartDto = new ResCartDto();
                 cartDto.setId(cart.getId());
@@ -1993,8 +2006,21 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                     isEffect = false;
                 }
                 cartDto.setIsEffect(isEffect);
+                MtGoods goodsInfo = cartDto.getGoodsInfo();
+                BigDecimal price = goodsInfo.getPrice();
+                BigDecimal discount = new BigDecimal("0");
+                if (mtGoodsInfo.getIsMemberDiscount().equals(YesOrNoEnum.YES.getKey())) {
+                    discount = NumberUtil.mul(price, payDiscount);
+                    cartDto.setVipPrice(discount);
+                }
+                BigDecimal goodsTotalPrice = NumberUtil.mul(price, cartDto.getNum());
+//                BigDecimal goodsDiscount = NumberUtil.mul(discount, cartDto.getNum());
+//                if (goodsDiscount.compareTo(new BigDecimal("0")) > 0) {
+//                    goodsDiscount = NumberUtil.sub(goodsTotalPrice, goodsDiscount);
+//                }
+                totalPrice = totalPrice.add(goodsTotalPrice);
                 // 计算总价
-                totalPrice = totalPrice.add(cartDto.getGoodsInfo().getPrice().multiply(new BigDecimal(cart.getNum())));
+//                discountPrice = NumberUtil.add(discountPrice, goodsDiscount);
                 // 累加可用积分去抵扣的金额
                 if (mtGoodsInfo.getCanUsePoint() != null && mtGoodsInfo.getCanUsePoint().equals(YesOrNoEnum.YES.getKey())) {
                     totalCanUsePointAmount = totalCanUsePointAmount.add(cartDto.getGoodsInfo().getPrice().multiply(new BigDecimal(cart.getNum())));
@@ -2155,22 +2181,13 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
             deliveryFee = new BigDecimal(mtSetting.getValue());
         }
 
-        // 会员折扣
-        BigDecimal payDiscount = new BigDecimal("1");
-        MtUserGrade userGrade = userGradeService.queryUserGradeById(merchantId, Integer.parseInt(userInfo.getGradeId()), userInfo.getId());
-        if (userGrade != null) {
-            if (userGrade.getDiscount() > 0) {
-                payDiscount = BigDecimal.valueOf(userGrade.getDiscount()).divide(new BigDecimal("10"), BigDecimal.ROUND_CEILING, RoundingMode.FLOOR);
-                if (payDiscount.compareTo(new BigDecimal("0")) <= 0) {
-                    payDiscount = new BigDecimal("1");
-                }
-            }
-        }
-        payPrice = payPrice.multiply(payDiscount).add(deliveryFee);
+
+        payPrice = payPrice.add(deliveryFee);
 
         result.put("list", cartDtoList);
         result.put("totalNum", totalNum);
         result.put("totalPrice", totalPrice);
+//        result.put("discountPrice", discountPrice);
         result.put("payPrice", payPrice);
         result.put("couponList", couponList);
         result.put("useCouponInfo", useCouponInfo);
@@ -2248,7 +2265,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
 
         if (StringUtils.isNotBlank(userInfo.getMpOpenId())) {
             weixinService.sendTemplateMessage(mtOrder.getMerchantId(), mtOrder.getUserId(), userInfo.getMpOpenId(), WxMessageEnum.TAKE_FOOD.getKey(), "pages/order/index", params, sendTime);
-        }else{
+        } else {
             weixinService.sendTemplateMessage(mtOrder.getMerchantId(), mtOrder.getUserId(), userInfo.getOpenId(), WxMessageEnum.TAKE_FOOD.getKey(), "pages/order/index", params, sendTime);
         }
 
@@ -2259,14 +2276,14 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
      * 订单预创建（实时算价）
      * 不实际创建订单，仅进行价格试算和优惠券匹配
      *
-     * @param merchantId    商户ID
-     * @param userId        用户ID
-     * @param cartList      购物车列表
-     * @param userCouponId  指定使用的用户优惠券ID（为0时自动匹配最优券）
-     * @param usePoint      使用积分数量
-     * @param platform      平台
-     * @param orderMode     订单模式
-     * @param storeId       店铺ID
+     * @param merchantId   商户ID
+     * @param userId       用户ID
+     * @param cartList     购物车列表
+     * @param userCouponId 指定使用的用户优惠券ID（为0时自动匹配最优券）
+     * @param usePoint     使用积分数量
+     * @param platform     平台
+     * @param orderMode    订单模式
+     * @param storeId      店铺ID
      * @return 订单预创建结果（包含价格信息和可用优惠券列表）
      * @throws BusinessCheckException
      */

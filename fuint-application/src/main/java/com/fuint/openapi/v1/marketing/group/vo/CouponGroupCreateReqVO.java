@@ -25,23 +25,13 @@ public class CouponGroupCreateReqVO implements Serializable {
     @NotNull(message = "商户ID不能为空")
     private Integer merchantId;
 
-    @ApiModelProperty(value = "店铺ID", required = false, example = "1")
+    @ApiModelProperty(value = "店铺ID", example = "1")
     private Integer storeId;
 
     @ApiModelProperty(value = "分组名称", required = true, example = "春节优惠券套餐")
     @NotBlank(message = "分组名称不能为空")
     private String name;
 
-    @ApiModelProperty(value = "价值金额", required = false, example = "100.00")
-    private BigDecimal money;
-
-    @ApiModelProperty(value = "发行数量", required = false, example = "1000")
-    private Integer total;
-
-    @ApiModelProperty(value = "分组描述", required = false, example = "春节特惠优惠券组合")
+    @ApiModelProperty(value = "分组描述", example = "春节特惠优惠券组合")
     private String description;
-
-    @ApiModelProperty(value = "操作人", required = false, example = "admin")
-    private String operator;
-
 }

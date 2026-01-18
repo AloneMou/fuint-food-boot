@@ -75,12 +75,6 @@ public class MtCouponCreateReqVO implements Serializable {
     @ApiModelProperty(value = "面额/固定金额", required = true, example = "20.00")
     private BigDecimal amount;
 
-    @ApiModelProperty(value = "优惠费率（0-100，100表示全免）", example = "0")
-    private Integer discountRate;
-
-    @ApiModelProperty(value = "最大优惠金额", example = "50.00")
-    private BigDecimal maxDiscountAmount;
-
     @NotBlank(message = "发放方式不能为空")
     @ApiModelProperty(value = "发放方式：front前台领取、backend后台发放、offline线下发放", required = true, example = "backend")
     private String sendWay;

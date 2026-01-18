@@ -16,7 +16,9 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.exception.ServiceException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.util.SeqUtil;
+import com.fuint.openapi.v1.member.user.vo.MtUserPageReqVO;
 import com.fuint.repository.bean.MemberTopBean;
 import com.fuint.repository.mapper.MtUserActionMapper;
 import com.fuint.repository.mapper.MtUserGradeMapper;
@@ -191,7 +193,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
         Page<MtUser> pageHelper = PageHelper.startPage(paginationRequest.getCurrentPage(), paginationRequest.getPageSize());
         LambdaQueryWrapper<MtUser> wrapper = Wrappers.lambdaQuery();
         wrapper.ne(MtUser::getStatus, StatusEnum.DISABLE.getKey());
-        wrapper.eq(MtUser::getIsStaff, YesOrNoEnum.NO.getKey());
+//        wrapper.eq(MtUser::getIsStaff, YesOrNoEnum.NO.getKey());
 
         String name = paginationRequest.getSearchParams().get("name") == null ? "" : paginationRequest.getSearchParams().get("name").toString();
         if (StringUtils.isNotBlank(name)) {
@@ -1090,5 +1092,10 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
             throw new ServiceException(USER_NOT_FOUND);
         }
         return mtUser;
+    }
+
+    @Override
+    public PageResult<MtUser> getMemberPage(MtUserPageReqVO reqVO) {
+        return mtUserMapper.selectMemberPage(reqVO);
     }
 }

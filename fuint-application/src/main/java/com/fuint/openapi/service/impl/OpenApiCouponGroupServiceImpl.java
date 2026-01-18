@@ -110,44 +110,31 @@ public class OpenApiCouponGroupServiceImpl implements OpenApiCouponGroupService 
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "OpenAPI创建优惠券分组")
     public MtCouponGroup createCouponGroup(ReqCouponGroupDto reqCouponGroupDto) throws BusinessCheckException {
-        logger.info("[OpenApiCouponGroupService] 创建优惠券分组, 参数: {}", reqCouponGroupDto);
-
-        // 参数校验
-        if (reqCouponGroupDto.getName() == null || reqCouponGroupDto.getName().trim().isEmpty()) {
-            throw new BusinessCheckException("分组名称不能为空");
-        }
-
         MtCouponGroup couponGroup = new MtCouponGroup();
         couponGroup.setMerchantId(reqCouponGroupDto.getMerchantId());
         couponGroup.setStoreId(reqCouponGroupDto.getStoreId());
         couponGroup.setName(CommonUtil.replaceXSS(reqCouponGroupDto.getName()));
-        
         // 设置默认值
         if (reqCouponGroupDto.getMoney() != null) {
             couponGroup.setMoney(reqCouponGroupDto.getMoney());
         } else {
             couponGroup.setMoney(BigDecimal.ZERO);
         }
-        
         if (reqCouponGroupDto.getTotal() != null) {
             couponGroup.setTotal(reqCouponGroupDto.getTotal());
         } else {
             couponGroup.setTotal(0);
         }
-
         if (reqCouponGroupDto.getDescription() != null) {
             couponGroup.setDescription(CommonUtil.replaceXSS(reqCouponGroupDto.getDescription()));
         }
-
         couponGroup.setStatus(StatusEnum.ENABLED.getKey());
         couponGroup.setCreateTime(new Date());
         couponGroup.setUpdateTime(new Date());
         couponGroup.setNum(0);
-        couponGroup.setOperator(reqCouponGroupDto.getOperator() != null ? reqCouponGroupDto.getOperator() : "system");
-
+        // OpenAPI操作时，默认operator为"openapi"
+        couponGroup.setOperator(reqCouponGroupDto.getOperator() != null ? reqCouponGroupDto.getOperator() : "openapi");
         mtCouponGroupMapper.insert(couponGroup);
-
-        logger.info("[OpenApiCouponGroupService] 创建优惠券分组成功, 分组ID: {}", couponGroup.getId());
         return couponGroup;
     }
 
@@ -196,7 +183,8 @@ public class OpenApiCouponGroupServiceImpl implements OpenApiCouponGroupService 
         }
 
         couponGroup.setUpdateTime(new Date());
-        couponGroup.setOperator(reqCouponGroupDto.getOperator() != null ? reqCouponGroupDto.getOperator() : "system");
+        // OpenAPI操作时，默认operator为"openapi"
+        couponGroup.setOperator(reqCouponGroupDto.getOperator() != null ? reqCouponGroupDto.getOperator() : "openapi");
 
         mtCouponGroupMapper.updateById(couponGroup);
 
@@ -233,7 +221,8 @@ public class OpenApiCouponGroupServiceImpl implements OpenApiCouponGroupService 
         MtCouponGroup couponGroup = queryCouponGroupById(id);
         couponGroup.setStatus(StatusEnum.DISABLE.getKey());
         couponGroup.setUpdateTime(new Date());
-        couponGroup.setOperator(operator != null ? operator : "system");
+        // OpenAPI操作时，默认operator为"openapi"
+        couponGroup.setOperator(operator != null ? operator : "openapi");
 
         mtCouponGroupMapper.updateById(couponGroup);
 

@@ -24,7 +24,7 @@ public interface UserErrorCodeConstants {
     ErrorCode USER_CREATE_FAILED = new ErrorCode(100_2_010, "创建会员失败");
     ErrorCode USER_UPDATE_FAILED = new ErrorCode(100_2_011, "更新会员失败");
     ErrorCode USER_SYNC_FAILED = new ErrorCode(100_2_012, "同步会员数据失败");
-    ErrorCode USER_BATCH_SYNC_EXCEED_LIMIT = new ErrorCode(100_2_013, "批量同步数量超过限制，每次最多同步100条");
+    ErrorCode USER_BATCH_SYNC_EXCEED_LIMIT = new ErrorCode(100_2_013, "批量同步数量超过限制，每次最多同步{}条");
     ErrorCode USER_BATCH_SYNC_EMPTY = new ErrorCode(100_2_014, "批量同步数据不能为空");
     
     // ========== 优惠券相关错误 100_2_101 ~ 100_2_150 ==========

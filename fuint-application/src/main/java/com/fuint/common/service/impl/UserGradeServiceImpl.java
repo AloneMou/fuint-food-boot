@@ -1,5 +1,6 @@
 package com.fuint.common.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -24,10 +25,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 
 /**
  * 会员等级业务接口实现类
@@ -119,11 +118,11 @@ public class UserGradeServiceImpl extends ServiceImpl<MtUserGradeMapper, MtUserG
             Map<String, Object> params = new HashMap<>();
             params.put("AUDITED_STATUS", StatusEnum.ENABLED.getKey());
             params.put("USER_ID", userId);
-            List<MtStaff> staffList = mtStaffMapper.selectByMap(params);
-            // 如果是员工关联的会员，就返回默认的会员等级
-            if (staffList != null && staffList.size() > 0) {
-                return getInitUserGrade(merchantId);
-            }
+//            List<MtStaff> staffList = mtStaffMapper.selectByMap(params);
+//            // 如果是员工关联的会员，就返回默认的会员等级
+//            if (staffList != null && !staffList.isEmpty()) {
+//                return getInitUserGrade(merchantId);
+//            }
         }
         return mtUserGradeMapper.selectById(gradeId);
     }
@@ -231,5 +230,13 @@ public class UserGradeServiceImpl extends ServiceImpl<MtUserGradeMapper, MtUserG
         }
 
         return dataList;
+    }
+
+    @Override
+    public List<MtUserGrade> getUserGradeListByIds(Collection<Integer> ids) {
+        if (CollUtil.isNotEmpty(ids)) {
+            return mtUserGradeMapper.selectBatchIds(ids);
+        }
+        return Collections.emptyList();
     }
 }

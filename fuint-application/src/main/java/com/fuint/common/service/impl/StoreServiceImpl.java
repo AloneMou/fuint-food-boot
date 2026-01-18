@@ -1,5 +1,6 @@
 package com.fuint.common.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -28,12 +29,13 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.util.*;
 
 /**
  * 店铺管理业务实现类
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -52,7 +54,7 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
 
     /**
      * 微信服务接口
-     * */
+     */
     private WeixinService weixinService;
 
     /**
@@ -89,13 +91,13 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
         List<StoreDto> dataList = new ArrayList<>();
 
         for (MtStore mtStore : storeList) {
-             StoreDto storeDto = new StoreDto();
-             BeanUtils.copyProperties(mtStore, storeDto);
-             MtMerchant mtMerchant = mtMerchantMapper.selectById(mtStore.getMerchantId());
-             if (mtMerchant != null) {
-                 storeDto.setMerchantName(mtMerchant.getName());
-             }
-             dataList.add(storeDto);
+            StoreDto storeDto = new StoreDto();
+            BeanUtils.copyProperties(mtStore, storeDto);
+            MtMerchant mtMerchant = mtMerchantMapper.selectById(mtStore.getMerchantId());
+            if (mtMerchant != null) {
+                storeDto.setMerchantName(mtMerchant.getName());
+            }
+            dataList.add(storeDto);
         }
 
         PageRequest pageRequest = PageRequest.of(paginationRequest.getCurrentPage(), paginationRequest.getPageSize());
@@ -111,9 +113,9 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
     /**
      * 保存店铺信息
      *
-     * @param  storeDto 店铺信息
-     * @throws BusinessCheckException
+     * @param storeDto 店铺信息
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -200,9 +202,9 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
     /**
      * 根据店铺ID获取店铺信息
      *
-     * @param  id 店铺ID
-     * @throws BusinessCheckException
+     * @param id 店铺ID
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     public MtStore queryStoreById(Integer id) {
@@ -215,7 +217,7 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
     /**
      * 获取系统默认店铺
      *
-     * @param  merchantNo 商户号
+     * @param merchantNo 商户号
      * @return
      */
     @Override
@@ -247,7 +249,7 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
     /**
      * 根据店铺名称获取店铺信息
      *
-     * @param  storeName 店铺名称
+     * @param storeName 店铺名称
      * @return
      */
     @Override
@@ -266,9 +268,9 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
     /**
      * 根据店铺ID获取店铺信息
      *
-     * @param  id 店铺ID
-     * @throws BusinessCheckException
+     * @param id 店铺ID
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     public StoreDto queryStoreDtoById(Integer id) throws BusinessCheckException {
@@ -292,11 +294,11 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
     /**
      * 更新店铺状态
      *
-     * @param  id       店铺ID
-     * @param  operator 操作人
-     * @param  status   状态
-     * @throws BusinessCheckException
+     * @param id       店铺ID
+     * @param operator 操作人
+     * @param status   状态
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -319,7 +321,7 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
      *
      * @param params 查询参数
      * @return
-     * */
+     */
     @Override
     public List<MtStore> queryStoresByParams(Map<String, Object> params) {
         LambdaQueryWrapper<MtStore> lambdaQueryWrapper = Wrappers.lambdaQuery();
@@ -353,11 +355,11 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
      * 根据距离远近获取店铺列表
      *
      * @param merchantNo 商户号
-     * @param keyword 关键字
-     * @param latitude 维度
-     * @param longitude 经度
+     * @param keyword    关键字
+     * @param latitude   维度
+     * @param longitude  经度
      * @return
-     * */
+     */
     @Override
     public List<MtStore> queryByDistance(String merchantNo, String keyword, String latitude, String longitude) throws BusinessCheckException {
         List<MtStore> dataList = new ArrayList<>();
@@ -372,16 +374,16 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
 
         if (distanceList != null) {
             for (StoreDistanceBean bean : distanceList) {
-                 for (MtStore mtStore : storeList) {
-                      if (mtStore.getId().equals(bean.getId())) {
-                          if (StringUtils.isNotEmpty(latitude) && StringUtils.isNotEmpty(longitude)) {
-                              mtStore.setDistance(new BigDecimal(bean.getDistance()));
-                          } else {
-                              mtStore.setDistance(new BigDecimal("0.0"));
-                          }
-                          dataList.add(mtStore);
-                      }
-                 }
+                for (MtStore mtStore : storeList) {
+                    if (mtStore.getId().equals(bean.getId())) {
+                        if (StringUtils.isNotEmpty(latitude) && StringUtils.isNotEmpty(longitude)) {
+                            mtStore.setDistance(new BigDecimal(bean.getDistance()));
+                        } else {
+                            mtStore.setDistance(new BigDecimal("0.0"));
+                        }
+                        dataList.add(mtStore);
+                    }
+                }
             }
         }
 
@@ -393,22 +395,30 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
      *
      * @param storeIds 店铺ID
      * @return
-     * */
+     */
     @Override
     public String getStoreNames(String storeIds) {
-       if (StringUtils.isEmpty(storeIds)) {
-           return "";
-       }
-       String[] ids = storeIds.split(",");
-       List<String> storeNames = new ArrayList<>();
-       if (ids.length > 0) {
-           for (int i = 0; i < ids.length; i++) {
+        if (StringUtils.isEmpty(storeIds)) {
+            return "";
+        }
+        String[] ids = storeIds.split(",");
+        List<String> storeNames = new ArrayList<>();
+        if (ids.length > 0) {
+            for (int i = 0; i < ids.length; i++) {
                 MtStore mtStore = mtStoreMapper.selectById(Integer.parseInt(ids[i]));
                 if (mtStore != null) {
                     storeNames.add(mtStore.getName());
                 }
-           }
-       }
-       return String.join(",", storeNames);
+            }
+        }
+        return String.join(",", storeNames);
+    }
+
+    @Override
+    public List<MtStore> getStoreByIds(Collection<Integer> storeIds) {
+        if (CollUtil.isEmpty(storeIds)) {
+            return new ArrayList<>();
+        }
+        return mtStoreMapper.selectBatchIds(storeIds);
     }
 }

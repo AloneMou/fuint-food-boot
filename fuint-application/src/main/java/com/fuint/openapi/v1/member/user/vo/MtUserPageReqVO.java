@@ -1,28 +1,26 @@
 package com.fuint.openapi.v1.member.user.vo;
 
+import cn.hutool.core.date.DatePattern;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fuint.framework.pojo.PageParams;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.validation.constraints.Min;
+import java.util.Date;
+import java.util.List;
 
 /**
  * 员工分页查询请求VO
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
 @Data
 @ApiModel(value = "员工分页查询请求VO")
-public class MtUserPageReqVO {
-
-    @ApiModelProperty(value = "当前页码", example = "1")
-    @Min(value = 1, message = "页码最小为1")
-    private Integer page = 1;
-
-    @ApiModelProperty(value = "每页数量", example = "10")
-    @Min(value = 1, message = "每页数量最小为1")
-    private Integer pageSize = 10;
+public class MtUserPageReqVO extends PageParams {
 
     @ApiModelProperty(value = "会员ID", example = "1")
     private Integer id;
@@ -37,7 +35,7 @@ public class MtUserPageReqVO {
     private String userNo;
 
     @ApiModelProperty(value = "分组ID", example = "1")
-    private String groupIds;
+    private Integer groupId;
 
     @ApiModelProperty(value = "等级ID", example = "1")
     private String gradeId;
@@ -45,18 +43,22 @@ public class MtUserPageReqVO {
     @ApiModelProperty(value = "商户ID", example = "1")
     private Integer merchantId;
 
-    @ApiModelProperty(value = "店铺ID列表（逗号分隔）", example = "1,2,3")
-    private String storeIds;
+    @ApiModelProperty(value = "店铺ID", example = "1,2,3")
+    private Integer storeId;
 
-    @ApiModelProperty(value = "状态：A-激活；N-禁用；D-删除", example = "A")
+    @ApiModelProperty(value = "状态：A-激活；N-禁用", example = "A")
     private String status;
 
-    @ApiModelProperty(value = "优惠券状态（精确匹配）：A-未使用；B-已使用；C-已过期；D-已删除；E-未领取", example = "A")
-    private String couponStatus;
+    @ApiModelProperty(value = "是否员工", example = "Y")
+    private String isStaff;
 
-    @ApiModelProperty(value = "注册开始时间", example = "2024-01-01 00:00:00")
-    private String startTime;
+    @DateTimeFormat(pattern = DatePattern.NORM_DATETIME_PATTERN)
+    @JsonFormat(pattern = DatePattern.NORM_DATETIME_PATTERN, timezone = "GMT+8")
+    @ApiModelProperty(value = "创建开始时间", example = "2024-01-01 00:00:00")
+    private Date startTime;
 
-    @ApiModelProperty(value = "注册结束时间", example = "2024-12-31 23:59:59")
+    @DateTimeFormat(pattern = DatePattern.NORM_DATETIME_PATTERN)
+    @JsonFormat(pattern = DatePattern.NORM_DATETIME_PATTERN, timezone = "GMT+8")
+    @ApiModelProperty(value = "创建结束时间", example = "2024-12-31 23:59:59")
     private String endTime;
 }

@@ -127,6 +127,12 @@ public class OpenOrderController extends BaseController {
         Integer userCouponId = reqVO.getUserCouponId() != null ? reqVO.getUserCouponId() : 0;
         Integer usePoint = reqVO.getUsePoint() != null ? reqVO.getUsePoint() : 0;
 
+        // 系统配置检查：检查交易功能是否关闭
+        MtSetting config = settingService.querySettingByName(merchantId, storeId, SettingTypeEnum.ORDER.getKey(), OrderSettingEnum.IS_CLOSE.getKey());
+        if (config != null && config.getValue().equals(YesOrNoEnum.TRUE.getKey())) {
+            return CommonResult.error(403, "系统已关闭交易功能，请稍后再试！");
+        }
+
         // 构建购物车列表
         List<MtCart> cartList = new ArrayList<>();
         if (CollUtil.isNotEmpty(reqVO.getItems())) {
@@ -143,7 +149,7 @@ public class OpenOrderController extends BaseController {
         }
         
         // 验证商品是否属于公共商品或当前门店
-        if (CollUtil.isNotEmpty(cartList) && storeId != null) {
+        if (CollUtil.isNotEmpty(cartList)) {
             for (MtCart cart : cartList) {
                 try {
                     MtGoods goodsInfo = goodsService.queryGoodsById(cart.getGoodsId());
@@ -185,11 +191,24 @@ public class OpenOrderController extends BaseController {
                 storeId
         );
 
+        // 订单起送费检查（针对配送订单）
+        if (orderMode.equals(OrderModeEnum.EXPRESS.getKey())) {
+            MtSetting delivery = settingService.querySettingByName(merchantId, SettingTypeEnum.ORDER.getKey(), OrderSettingEnum.DELIVERY_MIN_AMOUNT.getKey());
+            if (delivery != null && StringUtils.isNotEmpty(delivery.getValue())) {
+                BigDecimal deliveryMinAmount = new BigDecimal(delivery.getValue());
+                BigDecimal totalAmount = getBigDecimalValue(preCreateResult.get("totalAmount"));
+                if (deliveryMinAmount.compareTo(BigDecimal.ZERO) > 0 && deliveryMinAmount.compareTo(totalAmount) > 0) {
+                    return CommonResult.error(400, "订单起送金额：" + deliveryMinAmount + "元");
+                }
+            }
+        }
+
         // 构建响应VO，使用安全的方法获取值并设置默认值
         OrderPreCreateRespVO respVO = new OrderPreCreateRespVO();
         respVO.setTotalAmount(getBigDecimalValue(preCreateResult.get("totalAmount")));
         respVO.setDiscountAmount(getBigDecimalValue(preCreateResult.get("discountAmount")));
         respVO.setPointAmount(getBigDecimalValue(preCreateResult.get("pointAmount")));
+        respVO.setMemberDiscountAmount(getBigDecimalValue(preCreateResult.get("memberDiscountAmount")));
         respVO.setDeliveryFee(getBigDecimalValue(preCreateResult.get("deliveryFee")));
         respVO.setPayableAmount(getBigDecimalValue(preCreateResult.get("payableAmount")));
         respVO.setUsePoint(getIntegerValue(preCreateResult.get("usePoint")));
@@ -198,16 +217,6 @@ public class OpenOrderController extends BaseController {
         respVO.setCalculateTime(getDateValue(preCreateResult.get("calculateTime")));
         respVO.setOrderMode(orderMode);
         respVO.setStoreId(storeId);
-
-        // 计算会员折扣金额（从总金额和应付金额的差值中减去优惠券和积分抵扣）
-        BigDecimal memberDiscountAmount = calculateMemberDiscountAmount(
-                respVO.getTotalAmount(),
-                respVO.getDiscountAmount(),
-                respVO.getPointAmount(),
-                respVO.getDeliveryFee(),
-                respVO.getPayableAmount()
-        );
-        respVO.setMemberDiscountAmount(memberDiscountAmount);
 
         // 转换优惠券列表
         List<Map<String, Object>> availableCouponsMap = (List<Map<String, Object>>) preCreateResult.get("availableCoupons");

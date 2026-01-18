@@ -1,5 +1,6 @@
 package com.fuint.common.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -25,12 +26,13 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.lang.String;
 import java.util.*;
 
 /**
  * 会员分组业务实现类
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -85,11 +87,11 @@ public class MemberGroupServiceImpl extends ServiceImpl<MtUserGroupMapper, MtUse
         List<UserGroupDto> userGroupList = new ArrayList<>();
         if (dataList != null && dataList.size() > 0) {
             for (MtUserGroup mtUserGroup : dataList) {
-                 UserGroupDto userGroupDto = new UserGroupDto();
-                 BeanUtils.copyProperties(mtUserGroup, userGroupDto);
-                 userGroupDto.setChildren(getChildren(mtUserGroup.getId()));
-                 userGroupDto.setMemberNum(getMemberNum(mtUserGroup.getId()));
-                 userGroupList.add(userGroupDto);
+                UserGroupDto userGroupDto = new UserGroupDto();
+                BeanUtils.copyProperties(mtUserGroup, userGroupDto);
+                userGroupDto.setChildren(getChildren(mtUserGroup.getId()));
+                userGroupDto.setMemberNum(getMemberNum(mtUserGroup.getId()));
+                userGroupList.add(userGroupDto);
             }
         }
 
@@ -106,9 +108,9 @@ public class MemberGroupServiceImpl extends ServiceImpl<MtUserGroupMapper, MtUse
     /**
      * 添加会员分组
      *
-     * @param  memberGroupDto 会员分组
-     * @throws BusinessCheckException
+     * @param memberGroupDto 会员分组
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     @OperationServiceLog(description = "新增会员分组")
@@ -137,9 +139,9 @@ public class MemberGroupServiceImpl extends ServiceImpl<MtUserGroupMapper, MtUse
     /**
      * 根据分组ID获取分组信息
      *
-     * @param  id 分组ID
-     * @throws BusinessCheckException
+     * @param id 分组ID
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     public MtUserGroup queryMemberGroupById(Integer id) {
@@ -149,10 +151,10 @@ public class MemberGroupServiceImpl extends ServiceImpl<MtUserGroupMapper, MtUse
     /**
      * 根据ID删除会员分组
      *
-     * @param  id       分组ID
-     * @param  operator 操作人
-     * @throws BusinessCheckException
+     * @param id       分组ID
+     * @param operator 操作人
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     @OperationServiceLog(description = "删除会员分组")
@@ -169,12 +171,20 @@ public class MemberGroupServiceImpl extends ServiceImpl<MtUserGroupMapper, MtUse
         this.updateById(userGroup);
     }
 
+    @Override
+    public List<MtUserGroup> getUserGroupByIds(Collection<Integer> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return new ArrayList<>();
+        }
+        return mtUserGroupMapper.selectUserGroupListByIds(ids);
+    }
+
     /**
      * 修改会员分组
      *
-     * @param  memberGroupDto
-     * @throws BusinessCheckException
+     * @param memberGroupDto
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -206,7 +216,7 @@ public class MemberGroupServiceImpl extends ServiceImpl<MtUserGroupMapper, MtUse
      *
      * @param groupId 分组ID
      * @return
-     * */
+     */
     public List<UserGroupDto> getChildren(Integer groupId) {
         Map<String, Object> param = new HashMap<>();
         param.put("STATUS", StatusEnum.ENABLED.getKey());
@@ -215,11 +225,11 @@ public class MemberGroupServiceImpl extends ServiceImpl<MtUserGroupMapper, MtUse
         List<UserGroupDto> children = new ArrayList<>();
         if (dataList != null && dataList.size() > 0) {
             for (MtUserGroup userGroup : dataList) {
-                 UserGroupDto userGroupDto = new UserGroupDto();
-                 BeanUtils.copyProperties(userGroup, userGroupDto);
-                 userGroupDto.setChildren(getChildren(userGroup.getId()));
-                 userGroupDto.setMemberNum(getMemberNum(userGroup.getId()));
-                 children.add(userGroupDto);
+                UserGroupDto userGroupDto = new UserGroupDto();
+                BeanUtils.copyProperties(userGroup, userGroupDto);
+                userGroupDto.setChildren(getChildren(userGroup.getId()));
+                userGroupDto.setMemberNum(getMemberNum(userGroup.getId()));
+                children.add(userGroupDto);
             }
         }
         return children;
@@ -230,7 +240,7 @@ public class MemberGroupServiceImpl extends ServiceImpl<MtUserGroupMapper, MtUse
      *
      * @param groupId 分组ID
      * @return
-     * */
+     */
     public Long getMemberNum(Integer groupId) {
         List<Integer> groupIds = getGroupIds(groupId);
         Long totalMember = mtUserGroupMapper.getMemberNum(groupIds);
@@ -242,7 +252,7 @@ public class MemberGroupServiceImpl extends ServiceImpl<MtUserGroupMapper, MtUse
      *
      * @param groupId 分组ID
      * @return
-     * */
+     */
     public List<Integer> getGroupIds(Integer groupId) {
         Map<String, Object> param = new HashMap<>();
         param.put("STATUS", StatusEnum.ENABLED.getKey());
@@ -252,11 +262,11 @@ public class MemberGroupServiceImpl extends ServiceImpl<MtUserGroupMapper, MtUse
         groupIds.add(groupId);
         if (dataList != null && dataList.size() > 0) {
             for (MtUserGroup userGroup : dataList) {
-                 groupIds.add(userGroup.getId());
-                 List<Integer> childrenIds = getGroupIds(userGroup.getId());
-                 if (childrenIds.size() > 0) {
-                     groupIds.addAll(childrenIds);
-                 }
+                groupIds.add(userGroup.getId());
+                List<Integer> childrenIds = getGroupIds(userGroup.getId());
+                if (childrenIds.size() > 0) {
+                    groupIds.addAll(childrenIds);
+                }
             }
         }
         return groupIds;

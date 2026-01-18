@@ -16,6 +16,9 @@ import com.fuint.openapi.v1.marketing.group.vo.CouponGroupPageReqVO;
 import com.fuint.openapi.v1.marketing.group.vo.CouponGroupRespVO;
 import com.fuint.openapi.v1.marketing.group.vo.CouponGroupUpdateReqVO;
 import com.fuint.repository.model.MtCouponGroup;
+
+import static com.fuint.openapi.enums.CouponGroupErrorCodeConstants.*;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -54,42 +57,23 @@ public class OpenCouponGroupController extends BaseController {
     @Resource
     private OpenApiCouponGroupService openApiCouponGroupService;
 
-    /**
-     * 创建优惠券分组
-     *
-     * @param reqVO 创建请求参数
-     * @return 创建结果
-     * @throws BusinessCheckException 业务异常
-     */
     @ApiOperation(value = "创建优惠券分组", notes = "创建新的优惠券分组")
     @PostMapping("/create")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<CouponGroupRespVO> createCouponGroup(@Valid @RequestBody CouponGroupCreateReqVO reqVO) throws BusinessCheckException {
-        log.info("[createCouponGroup] 创建优惠券分组，请求参数: {}", reqVO);
-
-        // 参数校验
-        if (StringUtils.isEmpty(reqVO.getName())) {
-            return CommonResult.error(400001, "分组名称不能为空");
-        }
-
+    public CommonResult<Integer> createCouponGroup(@Valid @RequestBody CouponGroupCreateReqVO reqVO) throws BusinessCheckException {
         // 转换DTO
         ReqCouponGroupDto dto = new ReqCouponGroupDto();
         BeanUtils.copyProperties(reqVO, dto);
         dto.setStatus(StatusEnum.ENABLED.getKey());
-        dto.setOperator(reqVO.getOperator() != null ? reqVO.getOperator() : "system");
-
+        // OpenAPI操作时，设置operator为"openapi"
+        dto.setOperator("openapi");
         // 调用OpenAPI服务层创建
         MtCouponGroup couponGroup = openApiCouponGroupService.createCouponGroup(dto);
         if (couponGroup == null) {
-            return CommonResult.error(500000, "创建优惠券分组失败");
+            return CommonResult.error(COUPON_GROUP_CREATE_FAILED);
         }
-
-        // 构建响应VO
-        CouponGroupRespVO respVO = buildCouponGroupRespVO(couponGroup);
-        log.info("[createCouponGroup] 创建优惠券分组成功，分组ID: {}", couponGroup.getId());
-
-        return CommonResult.success(respVO);
+        return CommonResult.success(couponGroup.getId());
     }
 
     /**
@@ -106,26 +90,16 @@ public class OpenCouponGroupController extends BaseController {
     public CommonResult<CouponGroupRespVO> updateCouponGroup(@Valid @RequestBody CouponGroupUpdateReqVO reqVO) throws BusinessCheckException {
         log.info("[updateCouponGroup] 更新优惠券分组，请求参数: {}", reqVO);
 
-        // 参数校验
-        if (reqVO.getId() == null || reqVO.getId() <= 0) {
-            return CommonResult.error(400001, "分组ID不能为空");
-        }
-
-        // 检查分组是否存在
-        MtCouponGroup existGroup = openApiCouponGroupService.queryCouponGroupById(reqVO.getId());
-        if (existGroup == null) {
-            return CommonResult.error(404001, "优惠券分组不存在");
-        }
-
         // 转换DTO
         ReqCouponGroupDto dto = new ReqCouponGroupDto();
         BeanUtils.copyProperties(reqVO, dto);
-        dto.setOperator(reqVO.getOperator() != null ? reqVO.getOperator() : "system");
+        // OpenAPI操作时，设置operator为"openapi"
+        dto.setOperator(reqVO.getOperator() != null ? reqVO.getOperator() : "openapi");
 
-        // 调用OpenAPI服务层更新
+        // 调用OpenAPI服务层更新（内部会校验ID和分组是否存在）
         MtCouponGroup couponGroup = openApiCouponGroupService.updateCouponGroup(dto);
         if (couponGroup == null) {
-            return CommonResult.error(500000, "更新优惠券分组失败");
+            return CommonResult.error(COUPON_GROUP_UPDATE_FAILED);
         }
 
         // 构建响应VO
@@ -138,7 +112,8 @@ public class OpenCouponGroupController extends BaseController {
     /**
      * 删除优惠券分组
      *
-     * @param id 分组ID
+     * @param id       分组ID
+     * @param operator 操作人
      * @return 删除结果
      * @throws BusinessCheckException 业务异常
      */
@@ -147,22 +122,11 @@ public class OpenCouponGroupController extends BaseController {
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> deleteCouponGroup(
-            @ApiParam(value = "分组ID", required = true) @PathVariable("id") Integer id,
-            @ApiParam(value = "操作人", required = false) @RequestParam(value = "operator", required = false, defaultValue = "system") String operator) throws BusinessCheckException {
+            @ApiParam(value = "分组ID", required = true, example = "1") @PathVariable("id") Integer id,
+            @ApiParam(value = "操作人", required = false, example = "openapi") @RequestParam(value = "operator", required = false, defaultValue = "openapi") String operator) throws BusinessCheckException {
         log.info("[deleteCouponGroup] 删除优惠券分组，分组ID: {}, 操作人: {}", id, operator);
 
-        // 参数校验
-        if (id == null || id <= 0) {
-            return CommonResult.error(400001, "分组ID不能为空");
-        }
-
-        // 检查分组是否存在
-        MtCouponGroup existGroup = openApiCouponGroupService.queryCouponGroupById(id);
-        if (existGroup == null) {
-            return CommonResult.error(404001, "优惠券分组不存在");
-        }
-
-        // 调用OpenAPI服务层删除
+        // 调用OpenAPI服务层删除（内部会校验ID和分组是否存在）
         openApiCouponGroupService.deleteCouponGroup(id, operator);
         log.info("[deleteCouponGroup] 删除优惠券分组成功，分组ID: {}", id);
 
@@ -181,19 +145,11 @@ public class OpenCouponGroupController extends BaseController {
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<CouponGroupRespVO> getCouponGroupDetail(
-            @ApiParam(value = "分组ID", required = true) @PathVariable("id") Integer id) throws BusinessCheckException {
+            @ApiParam(value = "分组ID", required = true, example = "1") @PathVariable("id") Integer id) throws BusinessCheckException {
         log.info("[getCouponGroupDetail] 获取优惠券分组详情，分组ID: {}", id);
 
-        // 参数校验
-        if (id == null || id <= 0) {
-            return CommonResult.error(400001, "分组ID不能为空");
-        }
-
-        // 查询分组信息
+        // 查询分组信息（内部会校验ID和分组是否存在）
         MtCouponGroup couponGroup = openApiCouponGroupService.queryCouponGroupById(id);
-        if (couponGroup == null) {
-            return CommonResult.error(404001, "优惠券分组不存在");
-        }
 
         // 构建响应VO
         CouponGroupRespVO respVO = buildCouponGroupRespVO(couponGroup);

@@ -1,15 +1,17 @@
 package com.fuint.openapi.v1.member.user.vo;
 
+import cn.hutool.core.lang.RegexPool;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
 import java.math.BigDecimal;
 
 /**
  * 员工数据同步请求VO
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -66,7 +68,9 @@ public class MtUserSyncReqVO {
     @ApiModelProperty(value = "备注信息", example = "员工备注")
     private String description;
 
-    @ApiModelProperty(value = "是否员工",example = "Y")
+    @ApiModelProperty(value = "是否员工", example = "Y")
     private String isStaff;
 
+    @ApiModelProperty(value = "员工等级", example = "1")
+    private Integer staffLevel;
 }

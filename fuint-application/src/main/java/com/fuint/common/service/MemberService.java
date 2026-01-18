@@ -8,6 +8,8 @@ import com.fuint.common.dto.UserDto;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.pojo.PageResult;
+import com.fuint.openapi.v1.member.user.vo.MtUserPageReqVO;
 import com.fuint.repository.bean.MemberTopBean;
 import com.fuint.repository.model.MtUser;
 import com.fuint.repository.model.MtUserGrade;
@@ -295,4 +297,12 @@ public interface MemberService extends IService<MtUser> {
      * @return 会员信息
      */
     MtUser checkMemberExist(Integer userId);
+
+    /**
+     * 获取会员分页列表
+     *
+     * @param reqVO 请求参数
+     * @return 会员分页列表
+     */
+    PageResult<MtUser> getMemberPage(MtUserPageReqVO reqVO);
 }

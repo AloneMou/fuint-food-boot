@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -35,6 +36,9 @@ public class ResCartDto implements Serializable {
 
     @ApiModelProperty("是否有效")
     private Boolean isEffect;
+
+    @ApiModelProperty("会员价")
+    private BigDecimal vipPrice;
 
     @ApiModelProperty("商品规格")
     private List<GoodsSpecValueDto> specList;

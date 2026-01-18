@@ -4,6 +4,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
@@ -27,9 +28,10 @@ public class PageParams implements Serializable {
     @Min(value = 1, message = "页码最小值为 1")
     private Integer pageNo = PAGE_NO;
 
-    @ApiModelProperty(value = "每页条数，最大值为 200", required = true, example = "10")
+    @ApiModelProperty(value = "每页条数，最大值为 500", required = true, example = "10")
     @NotNull(message = "每页条数不能为空")
     @Min(value = 1, message = "每页条数最小值为 1")
+    @Max(value = 500, message = "每页条数最大值为 500")
     private Integer pageSize = PAGE_SIZE;
 
 }

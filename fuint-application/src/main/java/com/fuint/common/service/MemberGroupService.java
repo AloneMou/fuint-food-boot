@@ -6,11 +6,15 @@ import com.fuint.common.dto.UserGroupDto;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.repository.model.MtUserGrade;
 import com.fuint.repository.model.MtUserGroup;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * 会员分组业务接口
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -27,7 +31,7 @@ public interface MemberGroupService extends IService<MtUserGroup> {
     /**
      * 新增会员分组
      *
-     * @param  memberGroupDto
+     * @param memberGroupDto
      * @throws BusinessCheckException
      */
     MtUserGroup addMemberGroup(MemberGroupDto memberGroupDto) throws BusinessCheckException;
@@ -35,7 +39,7 @@ public interface MemberGroupService extends IService<MtUserGroup> {
     /**
      * 修改卡券分组
      *
-     * @param  memberGroupDto
+     * @param memberGroupDto
      * @throws BusinessCheckException
      */
     MtUserGroup updateMemberGroup(MemberGroupDto memberGroupDto) throws BusinessCheckException;
@@ -43,7 +47,7 @@ public interface MemberGroupService extends IService<MtUserGroup> {
     /**
      * 根据组ID获取分组信息
      *
-     * @param  id 分组ID
+     * @param id 分组ID
      * @throws BusinessCheckException
      */
     MtUserGroup queryMemberGroupById(Integer id) throws BusinessCheckException;
@@ -51,9 +55,17 @@ public interface MemberGroupService extends IService<MtUserGroup> {
     /**
      * 根据分组ID删除分组信息
      *
-     * @param  id 分组ID
-     * @param  operator 操作人
+     * @param id       分组ID
+     * @param operator 操作人
      * @throws BusinessCheckException
      */
     void deleteMemberGroup(Integer id, String operator) throws BusinessCheckException;
+
+    /**
+     * 根据ID集合查询会员分组
+     *
+     * @param ids ID集合
+     * @return 会员分组
+     */
+    List<MtUserGroup> getUserGroupByIds(Collection<Integer> ids);
 }

@@ -1,4 +1,4 @@
-package com.fuint.openapi.v1.member.user.vo;
+package com.fuint.openapi.v1.member.coupon.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;

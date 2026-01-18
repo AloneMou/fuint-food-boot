@@ -1,5 +1,7 @@
 package com.fuint.common.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -11,6 +13,7 @@ import com.fuint.common.service.StaffService;
 import com.fuint.common.service.StoreService;
 import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
+import com.fuint.framework.exception.ServiceException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.repository.mapper.MtStaffMapper;
@@ -21,14 +24,20 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.*;
+
+import static com.fuint.framework.exception.enums.GlobalErrorCodeConstants.BAD_REQUEST;
 
 /**
  * 员工管理接口实现类
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -52,6 +61,11 @@ public class StaffServiceImpl extends ServiceImpl<MtStaffMapper, MtStaff> implem
      * 店铺接口
      */
     private StoreService storeService;
+
+    /**
+     * Redisson 客户端
+     */
+    private RedissonClient redissonClient;
 
     /**
      * 员工查询列表
@@ -114,10 +128,10 @@ public class StaffServiceImpl extends ServiceImpl<MtStaffMapper, MtStaff> implem
     /**
      * 保存员工信息
      *
-     * @param  mtStaff 员工参数
+     * @param mtStaff  员工参数
      * @param operator 操作人
-     * @throws BusinessCheckException
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     @OperationServiceLog(description = "保存店铺员工")
@@ -171,12 +185,73 @@ public class StaffServiceImpl extends ServiceImpl<MtStaffMapper, MtStaff> implem
         return mtStaff;
     }
 
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public MtStaff createStaff(MtStaff reqStaff, String operator) {
+        RLock lock = redissonClient.getLock("mt_staff_lock_" + reqStaff.getMobile());
+        if (!lock.tryLock()) {
+            throw new ServiceException(BAD_REQUEST.getCode(), "频繁提交，正在同步");
+        }
+        MtStaff staff = mtStaffMapper.selectByMobile(reqStaff.getMobile());
+        if (staff == null) {
+            staff = BeanUtil.toBean(reqStaff, MtStaff.class);
+            staff.setAuditedStatus(StatusEnum.ENABLED.getKey());
+            staff.setUserId(reqStaff.getUserId());
+            staff.setCreateTime(new Date());
+            staff.setUpdateTime(new Date());
+            this.save(staff);
+            return staff;
+        }
+        if (!Objects.equals(staff.getUserId(), reqStaff.getUserId())) {
+            throw new ServiceException(BAD_REQUEST.getCode(), "[" + reqStaff.getMobile() + "]手机号已存在");
+        }
+        return staff;
+    }
+
+    @Override
+    public MtStaff updateStaff(MtStaff reqStaff, String operator) {
+        RLock lock = redissonClient.getLock("mt_staff_lock_" + reqStaff.getMobile());
+        if (!lock.tryLock()) {
+            throw new ServiceException(BAD_REQUEST.getCode(), "频繁提交，正在同步");
+        }
+        MtStaff staff = mtStaffMapper.selectByMobile(reqStaff.getMobile());
+        if (staff == null) {
+            staff = BeanUtil.toBean(reqStaff, MtStaff.class);
+            staff.setAuditedStatus(StatusEnum.ENABLED.getKey());
+            staff.setUserId(reqStaff.getUserId());
+            staff.setCreateTime(new Date());
+            staff.setUpdateTime(new Date());
+            this.save(staff);
+            return staff;
+        } else {
+            MtStaff updateOb = BeanUtil.toBean(reqStaff, MtStaff.class);
+            updateOb.setId(staff.getId());
+            updateOb.setUpdateTime(new Date());
+            updateOb.setUserId(updateOb.getUserId());
+            this.updateById(updateOb);
+            return staff;
+        }
+    }
+
+    @Override
+    public void deleteStaff(String phone, String operator) {
+        RLock lock = redissonClient.getLock("mt_staff_lock_" + phone);
+        if (!lock.tryLock()) {
+            throw new ServiceException(BAD_REQUEST.getCode(), "频繁提交，正在同步");
+        }
+        MtStaff staff = mtStaffMapper.selectByMobile(phone);
+        if (staff != null) {
+            this.removeById(staff.getId());
+        }
+    }
+
     /**
      * 根据ID获取员工信息
      *
-     * @param  id 员工ID
-     * @throws BusinessCheckException
+     * @param id 员工ID
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     public MtStaff queryStaffById(Integer id) {
@@ -189,9 +264,9 @@ public class StaffServiceImpl extends ServiceImpl<MtStaffMapper, MtStaff> implem
     /**
      * 修改店铺员工状态
      *
-     * @param  staffId 员工ID
-     * @throws BusinessCheckException
+     * @param staffId 员工ID
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     @OperationServiceLog(description = "修改店铺员工状态")
@@ -232,7 +307,7 @@ public class StaffServiceImpl extends ServiceImpl<MtStaffMapper, MtStaff> implem
      *
      * @param params 查询参数
      * @return
-     * */
+     */
     @Override
     public List<MtStaff> queryStaffByParams(Map<String, Object> params) {
         if (params == null) {
@@ -245,8 +320,8 @@ public class StaffServiceImpl extends ServiceImpl<MtStaffMapper, MtStaff> implem
      * 根据手机号获取员工信息
      *
      * @param mobile 手机号
-     * @throws BusinessCheckException
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     public MtStaff queryStaffByMobile(String mobile) {
@@ -256,12 +331,20 @@ public class StaffServiceImpl extends ServiceImpl<MtStaffMapper, MtStaff> implem
     /**
      * 根据会员ID获取员工信息
      *
-     * @param  userId 会员ID
-     * @throws BusinessCheckException
+     * @param userId 会员ID
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     public MtStaff queryStaffByUserId(Integer userId) {
         return mtStaffMapper.queryStaffByUserId(userId);
+    }
+
+    @Override
+    public List<MtStaff> queryStaffListByUserIds(Collection<Integer> userIds) {
+        if (CollUtil.isEmpty(userIds)) {
+            return new ArrayList<>();
+        }
+        return mtStaffMapper.selectListByUserIds(userIds);
     }
 }

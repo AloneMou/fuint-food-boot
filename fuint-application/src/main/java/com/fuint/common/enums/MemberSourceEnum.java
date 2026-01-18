@@ -2,7 +2,7 @@ package com.fuint.common.enums;
 
 /**
  * 会员来源渠道
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -10,7 +10,9 @@ public enum MemberSourceEnum {
     BACKEND_ADD("backend_add", "后台添加"),
     REGISTER_BY_ACCOUNT("register_by_account", "H5注册"),
     MOBILE_LOGIN("mobile_login", "手机号登录注册"),
-    WECHAT_LOGIN("wechat_login", "微信小程序");
+    WECHAT_LOGIN("wechat_login", "微信小程序"),
+    OPEN_API("open_api", "开放接口"),
+    ;
 
     private String key;
 

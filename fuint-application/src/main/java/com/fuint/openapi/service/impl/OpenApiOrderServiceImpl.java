@@ -241,7 +241,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         // 计算配送费用
         BigDecimal deliveryFee = calculateDeliveryFee(merchantId, orderMode);
 
-        // 计算会员折扣
+        // 计算会员折扣（整体应用，与OrderServiceImpl.calculateCartGoods保持一致）
         BigDecimal payDiscount = calculateMemberDiscount(merchantId, userInfo);
         payPrice = payPrice.multiply(payDiscount).add(deliveryFee);
 
@@ -297,33 +297,52 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         // 使用确定的优惠券计算购物车（最终计算）
         Map<String, Object> cartData = calculateCartGoods(merchantId, userId, cartList, selectedCouponId != null ? selectedCouponId : 0, isUsePoint, platform, orderMode);
 
-        // 提取计算结果
+        // 提取计算结果（参考saveOrder的逻辑）
         BigDecimal totalPrice = getBigDecimalValue(cartData.get("totalPrice"));
         BigDecimal deliveryFee = getBigDecimalValue(cartData.get("deliveryFee"));
         BigDecimal couponAmount = getBigDecimalValue(cartData.get("couponAmount"));
         BigDecimal usePointAmount = getBigDecimalValue(cartData.get("usePointAmount"));
         List<CouponDto> couponList = (List<CouponDto>) cartData.get("couponList");
+        List<ResCartDto> goodsList = (List<ResCartDto>) cartData.get("list");
         Integer myPoint = getIntegerValue(cartData.get("myPoint"));
         Integer calculatedUsePoint = getIntegerValue(cartData.get("usePoint"));
 
         // 构建可用优惠券列表
         List<Map<String, Object>> availableCoupons = buildAvailableCouponsList(couponList, selectedCouponId);
 
-        // 计算最终应付金额
-        BigDecimal payableAmount = calculatePayableAmount(totalPrice, couponAmount, usePointAmount, deliveryFee);
+        // 模拟saveOrder的价格计算逻辑（第450-460行，第600-610行）
+        // 1. 实付金额 = 商品总额 - 积分抵扣金额 - 优惠券金额（不含会员折扣和配送费）
+        BigDecimal payAmount = totalPrice.subtract(usePointAmount).subtract(couponAmount);
+        if (payAmount.compareTo(ZERO) < 0) {
+            payAmount = ZERO;
+        }
+
+        // 2. 按商品级别计算会员折扣（参考saveOrder第600-610行）
+        BigDecimal memberDiscountAmount = calculateMemberDiscountByItems(merchantId, userInfo, goodsList);
+        if (memberDiscountAmount.compareTo(ZERO) > 0) {
+            // 从实付金额中减去会员折扣
+            payAmount = payAmount.subtract(memberDiscountAmount);
+            if (payAmount.compareTo(ZERO) < 0) {
+                payAmount = ZERO;
+            }
+        }
+
+        // 3. 最终应付金额 = 实付金额 + 配送费
+        BigDecimal payableAmount = payAmount.add(deliveryFee);
 
         // 构建返回结果
         Map<String, Object> result = new HashMap<>();
         result.put("totalAmount", totalPrice);
         result.put("discountAmount", couponAmount);
         result.put("pointAmount", usePointAmount);
+        result.put("memberDiscountAmount", memberDiscountAmount);
         result.put("deliveryFee", deliveryFee);
         result.put("payableAmount", payableAmount);
         result.put("usePoint", calculatedUsePoint);
         result.put("availablePoint", myPoint);
         result.put("availableCoupons", availableCoupons);
         result.put("selectedCouponId", selectedCouponId);
-        result.put("goodsList", cartData.get("list"));
+        result.put("goodsList", goodsList);
         result.put("calculateTime", new Date());
         return result;
     }
@@ -809,20 +828,105 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
     }
 
     /**
-     * 计算会员折扣
+     * 计算会员折扣（整体应用，与OrderServiceImpl.calculateCartGoods保持一致）
      */
     private BigDecimal calculateMemberDiscount(Integer merchantId, MtUser userInfo) {
         try {
+            if (userInfo == null || userInfo.getGradeId() == null) {
+                return ONE;
+            }
             MtUserGrade userGrade = userGradeService.queryUserGradeById(merchantId,
                     Integer.parseInt(userInfo.getGradeId()), userInfo.getId());
             if (userGrade == null || userGrade.getDiscount() <= 0) {
                 return ONE;
             }
 
+            // 与OrderServiceImpl.calculateCartGoods第2163行保持一致
             BigDecimal discount = BigDecimal.valueOf(userGrade.getDiscount()).divide(TEN, BigDecimal.ROUND_CEILING, RoundingMode.FLOOR);
-            return discount.compareTo(ZERO) > 0 ? discount : ONE;
+            if (discount.compareTo(ZERO) <= 0) {
+                return ONE;
+            }
+            return discount;
         } catch (Exception e) {
             return ONE;
+        }
+    }
+
+    /**
+     * 按商品级别计算会员折扣金额（参考saveOrder的逻辑）
+     * 只对支持会员折扣的商品（isMemberDiscount == YES）应用折扣
+     *
+     * @param merchantId 商户ID
+     * @param userInfo   用户信息
+     * @param cartDtoList 购物车商品列表
+     * @return 会员折扣总金额
+     */
+    private BigDecimal calculateMemberDiscountByItems(Integer merchantId, MtUser userInfo, List<ResCartDto> cartDtoList) {
+        if (cartDtoList == null || cartDtoList.isEmpty()) {
+            return ZERO;
+        }
+
+        // 获取会员折扣率
+        BigDecimal percent = getMemberDiscountPercent(merchantId, userInfo);
+        if (percent.compareTo(ZERO) <= 0) {
+            return ZERO;
+        }
+
+        BigDecimal totalMemberDiscount = ZERO;
+
+        // 遍历商品列表，按商品级别计算会员折扣
+        for (ResCartDto cart : cartDtoList) {
+            MtGoods goodsInfo = cart.getGoodsInfo();
+            if (goodsInfo == null) {
+                continue;
+            }
+
+            // 检查商品是否支持会员折扣
+            boolean isDiscount = YesOrNoEnum.YES.getKey().equals(goodsInfo.getIsMemberDiscount());
+            if (percent.compareTo(ZERO) > 0 && isDiscount) {
+                // 计算该商品的会员折扣金额
+                BigDecimal price = goodsInfo.getPrice();
+                if (price != null && price.compareTo(ZERO) > 0) {
+                    // 折扣金额 = (原价 - 折扣后价格) * 数量
+                    BigDecimal discountAmount = price.subtract(price.multiply(percent))
+                            .multiply(new BigDecimal(cart.getNum()));
+                    totalMemberDiscount = totalMemberDiscount.add(discountAmount);
+                }
+            }
+        }
+
+        return totalMemberDiscount.max(ZERO);
+    }
+
+    /**
+     * 获取会员折扣率（参考saveOrder的逻辑）
+     *
+     * @param merchantId 商户ID
+     * @param userInfo   用户信息
+     * @return 会员折扣率（0-1之间，0表示无折扣，1表示不打折）
+     */
+    private BigDecimal getMemberDiscountPercent(Integer merchantId, MtUser userInfo) {
+        try {
+            if (userInfo == null || userInfo.getGradeId() == null) {
+                return ZERO;
+            }
+
+            MtUserGrade userGrade = userGradeService.queryUserGradeById(merchantId,
+                    Integer.parseInt(userInfo.getGradeId()), userInfo.getId());
+            if (userGrade == null || userGrade.getDiscount() == null || userGrade.getDiscount() <= 0) {
+                return ZERO;
+            }
+
+            // 会员折扣率 = discount / 10，例如 discount=8 表示 8折，即 0.8
+            // 与saveOrder第396行保持一致
+            BigDecimal percent = new BigDecimal(userGrade.getDiscount())
+                    .divide(new BigDecimal("10"), BigDecimal.ROUND_CEILING, 3);
+            if (percent.compareTo(ZERO) <= 0) {
+                return ZERO;
+            }
+            return percent;
+        } catch (Exception e) {
+            return ZERO;
         }
     }
 

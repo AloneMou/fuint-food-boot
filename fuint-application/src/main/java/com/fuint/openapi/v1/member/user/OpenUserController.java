@@ -1,21 +1,28 @@
 package com.fuint.openapi.v1.member.user;
 
-import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.lang.RegexPool;
+import cn.hutool.core.util.NumberUtil;
+import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.ReUtil;
 import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.fuint.common.dto.UserDto;
 import com.fuint.common.enums.CouponExpireTypeEnum;
+import com.fuint.common.enums.StaffCategoryEnum;
+import com.fuint.common.enums.StatusEnum;
+import com.fuint.common.enums.YesOrNoEnum;
 import com.fuint.common.service.*;
-import com.fuint.common.util.PhoneFormatCheckUtils;
 import com.fuint.framework.exception.BusinessCheckException;
+import com.fuint.framework.exception.ServiceException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.pojo.CommonResult;
+import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.enums.UserErrorCodeConstants;
+import com.fuint.openapi.v1.member.coupon.vo.UserCouponPageReqVO;
+import com.fuint.openapi.v1.member.coupon.vo.UserCouponRespVO;
 import com.fuint.openapi.v1.member.user.vo.*;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.*;
@@ -32,6 +39,9 @@ import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.fuint.framework.util.collection.CollectionUtils.*;
+import static com.fuint.framework.util.object.BeanUtils.toBean;
 
 /**
  * OpenAPI-员工管理相关接口
@@ -66,6 +76,9 @@ public class OpenUserController extends BaseController {
 
     @Resource
     private CouponService couponService;
+
+    @Resource
+    private StaffService staffService;
 
     /**
      * 单个员工数据同步
@@ -104,7 +117,7 @@ public class OpenUserController extends BaseController {
             return CommonResult.error(UserErrorCodeConstants.USER_BATCH_SYNC_EMPTY);
         }
         if (users.size() > 100) {
-            return CommonResult.error(UserErrorCodeConstants.USER_BATCH_SYNC_EXCEED_LIMIT);
+            return CommonResult.error(UserErrorCodeConstants.USER_BATCH_SYNC_EXCEED_LIMIT, 100);
         }
 
         MtUserBatchSyncRespVO response = new MtUserBatchSyncRespVO();
@@ -145,92 +158,61 @@ public class OpenUserController extends BaseController {
     private MtUserSyncRespVO syncSingleUser(MtUserSyncReqVO syncReqVO) throws BusinessCheckException {
         MtUserSyncRespVO result = new MtUserSyncRespVO();
         result.setMobile(syncReqVO.getMobile());
-
         // 校验手机号格式
-        if (!PhoneFormatCheckUtils.isChinaPhoneLegal(syncReqVO.getMobile())) {
+        if (!ReUtil.isMatch(RegexPool.MOBILE, syncReqVO.getMobile())) {
             result.setSuccess(false);
             result.setMessage("手机号格式不正确");
             return result;
         }
-
         // 设置默认商户ID
         Integer merchantId = syncReqVO.getMerchantId() != null ? syncReqVO.getMerchantId() : 1;
-
         // 根据手机号查询会员是否存在
         MtUser existingUser = memberService.queryMemberByMobile(merchantId, syncReqVO.getMobile());
-
         MtUser mtUser;
         String operationType;
-
         if (existingUser == null) {
             // 创建新会员
-            mtUser = new MtUser();
+            mtUser = toBean(syncReqVO, MtUser.class);
             operationType = "create";
         } else {
             // 更新已有会员
-            mtUser = existingUser;
+            mtUser = toBean(syncReqVO, MtUser.class);
+            mtUser.setId(existingUser.getId());
+            mtUser.setUpdateTime(new Date());
             operationType = "update";
         }
-
-        // 设置/更新会员信息
-        mtUser.setMobile(syncReqVO.getMobile());
-        mtUser.setMerchantId(merchantId);
-
-        if (StringUtils.isNotEmpty(syncReqVO.getName())) {
-            mtUser.setName(syncReqVO.getName());
-        }
-        if (StringUtils.isNotEmpty(syncReqVO.getUserNo())) {
-            mtUser.setUserNo(syncReqVO.getUserNo());
-        }
-        if (syncReqVO.getGroupId() != null) {
-            mtUser.setGroupId(syncReqVO.getGroupId());
-        }
-        if (StringUtils.isNotEmpty(syncReqVO.getGradeId())) {
-            mtUser.setGradeId(syncReqVO.getGradeId());
-        }
-        if (syncReqVO.getStoreId() != null) {
-            mtUser.setStoreId(syncReqVO.getStoreId());
-        }
-        if (syncReqVO.getSex() != null) {
-            mtUser.setSex(syncReqVO.getSex());
-        }
-        if (StringUtils.isNotEmpty(syncReqVO.getBirthday())) {
-            mtUser.setBirthday(syncReqVO.getBirthday());
-        }
-        if (StringUtils.isNotEmpty(syncReqVO.getIdcard())) {
-            mtUser.setIdcard(syncReqVO.getIdcard());
-        }
-        if (StringUtils.isNotEmpty(syncReqVO.getAddress())) {
-            mtUser.setAddress(syncReqVO.getAddress());
-        }
-        if (StringUtils.isNotEmpty(syncReqVO.getAvatar())) {
-            mtUser.setAvatar(syncReqVO.getAvatar());
-        }
-        if (syncReqVO.getBalance() != null) {
-            mtUser.setBalance(syncReqVO.getBalance());
-        }
-        if (syncReqVO.getPoint() != null) {
-            mtUser.setPoint(syncReqVO.getPoint());
-        }
-        if (StringUtils.isNotEmpty(syncReqVO.getStatus())) {
-            mtUser.setStatus(syncReqVO.getStatus());
-        }
-        if (StringUtils.isNotEmpty(syncReqVO.getDescription())) {
-            mtUser.setDescription(syncReqVO.getDescription());
-        }
-        mtUser.setIsStaff(syncReqVO.getIsStaff());
-
         mtUser.setOperator("openapi");
-
         // 保存或更新会员
         if (operationType.equals("create")) {
-            MtUser savedUser = memberService.addMember(mtUser);
-            if (savedUser == null) {
+            try {
+                MtUser savedUser = memberService.addMember(mtUser);
+                if (savedUser == null) {
+                    result.setSuccess(false);
+                    result.setMessage("创建会员失败");
+                    return result;
+                }
+                result.setUserId(savedUser.getId());
+                if (YesOrNoEnum.YES.getKey().equals(savedUser.getIsStaff())) {
+                    MtStaff staff = new MtStaff();
+                    staff.setUserId(savedUser.getId());
+                    staff.setMobile(savedUser.getMobile());
+                    staff.setRealName(savedUser.getName());
+                    staff.setMerchantId(savedUser.getMerchantId());
+                    staff.setStoreId(savedUser.getStoreId());
+                    if (syncReqVO.getStaffLevel() == null) {
+                        staff.setCategory(Integer.parseInt(StaffCategoryEnum.OTHER.getKey()));
+                    } else {
+                        staff.setCategory(syncReqVO.getStaffLevel());
+                    }
+                    staff.setAuditedStatus(StatusEnum.ENABLED.getKey());
+                    staffService.createStaff(staff, "openapi");
+                    // 员工ID
+                    result.setStaffId(staff.getId());
+                }
+            } catch (ServiceException e) {
                 result.setSuccess(false);
-                result.setMessage("创建会员失败");
-                return result;
+                result.setMessage(e.getMessage());
             }
-            result.setUserId(savedUser.getId());
         } else {
             MtUser updatedUser = memberService.updateMember(mtUser, false);
             if (updatedUser == null) {
@@ -239,8 +221,28 @@ public class OpenUserController extends BaseController {
                 return result;
             }
             result.setUserId(updatedUser.getId());
+            try {
+                if (YesOrNoEnum.YES.getKey().equals(updatedUser.getIsStaff())) {
+                    MtStaff updateObj = new MtStaff();
+                    updateObj.setUserId(updatedUser.getId());
+                    updateObj.setMobile(updatedUser.getMobile());
+                    updateObj.setRealName(updatedUser.getName());
+                    updateObj.setMerchantId(updatedUser.getMerchantId());
+                    updateObj.setStoreId(updatedUser.getStoreId());
+                    if (syncReqVO.getStaffLevel() != null) {
+                        updateObj.setCategory(syncReqVO.getStaffLevel());
+                    }
+                    MtStaff staff = staffService.updateStaff(updateObj, "openapi");
+                    // 员工ID
+                    result.setStaffId(staff.getId());
+                } else {
+                    staffService.deleteStaff(updatedUser.getMobile(), "openapi");
+                }
+            } catch (ServiceException e) {
+                result.setSuccess(false);
+                result.setMessage(e.getMessage());
+            }
         }
-
         result.setOperationType(operationType);
         result.setSuccess(true);
         result.setMessage("同步成功");
@@ -265,9 +267,22 @@ public class OpenUserController extends BaseController {
             if (mtUser == null) {
                 return CommonResult.error(UserErrorCodeConstants.USER_NOT_FOUND);
             }
+            List<MtUser> userLs = Collections.singletonList(mtUser);
+            Set<Integer> userIds = convertSet(filterList(userLs, user -> ObjectUtil.isNotNull(user.getId())), MtUser::getId);
+            Set<Integer> storeIds = convertSet(filterList(userLs, user -> ObjectUtil.isNotNull(user.getStoreId())), MtUser::getStoreId);
+            Set<Integer> groupIds = convertSet(filterList(userLs, user -> ObjectUtil.isNotNull(user.getGroupId())), MtUser::getGroupId);
+            Set<Integer> gradeIds = convertSet(filterList(userLs, user -> StringUtils.isNotBlank(user.getGradeId())), user -> Integer.parseInt(user.getGradeId()));
 
-            MtUserRespVO respVO = convertToRespVO(mtUser);
-            return CommonResult.success(respVO);
+            List<MtStaff> staffs = staffService.queryStaffListByUserIds(userIds);
+            List<MtUserGrade> grades = userGradeService.getUserGradeListByIds(gradeIds);
+            List<MtUserGroup> groups = memberGroupService.getUserGroupByIds(groupIds);
+            List<MtStore> stores = storeService.getStoreByIds(storeIds);
+
+            Map<Integer, MtStaff> staffMap = convertMap(staffs, MtStaff::getUserId);
+            Map<Integer, String> gradeMap = convertMap(grades, MtUserGrade::getId, MtUserGrade::getName);
+            Map<Integer, String> groupMap = convertMap(groups, MtUserGroup::getId, MtUserGroup::getName);
+            Map<Integer, String> storeMap = convertMap(stores, MtStore::getId, MtStore::getName);
+            return CommonResult.success(convertToRespVO(mtUser, groupMap, gradeMap, storeMap, staffMap));
         } catch (BusinessCheckException e) {
             return CommonResult.error(500, "获取员工详情失败: " + e.getMessage());
         }
@@ -283,238 +298,58 @@ public class OpenUserController extends BaseController {
     @GetMapping(value = "/page")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<MtUserPageRespVO> getUserPage(@Valid MtUserPageReqVO pageReqVO) {
-        try {
-            // 构建分页请求
-            PaginationRequest paginationRequest = new PaginationRequest();
-            paginationRequest.setCurrentPage(pageReqVO.getPage());
-            paginationRequest.setPageSize(pageReqVO.getPageSize());
-
-            Map<String, Object> params = BeanUtil.beanToMap(pageReqVO, false, true);
-            paginationRequest.setSearchParams(params);
-
-            // 执行查询
-            PaginationResponse<UserDto> paginationResponse = memberService.queryMemberListByPagination(paginationRequest);
-
-            // 如果有优惠券状态筛选，需要额外过滤
-            List<UserDto> filteredList = paginationResponse.getContent();
-            if (StringUtils.isNotEmpty(pageReqVO.getCouponStatus())) {
-                filteredList = filterByCouponStatus(filteredList, pageReqVO.getCouponStatus());
-            }
-
-            // 构建响应
-            MtUserPageRespVO respVO = new MtUserPageRespVO();
-
-            // 转换数据
-            List<MtUserRespVO> list = filteredList.stream()
-                    .map(this::convertUserDtoToRespVO)
-                    .collect(Collectors.toList());
-
-            respVO.setList(list);
-            respVO.setTotal(paginationResponse.getTotalElements());
-            respVO.setTotalPages(paginationResponse.getTotalPages());
-            respVO.setCurrentPage(pageReqVO.getPage());
-            respVO.setPageSize(pageReqVO.getPageSize());
-
-            return CommonResult.success(respVO);
-        } catch (BusinessCheckException e) {
-            return CommonResult.error(500, "查询员工列表失败: " + e.getMessage());
+    public CommonResult<PageResult<MtUserRespVO>> getUserPage(@Valid MtUserPageReqVO pageReqVO) {
+        PageResult<MtUser> result = memberService.getMemberPage(pageReqVO);
+        List<MtUser> userLs = result.getList();
+        if (CollUtil.isEmpty(userLs)) {
+            return CommonResult.success(PageResult.empty());
         }
-    }
+        Set<Integer> userIds = convertSet(filterList(userLs, user -> ObjectUtil.isNotNull(user.getId())), MtUser::getId);
+        Set<Integer> storeIds = convertSet(filterList(userLs, user -> ObjectUtil.isNotNull(user.getStoreId())), MtUser::getStoreId);
+        Set<Integer> groupIds = convertSet(filterList(userLs, user -> ObjectUtil.isNotNull(user.getGroupId())), MtUser::getGroupId);
+        Set<Integer> gradeIds = convertSet(filterList(userLs, user -> StringUtils.isNotBlank(user.getGradeId())), user -> Integer.parseInt(user.getGradeId()));
 
-    /**
-     * 根据优惠券状态筛选会员列表
-     */
-    private List<UserDto> filterByCouponStatus(List<UserDto> userList, String couponStatus) {
-        if (userList == null || userList.isEmpty()) {
-            return userList;
-        }
+        List<MtStaff> staffs = staffService.queryStaffListByUserIds(userIds);
+        List<MtUserGrade> grades = userGradeService.getUserGradeListByIds(gradeIds);
+        List<MtUserGroup> groups = memberGroupService.getUserGroupByIds(groupIds);
+        List<MtStore> stores = storeService.getStoreByIds(storeIds);
 
-        return userList.stream()
-                .filter(user -> {
-                    // 查询该会员的优惠券状态
-                    LambdaQueryWrapper<MtUserCoupon> wrapper = Wrappers.lambdaQuery();
-                    wrapper.eq(MtUserCoupon::getUserId, user.getId());
-                    wrapper.eq(MtUserCoupon::getStatus, couponStatus);
-                    wrapper.last("LIMIT 1");
-                    List<MtUserCoupon> coupons = mtUserCouponMapper.selectList(wrapper);
-                    return !coupons.isEmpty();
-                })
+        Map<Integer, MtStaff> staffMap = convertMap(staffs, MtStaff::getUserId);
+        Map<Integer, String> gradeMap = convertMap(grades, MtUserGrade::getId, MtUserGrade::getName);
+        Map<Integer, String> groupMap = convertMap(groups, MtUserGroup::getId, MtUserGroup::getName);
+        Map<Integer, String> storeMap = convertMap(stores, MtStore::getId, MtStore::getName);
+
+        List<MtUserRespVO> respVOList = userLs.stream()
+                .map(user -> convertToRespVO(user, groupMap, gradeMap, storeMap, staffMap))
                 .collect(Collectors.toList());
+        PageResult<MtUserRespVO> pageRespVO = new PageResult<>();
+        pageRespVO.setTotal(result.getTotal());
+        pageRespVO.setTotalPages(result.getTotalPages());
+        pageRespVO.setList(respVOList);
+        pageRespVO.setCurrentPage(result.getCurrentPage());
+        pageRespVO.setPageSize(result.getPageSize());
+        return CommonResult.success(pageRespVO);
     }
 
     /**
      * 转换MtUser为响应VO
      */
-    private MtUserRespVO convertToRespVO(MtUser mtUser) {
+    private MtUserRespVO convertToRespVO(MtUser mtUser, Map<Integer, String> groupMap, Map<Integer, String> gradeMap, Map<Integer, String> storeMap, Map<Integer, MtStaff> staffLs) {
         MtUserRespVO respVO = new MtUserRespVO();
         BeanUtils.copyProperties(mtUser, respVO);
-
         // 隐藏手机号中间四位
         String phone = mtUser.getMobile();
         respVO.setMobile(phone);
-
-        // 设置分组名称
-        if (mtUser.getGroupId() != null && mtUser.getGroupId() > 0) {
-            try {
-                MtUserGroup mtUserGroup = memberGroupService.queryMemberGroupById(mtUser.getGroupId());
-                if (mtUserGroup != null) {
-                    respVO.setGroupName(mtUserGroup.getName());
-                }
-            } catch (Exception e) {
-                // 忽略异常
-            }
+        respVO.setGroupName(groupMap.getOrDefault(mtUser.getGroupId(), ""));
+        if (NumberUtil.isInteger(mtUser.getGradeId())) {
+            respVO.setGradeName(gradeMap.getOrDefault(Integer.parseInt(mtUser.getGradeId()), ""));
+        } else {
+            respVO.setGradeName("");
         }
-
-        // 设置等级名称
-        if (StringUtils.isNotEmpty(mtUser.getGradeId())) {
-            try {
-                MtUserGrade mtGrade = userGradeService.queryUserGradeById(
-                        mtUser.getMerchantId(),
-                        Integer.parseInt(mtUser.getGradeId()),
-                        mtUser.getId());
-                if (mtGrade != null) {
-                    respVO.setGradeName(mtGrade.getName());
-                }
-            } catch (Exception e) {
-                // 忽略异常
-            }
-        }
-
-        // 设置店铺名称
-        if (mtUser.getStoreId() != null && mtUser.getStoreId() > 0) {
-            try {
-                MtStore mtStore = storeService.queryStoreById(mtUser.getStoreId());
-                if (mtStore != null) {
-                    respVO.setStoreName(mtStore.getName());
-                }
-            } catch (Exception e) {
-                // 忽略异常
-            }
-        }
-
-        // 设置最后登录时间描述
-//        respVO.setLastLoginTime(TimeUtil.showTime(new Date(), mtUser.getUpdateTime()));
-
-        return respVO;
-    }
-
-    /**
-     * 转换UserDto为响应VO
-     */
-    private MtUserRespVO convertUserDtoToRespVO(UserDto userDto) {
-        MtUserRespVO respVO = new MtUserRespVO();
-        BeanUtils.copyProperties(userDto, respVO);
-
-        // UserDto已经处理过手机号脱敏
-        respVO.setGradeName(userDto.getGradeName());
-        respVO.setStoreName(userDto.getStoreName());
-//        respVO.setLastLoginTime(userDto.getLastLoginTime());
-
-        // 设置分组名称
-        if (userDto.getGroupInfo() != null) {
-            respVO.setGroupName(userDto.getGroupInfo().getName());
-        }
-
-        return respVO;
-    }
-
-    /**
-     * 获取用户优惠券列表
-     *
-     * @param reqVO 查询请求参数
-     * @return 用户优惠券列表
-     */
-    @ApiOperation(value = "获取用户优惠券列表", notes = "支持分页查询，支持按优惠券状态筛选（等于）")
-    @GetMapping(value = "/{userId}/coupons")
-    @ApiSignature
-    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<UserCouponListPageRespVO> getUserCouponList(
-            @ApiParam(value = "用户ID", required = true, example = "1")
-            @PathVariable("userId") Integer userId,
-            @Valid UserCouponListReqVO reqVO) {
-        try {
-            // 验证用户是否存在
-            MtUser userInfo = memberService.queryMemberById(userId);
-            if (userInfo == null) {
-                return CommonResult.error(UserErrorCodeConstants.USER_NOT_FOUND);
-            }
-
-            // 构建分页请求
-            PaginationRequest paginationRequest = new PaginationRequest();
-            paginationRequest.setCurrentPage(reqVO.getPage() != null ? reqVO.getPage() : 1);
-            paginationRequest.setPageSize(reqVO.getPageSize() != null ? reqVO.getPageSize() : 10);
-
-            Map<String, Object> params = new HashMap<>();
-            params.put("userId", userId.toString());
-            if (StringUtils.isNotEmpty(reqVO.getStatus())) {
-                params.put("status", reqVO.getStatus());
-            }
-            paginationRequest.setSearchParams(params);
-
-            // 执行查询
-            PaginationResponse<MtUserCoupon> paginationResponse = userCouponService.queryUserCouponListByPagination(paginationRequest);
-
-            // 转换为响应VO
-            List<UserCouponRespVO> list = paginationResponse.getContent().stream()
-                    .map(this::convertUserCouponToRespVO)
-                    .collect(Collectors.toList());
-
-            // 构建响应
-            UserCouponListPageRespVO respVO = new UserCouponListPageRespVO();
-            respVO.setPage(reqVO.getPage() != null ? reqVO.getPage() : 1);
-            respVO.setPageSize(reqVO.getPageSize() != null ? reqVO.getPageSize() : 10);
-            respVO.setTotal(paginationResponse.getTotalElements());
-            respVO.setTotalPages(paginationResponse.getTotalPages());
-            respVO.setList(list);
-
-            return CommonResult.success(respVO);
-        } catch (BusinessCheckException e) {
-            return CommonResult.error(500, "获取用户优惠券列表失败: " + e.getMessage());
-        }
-    }
-
-    /**
-     * 转换MtUserCoupon为响应VO
-     */
-    private UserCouponRespVO convertUserCouponToRespVO(MtUserCoupon userCoupon) {
-        UserCouponRespVO respVO = new UserCouponRespVO();
-        respVO.setUserCouponId(userCoupon.getId());
-        respVO.setCouponId(userCoupon.getCouponId());
-        respVO.setCode(userCoupon.getCode());
-        respVO.setStatus(userCoupon.getStatus());
-        respVO.setAmount(userCoupon.getAmount());
-        respVO.setBalance(userCoupon.getBalance());
-        respVO.setCreateTime(userCoupon.getCreateTime());
-        respVO.setUsedTime(userCoupon.getUsedTime());
-
-        // 获取优惠券详情
-        try {
-            MtCoupon couponInfo = couponService.queryCouponById(userCoupon.getCouponId());
-            if (couponInfo != null) {
-                respVO.setCouponName(couponInfo.getName());
-                respVO.setCouponType(couponInfo.getType());
-
-                // 设置使用门槛说明
-                if (StringUtils.isEmpty(couponInfo.getOutRule()) || couponInfo.getOutRule().equals("0")) {
-                    respVO.setDescription("无使用门槛");
-                } else {
-                    respVO.setDescription("满" + couponInfo.getOutRule() + "元可用");
-                }
-
-                // 设置有效期
-                if (couponInfo.getExpireType().equals(CouponExpireTypeEnum.FIX.getKey())) {
-                    respVO.setEffectiveStartTime(couponInfo.getBeginTime());
-                    respVO.setEffectiveEndTime(couponInfo.getEndTime());
-                } else if (couponInfo.getExpireType().equals(CouponExpireTypeEnum.FLEX.getKey())) {
-                    respVO.setEffectiveStartTime(userCoupon.getCreateTime());
-                    respVO.setEffectiveEndTime(userCoupon.getExpireTime());
-                }
-            }
-        } catch (Exception e) {
-            // 忽略异常，继续处理
-        }
-
+        MtStaff staff = staffLs.getOrDefault(mtUser.getId(), new MtStaff());
+        respVO.setStaffLevel(staff.getCategory());
+        respVO.setStaffId(staff.getId());
+        respVO.setStoreName(storeMap.getOrDefault(mtUser.getStoreId(), null));
         return respVO;
     }
 

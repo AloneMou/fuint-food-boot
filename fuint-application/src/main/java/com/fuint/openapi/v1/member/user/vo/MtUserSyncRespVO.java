@@ -17,6 +17,9 @@ public class MtUserSyncRespVO {
     @ApiModelProperty(value = "会员ID", example = "1")
     private Integer userId;
 
+    @ApiModelProperty(value = "员工ID", example = "1")
+    private Integer staffId;
+
     @ApiModelProperty(value = "手机号码", example = "13800138000")
     private String mobile;
 
