@@ -45,6 +45,27 @@ public class UserCouponRespVO {
     @ApiModelProperty(value = "使用门槛说明", example = "满20元可用")
     private String description;
 
+    @ApiModelProperty(value = "使用规则", example = "满20元可用")
+    private String useRule;
+
+    @ApiModelProperty(value = "图片URL", example = "https://example.com/image.jpg")
+    private String image;
+
+    @ApiModelProperty(value = "是否允许转赠", example = "true")
+    private Boolean isGive;
+
+    @ApiModelProperty(value = "是否可用(过期、状态等)", example = "true")
+    private Boolean canUse;
+
+    @ApiModelProperty(value = "有效期（格式化字符串）", example = "2024-01-01 00:00:00-2024-12-31 23:59:59")
+    private String effectiveDate;
+
+    @ApiModelProperty(value = "适用店铺名称", example = "门店A,门店B")
+    private String storeNames;
+
+    @ApiModelProperty(value = "提示信息", example = "满20可用")
+    private String tips;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @ApiModelProperty(value = "有效期开始时间")
     private Date effectiveStartTime;
