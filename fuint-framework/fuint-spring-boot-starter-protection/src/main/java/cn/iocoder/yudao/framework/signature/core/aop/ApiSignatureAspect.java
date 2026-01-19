@@ -63,8 +63,10 @@ public class ApiSignatureAspect {
         // 1.2 校验 appId 是否能获取到对应的 appSecret
         String appId = request.getHeader(signature.appId());
         String appSecret = signatureRedisDAO.getAppSecret(appId);
+        if (StrUtil.isBlank(appSecret)) {
+            throw new ServiceException(APPID_ERROR);
+        }
         Assert.notNull(appSecret, "[appId({})] 找不到对应的 appSecret", appId);
-
         // 2. 校验签名【重要！】
         String clientSignature = request.getHeader(signature.sign()); // 客户端签名
         String serverSignatureString = buildSignatureString(signature, request, appSecret); // 服务端签名字符串
