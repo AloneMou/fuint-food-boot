@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * 会员卡券表 Mapper 接口
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -27,7 +27,7 @@ public interface MtUserCouponMapper extends BaseMapperX<MtUserCoupon> {
 
     List<MtUserCoupon> getUserCouponList(@Param("userId") Integer userId, @Param("statusList") List<String> statusList);
 
-    List<MtUserCoupon> getUserCouponListByCouponId(@Param("userId") Integer userId, @Param("couponId") Integer couponId ,@Param("statusList") List<String> statusList);
+    List<MtUserCoupon> getUserCouponListByCouponId(@Param("userId") Integer userId, @Param("couponId") Integer couponId, @Param("statusList") List<String> statusList);
 
     MtUserCoupon findByCode(@Param("code") String code);
 
@@ -51,6 +51,7 @@ public interface MtUserCouponMapper extends BaseMapperX<MtUserCoupon> {
         return selectPage(pageReqVO, new LambdaQueryWrapperX<MtUserCoupon>()
                 .eqIfPresent(MtUserCoupon::getUserId, pageReqVO.getUserId())
                 .eqIfPresent(MtUserCoupon::getStatus, pageReqVO.getStatus())
+                .eqIfPresent(MtUserCoupon::getType, pageReqVO.getCouponType())
                 .ne(MtUserCoupon::getStatus, StatusEnum.DISABLE.getKey())
                 .orderByDesc(MtUserCoupon::getCreateTime)
                 .orderByDesc(MtUserCoupon::getId)

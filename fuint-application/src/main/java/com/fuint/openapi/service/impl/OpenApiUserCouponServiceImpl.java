@@ -16,6 +16,7 @@ import com.fuint.repository.model.MtCoupon;
 import com.fuint.repository.model.MtStore;
 import com.fuint.repository.model.MtUserCoupon;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,7 @@ import static com.fuint.framework.util.object.BeanUtils.toBean;
  * @author mjw
  * @since 2026/1/18
  */
+@Slf4j
 @Service
 @AllArgsConstructor
 public class OpenApiUserCouponServiceImpl implements OpenApiUserCouponService {
@@ -148,7 +150,7 @@ public class OpenApiUserCouponServiceImpl implements OpenApiUserCouponService {
                                               Map<Integer, Long> confirmCountMap,
                                               String baseImage) {
         UserCouponRespVO respVO = new UserCouponRespVO();
-        
+        respVO.setCreateTime(userCoupon.getCreateTime());
         // 设置用户优惠券基础信息
         respVO.setUserCouponId(userCoupon.getId());
         respVO.setCouponId(userCoupon.getCouponId());
@@ -183,6 +185,19 @@ public class OpenApiUserCouponServiceImpl implements OpenApiUserCouponService {
         // 设置有效期（格式化为字符串，移除单独的开始/结束时间字段以减少响应大小）
         String effectiveDate = buildEffectiveDate(couponInfo, userCoupon);
         respVO.setEffectiveDate(effectiveDate);
+        if (StringUtils.isNotEmpty(effectiveDate) && effectiveDate.contains("~")) {
+            try {
+                String[] dates = effectiveDate.split("~");
+                if (dates.length == 2) {
+                    Date startTime = parseDateFromString(dates[0].trim());
+                    Date endTime = parseDateFromString(dates[1].trim());
+                    respVO.setEffectiveStartTime(startTime);
+                    respVO.setEffectiveEndTime(endTime);
+                }
+            } catch (Exception e) {
+                log.warn("解析优惠券有效期失败: {}", effectiveDate, e);
+            }
+        }
 
         // 设置适用店铺（从Map中获取，避免重复查询）
         String storeNames = storeNamesMap.getOrDefault(couponInfo.getStoreIds(), "");
@@ -374,5 +389,27 @@ public class OpenApiUserCouponServiceImpl implements OpenApiUserCouponService {
             }
         }
         return confirmCountMap;
+    }
+
+    /**
+     * 从字符串解析日期
+     */
+    private Date parseDateFromString(String dateStr) {
+        if (StringUtils.isEmpty(dateStr)) {
+            return null;
+        }
+        try {
+            // 尝试解析 "yyyy.MM.dd HH:mm" 格式
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy.MM.dd HH:mm");
+            return sdf.parse(dateStr);
+        } catch (Exception e) {
+            try {
+                // 尝试解析 "yyyy-MM-dd HH:mm:ss" 格式
+                java.text.SimpleDateFormat sdf2 = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                return sdf2.parse(dateStr);
+            } catch (Exception e2) {
+                return null;
+            }
+        }
     }
 }

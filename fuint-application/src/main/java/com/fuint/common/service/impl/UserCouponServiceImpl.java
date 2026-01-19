@@ -14,9 +14,11 @@ import com.fuint.common.util.DateUtil;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.util.SeqUtil;
 import com.fuint.framework.util.spring.SpringUtils;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.v1.member.coupon.vo.UserCouponPageReqVO;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.mapper.MtCouponGoodsMapper;
 import com.fuint.repository.model.*;
@@ -866,7 +868,7 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
     }
 
     @Override
-    public com.fuint.framework.pojo.PageResult<MtUserCoupon> getUserCouponPage(com.fuint.openapi.v1.member.coupon.vo.UserCouponPageReqVO pageReqVO) {
+    public PageResult<MtUserCoupon> getUserCouponPage(UserCouponPageReqVO pageReqVO) {
         return mtUserCouponMapper.selectUserCouponPage(pageReqVO);
     }
 }
