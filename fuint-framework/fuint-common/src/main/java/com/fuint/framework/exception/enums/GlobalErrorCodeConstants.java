@@ -44,4 +44,19 @@ public interface GlobalErrorCodeConstants {
     // APPID不正确
     ErrorCode APPID_ERROR = new ErrorCode(100_1_002, "APPID不正确");
 
+    //APPID不能为空
+    ErrorCode APPID_EMPTY = new ErrorCode(100_1_003, "APPID不能为空");
+
+    //当前IP
+    ErrorCode CURRENT_IP_ERROR = new ErrorCode(100_1_004, "当前IP({})不允许访问");
+    // 时间戳不能为空
+    ErrorCode TIMESTAMP_EMPTY = new ErrorCode(100_1_005, "时间戳不能为空");
+
+    //随机字符串长度不得少于
+    ErrorCode RANDOM_STRING_LENGTH_ERROR = new ErrorCode(100_1_006, "随机字符串长度不得少于{}位");
+    //签名不能为空
+    ErrorCode SIGNATURE_EMPTY = new ErrorCode(100_1_007, "签名不能为空");
+    //请求时差
+    ErrorCode REQUEST_TIME_OUT = new ErrorCode(100_1_008, "请求时差过大");
+
 }

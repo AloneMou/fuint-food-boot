@@ -55,6 +55,6 @@ public @interface ApiSignature {
     /**
      * sign 客户端签名
      */
-    String sign() default "sign";
+    String sign() default "signature";
 
 }

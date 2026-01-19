@@ -24,7 +24,8 @@ import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import static com.fuint.framework.exception.enums.GlobalErrorCodeConstants.BAD_REQUEST;
+import static com.fuint.framework.exception.enums.GlobalErrorCodeConstants.*;
+import static com.fuint.framework.exception.util.ServiceExceptionUtil.exception;
 
 
 /**
@@ -42,9 +43,6 @@ public class ApiSignatureAspect {
 
     @Before("@annotation(signature)")
     public void beforePointCut(JoinPoint joinPoint, ApiSignature signature) {
-        if(1==1){
-            return;
-        }
         // 1. 验证通过，直接结束
         if (verifySignature(signature, Objects.requireNonNull(ServletUtils.getRequest()))) {
             return;
@@ -53,8 +51,8 @@ public class ApiSignatureAspect {
         // 2. 验证不通过，抛出异常
         log.error("[beforePointCut][方法{} 参数({}) 签名失败]", joinPoint.getSignature().toString(),
                 joinPoint.getArgs());
-        throw new ServiceException(BAD_REQUEST.getCode(),
-                StrUtil.blankToDefault(signature.message(), BAD_REQUEST.getMsg()));
+        throw new ServiceException(SIGNATURE_ERROR.getCode(),
+                StrUtil.blankToDefault(signature.message(), SIGNATURE_ERROR.getMsg()));
     }
 
     public boolean verifySignature(ApiSignature signature, HttpServletRequest request) {
@@ -101,22 +99,22 @@ public class ApiSignatureAspect {
         // 1. 非空校验
         String appId = request.getHeader(signature.appId());
         if (StrUtil.isBlank(appId)) {
-            return false;
+            throw new ServiceException(APPID_EMPTY);
         }
-        if (signatureService.checkIpWhiteList(appId, ServletUtils.getClientIP(request))) {
-
+        if (!signatureService.checkIpWhiteList(appId, ServletUtils.getClientIP(request))) {
+            throw exception(CURRENT_IP_ERROR, ServletUtils.getClientIP(request));
         }
         String timestamp = request.getHeader(signature.timestamp());
         if (StrUtil.isBlank(timestamp)) {
-            return false;
+            throw new ServiceException(TIMESTAMP_EMPTY);
         }
         String nonce = request.getHeader(signature.nonce());
         if (StrUtil.length(nonce) < 10) {
-            return false;
+            throw new ServiceException(RANDOM_STRING_LENGTH_ERROR);
         }
         String sign = request.getHeader(signature.sign());
         if (StrUtil.isBlank(sign)) {
-            return false;
+            throw new ServiceException(SIGNATURE_EMPTY);
         }
 
         // 2. 检查 timestamp 是否超出允许的范围 （重点一：此处需要取绝对值）
@@ -124,7 +122,7 @@ public class ApiSignatureAspect {
         long requestTimestamp = Long.parseLong(timestamp);
         long timestampDisparity = Math.abs(System.currentTimeMillis() - requestTimestamp);
         if (timestampDisparity > expireTime) {
-            return false;
+            throw new ServiceException(REQUEST_TIME_OUT);
         }
 
         // 3. 检查 nonce 是否存在，有且仅能使用一次
