@@ -4,8 +4,8 @@ import cn.iocoder.yudao.framework.redis.config.YudaoRedisAutoConfiguration;
 import cn.iocoder.yudao.framework.signature.core.aop.ApiSignatureAspect;
 import cn.iocoder.yudao.framework.signature.core.redis.ApiSignatureRedisDAO;
 import cn.iocoder.yudao.framework.signature.core.service.ApiSignatureService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -19,9 +19,12 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 @AutoConfigureAfter(YudaoRedisAutoConfiguration.class)
 public class YudaoApiSignatureAutoConfiguration {
 
+    @Value("${project.signature.enable:true}")
+    private Boolean enable;
+
     @Bean
     public ApiSignatureAspect signatureAspect(ApiSignatureRedisDAO signatureRedisDAO, ApiSignatureService signatureService) {
-        return new ApiSignatureAspect(signatureRedisDAO, signatureService);
+        return new ApiSignatureAspect(signatureRedisDAO, signatureService, enable);
     }
 
     @Bean

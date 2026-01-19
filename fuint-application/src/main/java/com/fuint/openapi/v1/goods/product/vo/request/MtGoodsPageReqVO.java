@@ -1,5 +1,6 @@
 package com.fuint.openapi.v1.goods.product.vo.request;
 
+import com.fuint.framework.pojo.PageParams;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -14,15 +15,8 @@ import javax.validation.constraints.Min;
  */
 @Data
 @ApiModel(value = "商品分页查询请求VO")
-public class MtGoodsPageReqVO {
+public class MtGoodsPageReqVO  extends PageParams {
 
-    @ApiModelProperty(value = "当前页码", example = "1")
-    @Min(value = 1, message = "页码最小为1")
-    private Integer page = 1;
-
-    @ApiModelProperty(value = "每页数量", example = "10")
-    @Min(value = 1, message = "每页数量最小为1")
-    private Integer pageSize = 10;
 
     @ApiModelProperty(value = "商品名称（模糊搜索）", example = "咖啡")
     private String name;

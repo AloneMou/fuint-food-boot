@@ -43,7 +43,7 @@ public interface OpenApiCouponGroupService {
      * @return 更新后的分组
      * @throws BusinessCheckException 业务异常
      */
-    MtCouponGroup updateCouponGroup(ReqCouponGroupDto reqCouponGroupDto) throws BusinessCheckException;
+    void updateCouponGroup(ReqCouponGroupDto reqCouponGroupDto) throws BusinessCheckException;
 
     /**
      * 根据ID获取优惠券分组信息

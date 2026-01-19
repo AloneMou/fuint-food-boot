@@ -5,20 +5,17 @@ import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRate
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.fuint.common.dto.ReqCouponGroupDto;
 import com.fuint.common.enums.StatusEnum;
-import com.fuint.openapi.service.OpenApiCouponGroupService;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.web.BaseController;
+import com.fuint.openapi.service.OpenApiCouponGroupService;
 import com.fuint.openapi.v1.marketing.group.vo.CouponGroupCreateReqVO;
 import com.fuint.openapi.v1.marketing.group.vo.CouponGroupPageReqVO;
 import com.fuint.openapi.v1.marketing.group.vo.CouponGroupRespVO;
 import com.fuint.openapi.v1.marketing.group.vo.CouponGroupUpdateReqVO;
 import com.fuint.repository.model.MtCouponGroup;
-
-import static com.fuint.openapi.enums.CouponGroupErrorCodeConstants.*;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -37,6 +34,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.fuint.openapi.enums.CouponGroupErrorCodeConstants.COUPON_GROUP_CREATE_FAILED;
 
 /**
  * OpenApi优惠券分组管理接口
@@ -62,13 +61,10 @@ public class OpenCouponGroupController extends BaseController {
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Integer> createCouponGroup(@Valid @RequestBody CouponGroupCreateReqVO reqVO) throws BusinessCheckException {
-        // 转换DTO
         ReqCouponGroupDto dto = new ReqCouponGroupDto();
         BeanUtils.copyProperties(reqVO, dto);
         dto.setStatus(StatusEnum.ENABLED.getKey());
-        // OpenAPI操作时，设置operator为"openapi"
         dto.setOperator("openapi");
-        // 调用OpenAPI服务层创建
         MtCouponGroup couponGroup = openApiCouponGroupService.createCouponGroup(dto);
         if (couponGroup == null) {
             return CommonResult.error(COUPON_GROUP_CREATE_FAILED);
@@ -87,26 +83,12 @@ public class OpenCouponGroupController extends BaseController {
     @PutMapping("/update")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<CouponGroupRespVO> updateCouponGroup(@Valid @RequestBody CouponGroupUpdateReqVO reqVO) throws BusinessCheckException {
-        log.info("[updateCouponGroup] 更新优惠券分组，请求参数: {}", reqVO);
-
-        // 转换DTO
+    public CommonResult<Boolean> updateCouponGroup(@Valid @RequestBody CouponGroupUpdateReqVO reqVO) throws BusinessCheckException {
         ReqCouponGroupDto dto = new ReqCouponGroupDto();
         BeanUtils.copyProperties(reqVO, dto);
-        // OpenAPI操作时，设置operator为"openapi"
-        dto.setOperator(reqVO.getOperator() != null ? reqVO.getOperator() : "openapi");
-
-        // 调用OpenAPI服务层更新（内部会校验ID和分组是否存在）
-        MtCouponGroup couponGroup = openApiCouponGroupService.updateCouponGroup(dto);
-        if (couponGroup == null) {
-            return CommonResult.error(COUPON_GROUP_UPDATE_FAILED);
-        }
-
-        // 构建响应VO
-        CouponGroupRespVO respVO = buildCouponGroupRespVO(couponGroup);
-        log.info("[updateCouponGroup] 更新优惠券分组成功，分组ID: {}", couponGroup.getId());
-
-        return CommonResult.success(respVO);
+        dto.setOperator("openapi");
+        openApiCouponGroupService.updateCouponGroup(dto);
+        return CommonResult.success(true);
     }
 
     /**
@@ -124,12 +106,8 @@ public class OpenCouponGroupController extends BaseController {
     public CommonResult<Boolean> deleteCouponGroup(
             @ApiParam(value = "分组ID", required = true, example = "1") @PathVariable("id") Integer id,
             @ApiParam(value = "操作人", required = false, example = "openapi") @RequestParam(value = "operator", required = false, defaultValue = "openapi") String operator) throws BusinessCheckException {
-        log.info("[deleteCouponGroup] 删除优惠券分组，分组ID: {}, 操作人: {}", id, operator);
-
         // 调用OpenAPI服务层删除（内部会校验ID和分组是否存在）
         openApiCouponGroupService.deleteCouponGroup(id, operator);
-        log.info("[deleteCouponGroup] 删除优惠券分组成功，分组ID: {}", id);
-
         return CommonResult.success(true);
     }
 
@@ -146,21 +124,13 @@ public class OpenCouponGroupController extends BaseController {
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<CouponGroupRespVO> getCouponGroupDetail(
             @ApiParam(value = "分组ID", required = true, example = "1") @PathVariable("id") Integer id) throws BusinessCheckException {
-        log.info("[getCouponGroupDetail] 获取优惠券分组详情，分组ID: {}", id);
-
         // 查询分组信息（内部会校验ID和分组是否存在）
         MtCouponGroup couponGroup = openApiCouponGroupService.queryCouponGroupById(id);
-
         // 构建响应VO
         CouponGroupRespVO respVO = buildCouponGroupRespVO(couponGroup);
-
         // 补充额外统计信息
         Integer couponNum = openApiCouponGroupService.getCouponNum(id);
-        Integer sendNum = openApiCouponGroupService.getSendNum(id);
         respVO.setCouponNum(couponNum);
-        respVO.setSendNum(sendNum);
-
-        log.info("[getCouponGroupDetail] 获取优惠券分组详情成功，分组ID: {}", id);
         return CommonResult.success(respVO);
     }
 
@@ -172,7 +142,7 @@ public class OpenCouponGroupController extends BaseController {
      * @throws BusinessCheckException 业务异常
      */
     @ApiOperation(value = "分页查询优惠券分组列表", notes = "支持按名称、商户ID、状态等条件分页查询")
-    @GetMapping("/list")
+    @GetMapping("/page")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<PaginationResponse<CouponGroupRespVO>> getCouponGroupList(@Valid CouponGroupPageReqVO reqVO) throws BusinessCheckException {
@@ -218,8 +188,6 @@ public class OpenCouponGroupController extends BaseController {
                 try {
                     Integer couponNum = openApiCouponGroupService.getCouponNum(group.getId());
                     Integer sendNum = openApiCouponGroupService.getSendNum(group.getId());
-                    respVO.setCouponNum(couponNum);
-                    respVO.setSendNum(sendNum);
                 } catch (Exception e) {
                     log.warn("[getCouponGroupList] 获取分组统计信息失败，分组ID: {}", group.getId(), e);
                 }

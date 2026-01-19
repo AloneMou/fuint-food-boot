@@ -30,7 +30,7 @@ public class MyBatisUtils {
 
     public static <T> Page<T> buildPage(PageParams pageParam, Collection<SortingField> sortingFields) {
         // 页码 + 数量
-        Page<T> page = new Page<>(pageParam.getPageNo(), pageParam.getPageSize());
+        Page<T> page = new Page<>(pageParam.getPage(), pageParam.getPageSize());
         // 排序字段
         if (CollUtil.isNotEmpty(sortingFields)) {
             for (SortingField sortingField : sortingFields) {

@@ -6,7 +6,6 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -33,15 +32,6 @@ public class CouponGroupRespVO implements Serializable {
     @ApiModelProperty(value = "分组名称", example = "春节优惠券套餐")
     private String name;
 
-    @ApiModelProperty(value = "价值金额", example = "100.00")
-    private BigDecimal money;
-
-    @ApiModelProperty(value = "券种类数量", example = "5")
-    private Integer num;
-
-    @ApiModelProperty(value = "发行数量", example = "1000")
-    private Integer total;
-
     @ApiModelProperty(value = "分组描述", example = "春节特惠优惠券组合")
     private String description;
 
@@ -53,16 +43,6 @@ public class CouponGroupRespVO implements Serializable {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date updateTime;
 
-    @ApiModelProperty(value = "操作人", example = "admin")
-    private String operator;
-
-    @ApiModelProperty(value = "状态", example = "A", notes = "A：正常；D：删除")
-    private String status;
-
-    @ApiModelProperty(value = "已发放套数", example = "500")
-    private Integer sendNum;
-
-    @ApiModelProperty(value = "券种类数量", example = "3")
+    @ApiModelProperty(value = "优惠券种类数量", example = "10")
     private Integer couponNum;
-
 }

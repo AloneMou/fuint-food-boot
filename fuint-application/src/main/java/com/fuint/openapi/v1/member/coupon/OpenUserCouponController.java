@@ -55,7 +55,7 @@ public class OpenUserCouponController extends BaseController {
         try {
             // 构建分页请求
             PaginationRequest paginationRequest = new PaginationRequest();
-            paginationRequest.setCurrentPage(pageReqVO.getPageNo() == null ? Constants.PAGE_NUMBER : pageReqVO.getPageNo());
+            paginationRequest.setCurrentPage(pageReqVO.getPage() == null ? Constants.PAGE_NUMBER : pageReqVO.getPage());
             paginationRequest.setPageSize(pageReqVO.getPageSize() == null ? Constants.PAGE_SIZE : pageReqVO.getPageSize());
 
             // 构建查询参数

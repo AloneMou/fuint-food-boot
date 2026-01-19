@@ -17,7 +17,7 @@ public class PageUtils {
     private static final Object[] ORDER_TYPES = new String[]{SortingField.ORDER_ASC, SortingField.ORDER_DESC};
 
     public static int getStart(PageParams pageParam) {
-        return (pageParam.getPageNo() - 1) * pageParam.getPageSize();
+        return (pageParam.getPage() - 1) * pageParam.getPageSize();
     }
 
     /**

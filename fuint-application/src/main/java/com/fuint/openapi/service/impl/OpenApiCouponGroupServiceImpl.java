@@ -1,5 +1,6 @@
 package com.fuint.openapi.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fuint.common.dto.ReqCouponGroupDto;
@@ -9,6 +10,7 @@ import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.util.object.BeanUtils;
 import com.fuint.openapi.service.OpenApiCouponGroupService;
 import com.fuint.repository.mapper.MtCouponGroupMapper;
 import com.fuint.repository.mapper.MtCouponMapper;
@@ -30,6 +32,10 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import static com.fuint.framework.exception.util.ServiceExceptionUtil.exception;
+import static com.fuint.openapi.enums.CouponGroupErrorCodeConstants.COUPON_GROUP_ALREADY_DELETED;
+import static com.fuint.openapi.enums.CouponGroupErrorCodeConstants.COUPON_GROUP_NOT_FOUND;
 
 /**
  * OpenAPI优惠券分组业务实现类
@@ -140,56 +146,30 @@ public class OpenApiCouponGroupServiceImpl implements OpenApiCouponGroupService 
 
     /**
      * 更新优惠券分组
+     *
+     * @return
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "OpenAPI更新优惠券分组")
-    public MtCouponGroup updateCouponGroup(ReqCouponGroupDto reqCouponGroupDto) throws BusinessCheckException {
-        logger.info("[OpenApiCouponGroupService] 更新优惠券分组, 参数: {}", reqCouponGroupDto);
-
-        if (reqCouponGroupDto.getId() == null) {
-            throw new BusinessCheckException("分组ID不能为空");
-        }
-
+    public void updateCouponGroup(ReqCouponGroupDto reqCouponGroupDto) throws BusinessCheckException {
         // 检查分组是否存在
         MtCouponGroup couponGroup = mtCouponGroupMapper.selectById(reqCouponGroupDto.getId());
         if (couponGroup == null) {
-            throw new BusinessCheckException("优惠券分组不存在");
+            throw exception(COUPON_GROUP_NOT_FOUND);
         }
-
         if (StatusEnum.DISABLE.getKey().equals(couponGroup.getStatus())) {
-            throw new BusinessCheckException("该分组已被删除");
+            throw exception(COUPON_GROUP_ALREADY_DELETED);
         }
-
+        MtCouponGroup updateObj = BeanUtils.toBean(reqCouponGroupDto, MtCouponGroup.class);
         // 更新字段
-        if (reqCouponGroupDto.getName() != null) {
-            couponGroup.setName(CommonUtil.replaceXSS(reqCouponGroupDto.getName()));
+        if (StringUtils.isNotBlank(reqCouponGroupDto.getName())) {
+            updateObj.setName(CommonUtil.replaceXSS(reqCouponGroupDto.getName()));
         }
-
-        if (reqCouponGroupDto.getMoney() != null) {
-            couponGroup.setMoney(reqCouponGroupDto.getMoney());
-        }
-
-        if (reqCouponGroupDto.getTotal() != null) {
-            couponGroup.setTotal(reqCouponGroupDto.getTotal());
-        }
-
-        if (reqCouponGroupDto.getDescription() != null) {
-            couponGroup.setDescription(CommonUtil.replaceXSS(reqCouponGroupDto.getDescription()));
-        }
-
-        if (reqCouponGroupDto.getStatus() != null) {
-            couponGroup.setStatus(reqCouponGroupDto.getStatus());
-        }
-
-        couponGroup.setUpdateTime(new Date());
+        updateObj.setUpdateTime(new Date());
         // OpenAPI操作时，默认operator为"openapi"
-        couponGroup.setOperator(reqCouponGroupDto.getOperator() != null ? reqCouponGroupDto.getOperator() : "openapi");
-
-        mtCouponGroupMapper.updateById(couponGroup);
-
-        logger.info("[OpenApiCouponGroupService] 更新优惠券分组成功, 分组ID: {}", couponGroup.getId());
-        return couponGroup;
+        updateObj.setOperator("openapi");
+        mtCouponGroupMapper.updateById(updateObj);
     }
 
     /**
@@ -200,12 +180,13 @@ public class OpenApiCouponGroupServiceImpl implements OpenApiCouponGroupService 
         if (id == null || id <= 0) {
             throw new BusinessCheckException("分组ID不能为空");
         }
-
         MtCouponGroup couponGroup = mtCouponGroupMapper.selectById(id);
         if (couponGroup == null) {
-            throw new BusinessCheckException("优惠券分组不存在");
+            throw exception(COUPON_GROUP_NOT_FOUND);
         }
-
+        if (StatusEnum.DISABLE.getKey().equals(couponGroup.getStatus())) {
+            throw exception(COUPON_GROUP_ALREADY_DELETED);
+        }
         return couponGroup;
     }
 
@@ -216,17 +197,18 @@ public class OpenApiCouponGroupServiceImpl implements OpenApiCouponGroupService 
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "OpenAPI删除优惠券分组")
     public void deleteCouponGroup(Integer id, String operator) throws BusinessCheckException {
-        logger.info("[OpenApiCouponGroupService] 删除优惠券分组, 分组ID: {}, 操作人: {}", id, operator);
-
         MtCouponGroup couponGroup = queryCouponGroupById(id);
+        if (couponGroup == null) {
+            throw exception(COUPON_GROUP_NOT_FOUND);
+        }
+        if (StatusEnum.DISABLE.getKey().equals(couponGroup.getStatus())) {
+            throw exception(COUPON_GROUP_ALREADY_DELETED);
+        }
         couponGroup.setStatus(StatusEnum.DISABLE.getKey());
         couponGroup.setUpdateTime(new Date());
         // OpenAPI操作时，默认operator为"openapi"
         couponGroup.setOperator(operator != null ? operator : "openapi");
-
         mtCouponGroupMapper.updateById(couponGroup);
-
-        logger.info("[OpenApiCouponGroupService] 删除优惠券分组成功, 分组ID: {}", id);
     }
 
     /**
@@ -283,10 +265,9 @@ public class OpenApiCouponGroupServiceImpl implements OpenApiCouponGroupService 
         if (id == null || id <= 0) {
             return 0;
         }
-
         // 查询该分组下所有券的已发放数量
         List<MtCoupon> couponList = mtCouponMapper.queryByGroupId(id);
-        if (couponList == null || couponList.isEmpty()) {
+        if (CollUtil.isEmpty(couponList)) {
             return 0;
         }
 

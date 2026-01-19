@@ -40,9 +40,13 @@ public class ApiSignatureAspect {
 
     private final ApiSignatureRedisDAO signatureRedisDAO;
     private final ApiSignatureService signatureService;
+    private final Boolean enable;
 
     @Before("@annotation(signature)")
     public void beforePointCut(JoinPoint joinPoint, ApiSignature signature) {
+        if (!enable) {
+            return;
+        }
         // 1. 验证通过，直接结束
         if (verifySignature(signature, Objects.requireNonNull(ServletUtils.getRequest()))) {
             return;

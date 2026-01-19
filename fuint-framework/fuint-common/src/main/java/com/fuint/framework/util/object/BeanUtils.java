@@ -70,7 +70,7 @@ public class BeanUtils {
 
     public static PaginationRequest buildPaginationRequest(PageParams pageParam) {
         PaginationRequest paginationRequest = new PaginationRequest();
-        paginationRequest.setCurrentPage(pageParam.getPageNo());
+        paginationRequest.setCurrentPage(pageParam.getPage());
         paginationRequest.setPageSize(pageParam.getPageSize());
         return paginationRequest;
     }
