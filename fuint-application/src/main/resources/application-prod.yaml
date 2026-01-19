@@ -24,9 +24,9 @@ spring:
     store-type: redis
 
 ################ MyBatisPlus配置 ######################
-mybatis-plus:
-  configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+#mybatis-plus:
+#  configuration:
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 ################ 微信订阅模板消息配置 ######################
 weixin:

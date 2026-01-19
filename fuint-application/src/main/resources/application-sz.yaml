@@ -134,3 +134,7 @@ knife4j:
   setting:
     language: zh_cn
 
+
+project:
+  signature:
+    enable: false
