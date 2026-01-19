@@ -3,6 +3,7 @@ package com.fuint.openapi.v1.marketing.coupon;
 import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fuint.common.Constants;
 import com.fuint.common.dto.ReqCouponDto;
 import com.fuint.common.enums.StatusEnum;
@@ -14,7 +15,10 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.v1.marketing.coupon.vo.*;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fuint.repository.mapper.MtCouponGoodsMapper;
+import com.fuint.repository.mapper.MtGoodsMapper;
 import com.fuint.repository.model.*;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -58,6 +62,9 @@ public class OpenCouponController extends BaseController {
 
     @Resource
     private MtCouponGoodsMapper mtCouponGoodsMapper;
+
+    @Resource
+    private MtGoodsMapper mtGoodsMapper;
 
     /**
      * 创建优惠券
@@ -131,58 +138,71 @@ public class OpenCouponController extends BaseController {
     @ApiSignature
     @RateLimiter(time = 60, count = 200, keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<MtCouponPageRespVO> pageCoupons(@Valid @ModelAttribute MtCouponPageReqVO pageReqVO) {
-        try {
-            // 构建分页请求
-            PaginationRequest paginationRequest = new PaginationRequest();
-            paginationRequest.setCurrentPage(pageReqVO.getPage() == null ? Constants.PAGE_NUMBER : pageReqVO.getPage());
-            paginationRequest.setPageSize(pageReqVO.getPageSize() == null ? Constants.PAGE_SIZE : pageReqVO.getPageSize());
+        // 限制最大分页大小，防止深度分页
+        if (pageReqVO.getPageSize() != null && pageReqVO.getPageSize() > 100) {
+            pageReqVO.setPageSize(100);
+        }
 
-            // 构建查询参数
-            Map<String, Object> params = new HashMap<>();
-            if (pageReqVO.getId() != null) {
-                params.put("id", pageReqVO.getId().toString());
-            }
-            if (pageReqVO.getGroupId() != null) {
-                params.put("groupId", pageReqVO.getGroupId().toString());
-            }
-            if (pageReqVO.getMerchantId() != null) {
-                params.put("merchantId", pageReqVO.getMerchantId());
-            }
-            if (pageReqVO.getStoreId() != null) {
-                params.put("storeId", pageReqVO.getStoreId());
-            }
-            if (StringUtils.isNotEmpty(pageReqVO.getName())) {
-                params.put("name", pageReqVO.getName());
-            }
-            if (StringUtils.isNotEmpty(pageReqVO.getType())) {
-                params.put("type", pageReqVO.getType());
-            }
-            if (StringUtils.isNotEmpty(pageReqVO.getStatus())) {
-                params.put("status", pageReqVO.getStatus());
-            } else {
-                params.put("status", StatusEnum.ENABLED.getKey());
-            }
+        // 使用优化后的MyBatis Plus分页查询
+        IPage<MtCouponRespVO> page = openApiCouponService.queryCouponPage(pageReqVO);
+        List<MtCouponRespVO> list = page.getRecords();
 
-            paginationRequest.setSearchParams(params);
+        if (list != null && !list.isEmpty()) {
+            // 批量填充商品信息
+            fillGoodsInfo(list);
+        }
 
-            // 查询分页数据
-            PaginationResponse<MtCoupon> paginationResponse = openApiCouponService.queryCouponListByPagination(paginationRequest);
+        // 转换为响应VO
+        MtCouponPageRespVO pageRespVO = new MtCouponPageRespVO();
+        pageRespVO.setTotalElements(page.getTotal());
+        pageRespVO.setTotalPages((int) page.getPages());
+        pageRespVO.setCurrentPage((int) page.getCurrent());
+        pageRespVO.setPageSize((int) page.getSize());
+        pageRespVO.setContent(list);
 
-            // 转换为响应VO
-            MtCouponPageRespVO pageRespVO = new MtCouponPageRespVO();
-            pageRespVO.setTotalElements(paginationResponse.getTotalElements());
-            pageRespVO.setTotalPages(paginationResponse.getTotalPages());
-            pageRespVO.setCurrentPage(paginationRequest.getCurrentPage());
-            pageRespVO.setPageSize(paginationRequest.getPageSize());
+        return CommonResult.success(pageRespVO);
+    }
 
-            List<MtCouponRespVO> respVOList = paginationResponse.getContent().stream()
-                    .map(this::convertToRespVO)
-                    .collect(Collectors.toList());
-            pageRespVO.setContent(respVOList);
+    /**
+     * 批量填充商品信息
+     */
+    private void fillGoodsInfo(List<MtCouponRespVO> list) {
+        Set<Integer> couponIds = list.stream().map(MtCouponRespVO::getId).collect(Collectors.toSet());
+        if (couponIds.isEmpty()) return;
 
-            return CommonResult.success(pageRespVO);
-        } catch (BusinessCheckException e) {
-            return CommonResult.error(500, e.getMessage());
+        // 1. 批量查询优惠券与商品的关联关系
+        LambdaQueryWrapper<MtCouponGoods> wrapper = Wrappers.lambdaQuery();
+        wrapper.in(MtCouponGoods::getCouponId, couponIds);
+        List<MtCouponGoods> couponGoodsList = mtCouponGoodsMapper.selectList(wrapper);
+
+        if (couponGoodsList.isEmpty()) return;
+
+        // 2. 收集所有商品ID
+        Set<Integer> goodsIds = couponGoodsList.stream().map(MtCouponGoods::getGoodsId).collect(Collectors.toSet());
+        if (goodsIds.isEmpty()) return;
+
+        // 3. 批量查询商品信息
+        List<MtGoods> goodsList = mtGoodsMapper.selectBatchIds(goodsIds);
+        Map<Integer, String> goodsNameMap = goodsList.stream()
+                .collect(Collectors.toMap(MtGoods::getId, MtGoods::getName, (v1, v2) -> v1));
+
+        // 4. 组装数据
+        Map<Integer, List<CouponGoodsItemVO>> couponGoodsMap = new HashMap<>();
+        for (MtCouponGoods cg : couponGoodsList) {
+            if (goodsNameMap.containsKey(cg.getGoodsId())) {
+                CouponGoodsItemVO item = new CouponGoodsItemVO();
+                item.setGoodsId(cg.getGoodsId());
+                item.setGoodsName(goodsNameMap.get(cg.getGoodsId()));
+
+                couponGoodsMap.computeIfAbsent(cg.getCouponId(), k -> new ArrayList<>()).add(item);
+            }
+        }
+
+        // 5. 填充到VO
+        for (MtCouponRespVO vo : list) {
+            if (couponGoodsMap.containsKey(vo.getId())) {
+                vo.setGoodsList(couponGoodsMap.get(vo.getId()));
+            }
         }
     }
 

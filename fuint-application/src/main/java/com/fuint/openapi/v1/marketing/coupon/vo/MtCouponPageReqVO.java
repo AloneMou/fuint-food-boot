@@ -1,8 +1,10 @@
 package com.fuint.openapi.v1.marketing.coupon.vo;
 
+import com.fuint.framework.pojo.PageParams;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 
@@ -13,16 +15,11 @@ import java.io.Serializable;
  * @since 2026/1/17
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @ApiModel(value = "优惠券分页查询请求VO")
-public class MtCouponPageReqVO implements Serializable {
+public class MtCouponPageReqVO extends PageParams implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
-    @ApiModelProperty(value = "页码", example = "1")
-    private Integer page;
-
-    @ApiModelProperty(value = "每页大小", example = "10")
-    private Integer pageSize;
 
     @ApiModelProperty(value = "优惠券ID", example = "1")
     private Integer id;

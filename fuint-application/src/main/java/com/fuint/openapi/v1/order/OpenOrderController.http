@@ -1,0 +1,118 @@
+@baseUrl = http://localhost:8080
+@contentType = application/json
+
+### 订单预创建（实时算价）
+# 不实际创建订单，仅进行价格试算和优惠券匹配
+POST {{baseUrl}}/api/v1/order/pre-create
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "merchantId": 1,
+  "storeId": 0,
+  "orderMode": "oneself",
+  "platform": "MP-WEIXIN",
+  "userCouponId": 0,
+  "usePoint": 0,
+  "items": [
+    {
+      "goodsId": 1,
+      "skuId": 1,
+      "quantity": 2
+    }
+  ]
+}
+
+### 创建订单
+# 验证价格并创建订单
+POST {{baseUrl}}/api/v1/order/create
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "merchantId": 1,
+  "storeId": 0,
+  "orderMode": "oneself",
+  "platform": "MP-WEIXIN",
+  "userCouponId": 0,
+  "usePoint": 0,
+  "preTotalAmount": 29.00,
+  "items": [
+    {
+      "goodsId": 1,
+      "skuId": 1,
+      "quantity": 2
+    }
+  ],
+  "remark": "不要辣",
+  "tableId": null,
+  "type": "GOODS",
+  "payType": "JSAPI"
+}
+
+### 取消订单
+# 取消订单，若已支付则自动退款
+POST {{baseUrl}}/api/v1/order/cancel
+Content-Type: {{contentType}}
+
+{
+  "orderId": 1,
+  "userId": 1,
+  "remark": "不想要了"
+}
+
+### 支付订单
+# 支付成功，并发送订单支付成功事件回调
+POST {{baseUrl}}/api/v1/order/pay
+Content-Type: {{contentType}}
+
+{
+  "orderId": 1,
+  "userId": 1,
+  "payAmount": 29.00
+}
+
+### 订单退款
+# 触发退款逻辑，退款成功修改订单支付状态为已退款
+POST {{baseUrl}}/api/v1/order/refund
+Content-Type: {{contentType}}
+
+{
+  "orderId": 1,
+  "userId": 1,
+  "amount": 29.00,
+  "remark": "退款"
+}
+
+### 获取订单详情
+# 包含订单与订单商品所有信息，预计等待时间，前有多少杯咖啡
+GET {{baseUrl}}/api/v1/order/detail?orderId=1&userId=1&merchantId=1
+
+### 订单列表
+# 支持多条件分页查询，使用MyBatis Plus优化性能
+GET {{baseUrl}}/api/v1/order/list?page=1&pageSize=10&userId=1&merchantId=1&status=PAID
+
+### 订单评价
+# 支持订单维度NPS打分评价（0-10分）
+POST {{baseUrl}}/api/v1/order/evaluate
+Content-Type: {{contentType}}
+
+{
+  "orderId": 1,
+  "score": 9,
+  "comment": "味道很好，服务也很棒！"
+}
+
+### 订单评价拉取
+# 支持分页拉取，时间范围筛选，商品SKU范围筛选，使用MyBatis Plus优化
+GET {{baseUrl}}/api/v1/order/evaluations?page=1&pageSize=10&userId=1&startDate=2024-01-01&endDate=2024-12-31
+
+### 标记订单可取餐
+# 标记订单商品可取餐，并发送可取餐状态通知回调
+POST {{baseUrl}}/api/v1/order/ready
+Content-Type: {{contentType}}
+
+{
+  "orderId": 1,
+  "merchantId": 1
+}

@@ -1,0 +1,39 @@
+@baseUrl = http://localhost:8080
+@contentType = application/json
+
+### 创建优惠券分组
+# 创建新的优惠券分组
+POST {{baseUrl}}/api/v1/coupon/group/create
+Content-Type: {{contentType}}
+
+{
+  "merchantId": 1,
+  "storeId": 0,
+  "name": "新人专享",
+  "description": "新注册用户专享优惠"
+}
+
+### 更新优惠券分组
+# 更新已存在的优惠券分组信息
+PUT {{baseUrl}}/api/v1/coupon/group/update
+Content-Type: {{contentType}}
+
+{
+  "id": 1,
+  "merchantId": 1,
+  "storeId": 0,
+  "name": "新人专享",
+  "description": "新注册用户专享优惠，有效期30天"
+}
+
+### 删除优惠券分组
+# 根据ID删除优惠券分组
+DELETE {{baseUrl}}/api/v1/coupon/group/delete/1?operator=openapi
+
+### 获取优惠券分组详情
+# 根据ID获取优惠券分组详细信息
+GET {{baseUrl}}/api/v1/coupon/group/detail/1
+
+### 分页查询优惠券分组列表
+# 支持按名称、商户ID、状态等条件分页查询
+GET {{baseUrl}}/api/v1/coupon/group/page?page=1&pageSize=10&merchantId=1&storeId=0&name=新人&status=A

@@ -1,0 +1,51 @@
+@baseUrl = http://localhost:8080
+@contentType = application/json
+
+### 创建商品分类
+# 创建一个新的商品分类
+POST {{baseUrl}}/api/v1/goods/cate/create
+Content-Type: {{contentType}}
+
+{
+  "merchantId": 1,
+  "storeId": 0,
+  "name": "咖啡",
+  "logo": "/images/coffee.jpg",
+  "description": "各类咖啡饮品",
+  "sort": 1
+}
+
+### 更新商品分类
+# 根据ID更新商品分类信息
+PUT {{baseUrl}}/api/v1/goods/cate/update
+Content-Type: {{contentType}}
+
+{
+  "id": 1,
+  "merchantId": 1,
+  "storeId": 0,
+  "name": "咖啡饮品",
+  "logo": "/images/coffee_drink.jpg",
+  "description": "各类咖啡饮品，包括美式、拿铁等",
+  "sort": 1
+}
+
+### 删除商品分类
+# 根据ID删除商品分类（逻辑删除）
+DELETE {{baseUrl}}/api/v1/goods/cate/delete/1
+
+### 获取商品分类详情
+# 根据ID获取商品分类详细信息
+GET {{baseUrl}}/api/v1/goods/cate/detail/1
+
+### 分页查询商品分类列表
+# 支持按名称、状态、店铺等条件分页查询
+GET {{baseUrl}}/api/v1/goods/cate/page?page=1&pageSize=10&merchantId=1&storeId=0&name=咖啡&status=A
+
+### 获取所有启用的商品分类列表
+# 获取所有状态为启用的商品分类，不分页
+GET {{baseUrl}}/api/v1/goods/cate/list?merchantId=1&storeId=0
+
+### 更新商品分类状态
+# 更新指定商品分类的状态
+PUT {{baseUrl}}/api/v1/goods/cate/status/1?status=A

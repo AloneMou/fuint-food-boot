@@ -8,4 +8,39 @@
     <select id="queryByGroupId" resultType="com.fuint.repository.model.MtCoupon">
         select * from mt_coupon t where t.GROUP_ID = #{groupId}
     </select>
+
+    <select id="selectCouponPage" resultType="com.fuint.openapi.v1.marketing.coupon.vo.MtCouponRespVO">
+        SELECT
+        t.*,
+        g.NAME as groupName,
+        (SELECT COUNT(0) FROM mt_user_coupon uc WHERE uc.COUPON_ID = t.ID) as sentNum,
+        (IFNULL(t.TOTAL, 0) - (SELECT COUNT(0) FROM mt_user_coupon uc WHERE uc.COUPON_ID = t.ID)) as leftNum
+        FROM mt_coupon t
+        LEFT JOIN mt_coupon_group g ON t.GROUP_ID = g.ID
+        <where>
+            t.STATUS != 'D'
+            <if test="req.id != null">
+                AND t.ID = #{req.id}
+            </if>
+            <if test="req.groupId != null">
+                AND t.GROUP_ID = #{req.groupId}
+            </if>
+            <if test="req.merchantId != null">
+                AND t.MERCHANT_ID = #{req.merchantId}
+            </if>
+            <if test="req.storeId != null">
+                AND t.STORE_ID = #{req.storeId}
+            </if>
+            <if test="req.name != null and req.name != ''">
+                AND t.NAME LIKE CONCAT('%', #{req.name}, '%')
+            </if>
+            <if test="req.type != null and req.type != ''">
+                AND t.TYPE = #{req.type}
+            </if>
+            <if test="req.status != null and req.status != ''">
+                AND t.STATUS = #{req.status}
+            </if>
+        </where>
+        ORDER BY t.ID DESC
+    </select>
 </mapper>

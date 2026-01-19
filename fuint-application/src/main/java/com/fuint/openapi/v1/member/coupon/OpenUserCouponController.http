@@ -1,0 +1,10 @@
+@baseUrl = http://localhost:8080
+@contentType = application/json
+
+### 分页查询用户优惠券列表
+# 支持按用户ID、状态等条件分页查询，使用MyBatis Plus优化性能
+GET {{baseUrl}}/api/v1/member/coupon/page?page=1&pageSize=10&userId=1&status=A
+
+### 获取用户优惠券详情
+# 根据ID获取用户优惠券详细信息
+GET {{baseUrl}}/api/v1/member/coupon/get/1

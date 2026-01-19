@@ -1,5 +1,6 @@
 package com.fuint.openapi.v1.marketing.coupon.vo;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -17,6 +18,7 @@ import java.util.List;
  */
 @Data
 @ApiModel(value = "优惠券响应VO")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class MtCouponRespVO implements Serializable {
 
     private static final long serialVersionUID = 1L;

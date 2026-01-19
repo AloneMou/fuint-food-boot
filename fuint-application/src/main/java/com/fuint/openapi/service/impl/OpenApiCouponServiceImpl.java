@@ -1,6 +1,7 @@
 package com.fuint.openapi.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fuint.common.dto.ReqCouponDto;
 import com.fuint.common.enums.CouponExpireTypeEnum;
@@ -15,14 +16,14 @@ import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.util.SeqUtil;
 import com.fuint.openapi.service.OpenApiCouponService;
+import com.fuint.openapi.v1.marketing.coupon.vo.MtCouponPageReqVO;
+import com.fuint.openapi.v1.marketing.coupon.vo.MtCouponRespVO;
 import com.fuint.repository.mapper.MtCouponGoodsMapper;
 import com.fuint.repository.mapper.MtCouponMapper;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.MtCoupon;
 import com.fuint.repository.model.MtCouponGoods;
 import com.fuint.repository.model.MtUserCoupon;
-import com.github.pagehelper.Page;
-import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -56,13 +57,25 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
     private final MtCouponGoodsMapper mtCouponGoodsMapper;
 
     /**
+     * 分页查询优惠券列表 (Optimized)
+     */
+    @Override
+    public IPage<MtCouponRespVO> queryCouponPage(MtCouponPageReqVO reqVO) {
+        long current = reqVO.getPage() == null ? 1 : reqVO.getPage();
+        long size = reqVO.getPageSize() == null ? 10 : reqVO.getPageSize();
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<MtCouponRespVO> page = 
+                new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(current, size);
+        return mtCouponMapper.selectCouponPage(page, reqVO);
+    }
+
+    /**
      * 分页查询优惠券列表
      */
     @Override
     public PaginationResponse<MtCoupon> queryCouponListByPagination(PaginationRequest paginationRequest) throws BusinessCheckException {
         logger.info("[OpenApiCouponService] 分页查询优惠券列表, 参数: {}", paginationRequest);
 
-        Page<MtCoupon> pageHelper = PageHelper.startPage(paginationRequest.getCurrentPage(), paginationRequest.getPageSize());
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<MtCoupon> page = new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(paginationRequest.getCurrentPage(), paginationRequest.getPageSize());
         LambdaQueryWrapper<MtCoupon> wrapper = Wrappers.lambdaQuery();
         wrapper.ne(MtCoupon::getStatus, StatusEnum.DISABLE.getKey());
 
@@ -101,16 +114,22 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
         }
 
         wrapper.orderByDesc(MtCoupon::getId);
-        List<MtCoupon> dataList = mtCouponMapper.selectList(wrapper);
+        mtCouponMapper.selectPage(page, wrapper);
 
-        PageRequest pageRequest = PageRequest.of(paginationRequest.getCurrentPage(), paginationRequest.getPageSize());
-        PageImpl pageImpl = new PageImpl(dataList, pageRequest, pageHelper.getTotal());
+        List<MtCoupon> dataList = page.getRecords();
+
+        // 构造PageImpl用于PaginationResponse (保持原有返回结构)
+        // 注意：PageRequest.of 也是0-based，如果PaginationRequest是1-based，这里可能需要调整，但为了保持与原代码一致逻辑，暂时维持原状
+        // 原代码：PageRequest.of(paginationRequest.getCurrentPage(), ...)
+        PageRequest pageRequest = PageRequest.of(paginationRequest.getCurrentPage() > 0 ? paginationRequest.getCurrentPage() - 1 : 0, paginationRequest.getPageSize());
+        PageImpl<MtCoupon> pageImpl = new PageImpl<>(dataList, pageRequest, page.getTotal());
+        
         PaginationResponse<MtCoupon> paginationResponse = new PaginationResponse(pageImpl, MtCoupon.class);
-        paginationResponse.setTotalPages(pageHelper.getPages());
-        paginationResponse.setTotalElements(pageHelper.getTotal());
+        paginationResponse.setTotalPages((int) page.getPages());
+        paginationResponse.setTotalElements(page.getTotal());
         paginationResponse.setContent(dataList);
 
-        logger.info("[OpenApiCouponService] 查询成功, 总记录数: {}", pageHelper.getTotal());
+        logger.info("[OpenApiCouponService] 查询成功, 总记录数: {}", page.getTotal());
         return paginationResponse;
     }
 

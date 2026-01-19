@@ -1,9 +1,12 @@
 package com.fuint.openapi.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fuint.common.dto.ReqCouponDto;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.openapi.v1.marketing.coupon.vo.MtCouponPageReqVO;
+import com.fuint.openapi.v1.marketing.coupon.vo.MtCouponRespVO;
 import com.fuint.repository.model.MtCoupon;
 import com.fuint.repository.model.MtUserCoupon;
 
@@ -23,6 +26,14 @@ public interface OpenApiCouponService {
 
     /**
      * 分页查询优惠券列表
+     *
+     * @param reqVO 分页请求参数
+     * @return 分页结果
+     */
+    IPage<MtCouponRespVO> queryCouponPage(MtCouponPageReqVO reqVO);
+
+    /**
+     * 分页查询优惠券列表 (Old)
      *
      * @param paginationRequest 分页请求参数
      * @return 分页结果

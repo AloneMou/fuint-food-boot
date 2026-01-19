@@ -1,0 +1,130 @@
+@baseUrl = http://localhost:8080
+@contentType = application/json
+
+### 创建优惠券
+# 创建优惠券，支持配置多商品、数量、固定金额、费率、最大优惠额
+POST {{baseUrl}}/api/v1/coupon/create
+Content-Type: {{contentType}}
+
+{
+  "groupId": 1,
+  "merchantId": 1,
+  "storeId": 0,
+  "name": "新人优惠券",
+  "type": "DISCOUNT",
+  "amount": 5.00,
+  "rate": null,
+  "maxDiscount": 10.00,
+  "limit": 1000,
+  "userLimit": 1,
+  "startTime": "2024-01-01 00:00:00",
+  "endTime": "2024-12-31 23:59:59",
+  "sendType": "ACTIVE",
+  "days": 0,
+  "status": "A",
+  "goodsList": [
+    {
+      "goodsId": 1
+    },
+    {
+      "goodsId": 2
+    }
+  ]
+}
+
+### 更新优惠券
+# 更新优惠券信息
+PUT {{baseUrl}}/api/v1/coupon/update
+Content-Type: {{contentType}}
+
+{
+  "id": 1,
+  "groupId": 1,
+  "merchantId": 1,
+  "storeId": 0,
+  "name": "新人优惠券",
+  "type": "DISCOUNT",
+  "amount": 8.00,
+  "rate": null,
+  "maxDiscount": 10.00,
+  "limit": 1000,
+  "userLimit": 1,
+  "startTime": "2024-01-01 00:00:00",
+  "endTime": "2024-12-31 23:59:59",
+  "sendType": "ACTIVE",
+  "days": 0,
+  "status": "A",
+  "goodsList": [
+    {
+      "goodsId": 1
+    }
+  ]
+}
+
+### 分页查询优惠券列表
+# 支持按名称、类型、状态等条件查询
+GET {{baseUrl}}/api/v1/coupon/page?page=1&pageSize=10&merchantId=1&storeId=0&groupId=1&name=新人&type=DISCOUNT&status=A
+
+### 获取优惠券详情
+# 根据ID获取优惠券详细信息
+GET {{baseUrl}}/api/v1/coupon/get/1
+
+### 发放优惠券
+# 支持单个用户、批量用户、会员分组发券
+POST {{baseUrl}}/api/v1/coupon/send
+Content-Type: {{contentType}}
+
+{
+  "couponId": 1,
+  "sendObject": "single",
+  "userId": 1,
+  "mobile": null,
+  "userIds": null,
+  "groupId": null,
+  "num": 1,
+  "sendMessage": true,
+  "operator": "admin"
+}
+
+### 批量发放优惠券
+POST {{baseUrl}}/api/v1/coupon/send
+Content-Type: {{contentType}}
+
+{
+  "couponId": 1,
+  "sendObject": "batch",
+  "userId": null,
+  "mobile": null,
+  "userIds": [1, 2, 3],
+  "groupId": null,
+  "num": 1,
+  "sendMessage": true,
+  "operator": "admin"
+}
+
+### 按会员分组发放优惠券
+POST {{baseUrl}}/api/v1/coupon/send
+Content-Type: {{contentType}}
+
+{
+  "couponId": 1,
+  "sendObject": "group",
+  "userId": null,
+  "mobile": null,
+  "userIds": null,
+  "groupId": 1,
+  "num": 1,
+  "sendMessage": true,
+  "operator": "admin"
+}
+
+### 撤销优惠券
+# 根据批次号撤销已发放的优惠券
+POST {{baseUrl}}/api/v1/coupon/revoke
+Content-Type: {{contentType}}
+
+{
+  "couponId": 1,
+  "uuid": "a1b2c3d4e5f6g7h8i9j0",
+  "operator": "admin"
+}

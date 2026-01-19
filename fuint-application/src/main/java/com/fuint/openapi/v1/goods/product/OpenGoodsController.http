@@ -1,0 +1,87 @@
+@baseUrl = http://localhost:8080
+@contentType = application/json
+
+### 创建商品
+# 创建一个新的商品
+POST {{baseUrl}}/api/v1/goods/create
+Content-Type: {{contentType}}
+
+{
+  "merchantId": 1,
+  "storeId": 0,
+  "cateId": 1,
+  "name": "拿铁咖啡",
+  "goodsNo": "GOODS001",
+  "type": "GOODS",
+  "description": "香浓拿铁咖啡",
+  "logo": "/images/latte.jpg",
+  "images": "[\"/images/latte1.jpg\", \"/images/latte2.jpg\"]",
+  "price": 28.00,
+  "linePrice": 35.00,
+  "weight": 500,
+  "stock": 100,
+  "initSale": 10,
+  "salePoint": "新鲜制作，口感纯正",
+  "canUsePoint": "A",
+  "isMemberDiscount": "A",
+  "isSingleSpec": "Y",
+  "serviceTime": "08:00-22:00",
+  "couponIds": "1,2,3",
+  "sort": 1,
+  "status": "A"
+}
+
+### 更新商品
+# 根据ID更新商品信息
+POST {{baseUrl}}/api/v1/goods/update
+Content-Type: {{contentType}}
+
+{
+  "id": 1,
+  "merchantId": 1,
+  "storeId": 0,
+  "cateId": 1,
+  "name": "拿铁咖啡",
+  "goodsNo": "GOODS001",
+  "type": "GOODS",
+  "description": "香浓拿铁咖啡，现磨制作",
+  "logo": "/images/latte.jpg",
+  "images": "[\"/images/latte1.jpg\"]",
+  "price": 30.00,
+  "linePrice": 38.00,
+  "weight": 500,
+  "stock": 90,
+  "initSale": 20,
+  "salePoint": "新鲜制作，口感纯正",
+  "canUsePoint": "A",
+  "isMemberDiscount": "A",
+  "isSingleSpec": "Y",
+  "serviceTime": "08:00-22:00",
+  "couponIds": "1,2",
+  "sort": 1,
+  "status": "A"
+}
+
+### 删除商品
+# 根据ID删除商品（逻辑删除）
+DELETE {{baseUrl}}/api/v1/goods/delete/1
+
+### 获取商品详情
+# 根据ID获取商品详细信息，包括规格和SKU
+GET {{baseUrl}}/api/v1/goods/detail/1
+
+### 分页查询商品列表
+# 支持按名称、编码、类型、分类、状态等条件分页查询
+GET {{baseUrl}}/api/v1/goods/page?page=1&pageSize=10&merchantId=1&storeId=0&cateId=1&name=拿铁&status=A
+
+### 获取所有启用的商品列表
+# 获取所有状态为启用的商品，不分页
+GET {{baseUrl}}/api/v1/goods/list?merchantId=1&storeId=0&cateId=1
+
+### 更新商品状态
+# 更新指定商品的状态
+PATCH {{baseUrl}}/api/v1/goods/status/1?status=A
+
+### C端商品列表（支持动态价格计算）
+# 获取已上架、可点单的商品列表，包含动态价格（根据营销活动和用户优惠券计算）和划线价格
+GET {{baseUrl}}/api/v1/goods/calculate-page?page=1&pageSize=10&merchantId=1&storeId=0&cateId=1&userId=1

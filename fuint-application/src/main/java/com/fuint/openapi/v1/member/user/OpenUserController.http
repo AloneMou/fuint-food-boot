@@ -1,0 +1,59 @@
+@baseUrl = http://localhost:8080
+@contentType = application/json
+
+### 单个员工数据同步
+# 根据手机号同步员工数据，如果员工不存在则创建，如果已存在则更新
+POST {{baseUrl}}/api/v1/member/user/sync
+Content-Type: {{contentType}}
+
+{
+  "merchantId": 1,
+  "storeId": 1,
+  "mobile": "13800138000",
+  "name": "张三",
+  "storeId": 1,
+  "groupId": 1,
+  "gradeId": "1",
+  "isStaff": "Y",
+  "staffLevel": 1,
+  "avatar": "/images/avatar.jpg"
+}
+
+### 批量员工数据同步
+# 批量同步员工数据，每次最多同步100条
+POST {{baseUrl}}/api/v1/member/user/batchSync
+Content-Type: {{contentType}}
+
+{
+  "users": [
+    {
+      "merchantId": 1,
+      "storeId": 1,
+      "mobile": "13800138001",
+      "name": "李四",
+      "storeId": 1,
+      "groupId": 1,
+      "gradeId": "1",
+      "isStaff": "Y",
+      "staffLevel": 1
+    },
+    {
+      "merchantId": 1,
+      "storeId": 1,
+      "mobile": "13800138002",
+      "name": "王五",
+      "storeId": 1,
+      "groupId": 1,
+      "gradeId": "2",
+      "isStaff": "N"
+    }
+  ]
+}
+
+### 获取员工详情
+# 根据ID获取员工详细信息
+GET {{baseUrl}}/api/v1/member/user/detail/1
+
+### 分页查询员工列表
+# 支持按姓名、手机号、状态、优惠券状态等条件分页查询
+GET {{baseUrl}}/api/v1/member/user/page?page=1&pageSize=10&merchantId=1&storeId=1&name=张&mobile=138&status=A

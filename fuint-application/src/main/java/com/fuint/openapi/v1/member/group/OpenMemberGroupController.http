@@ -1,0 +1,51 @@
+@baseUrl = http://localhost:8080
+@contentType = application/json
+
+### 创建会员分组
+# 创建一个新的会员分组
+POST {{baseUrl}}/api/v1/member/group/create
+Content-Type: {{contentType}}
+
+{
+  "merchantId": 1,
+  "storeId": 0,
+  "parentId": 0,
+  "name": "VIP会员",
+  "description": "VIP会员组，享受更多优惠",
+  "sort": 1
+}
+
+### 更新会员分组
+# 根据ID更新会员分组信息
+PUT {{baseUrl}}/api/v1/member/group/update
+Content-Type: {{contentType}}
+
+{
+  "id": 1,
+  "merchantId": 1,
+  "storeId": 0,
+  "parentId": 0,
+  "name": "超级VIP会员",
+  "description": "超级VIP会员组，享受更多优惠",
+  "sort": 1
+}
+
+### 删除会员分组
+# 根据ID删除会员分组（逻辑删除）
+DELETE {{baseUrl}}/api/v1/member/group/delete/1
+
+### 获取会员分组详情
+# 根据ID获取会员分组详细信息
+GET {{baseUrl}}/api/v1/member/group/detail/1
+
+### 分页查询会员分组列表
+# 支持按名称、状态等条件分页查询
+GET {{baseUrl}}/api/v1/member/group/page?page=1&pageSize=10&merchantId=1&storeId=0&name=VIP&status=A
+
+### 获取所有启用的会员分组列表
+# 获取所有状态为启用的会员分组，不分页
+GET {{baseUrl}}/api/v1/member/group/list?merchantId=1&storeId=0
+
+### 更新会员分组状态
+# 更新指定会员分组的状态
+PATCH {{baseUrl}}/api/v1/member/group/status/1?status=A
