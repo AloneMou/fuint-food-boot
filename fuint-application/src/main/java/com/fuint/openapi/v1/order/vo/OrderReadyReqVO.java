@@ -7,22 +7,19 @@ import lombok.Data;
 import javax.validation.constraints.NotNull;
 
 /**
- * 取消订单请求VO
+ * 标记订单可取餐请求VO
  *
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
 @Data
-@ApiModel(value = "取消订单请求VO")
-public class OrderCancelReqVO {
+@ApiModel(value = "标记订单可取餐请求VO")
+public class OrderReadyReqVO {
 
-    @NotNull(message = "订单ID不能为空")
     @ApiModelProperty(value = "订单ID", required = true, example = "1")
+    @NotNull(message = "订单ID不能为空")
     private Integer orderId;
 
-    @ApiModelProperty(value = "用户ID（用于权限验证）", example = "1")
-    private Integer userId;
-
-    @ApiModelProperty(value = "取消原因", example = "不想要了")
-    private String remark;
+    @ApiModelProperty(value = "商户ID（用于权限验证）", example = "1")
+    private Integer merchantId;
 }

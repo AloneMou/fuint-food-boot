@@ -1,8 +1,10 @@
 package com.fuint.openapi.v1.order.vo;
 
+import com.fuint.framework.pojo.PageParams;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * 订单列表查询请求VO
@@ -11,8 +13,9 @@ import lombok.Data;
  * CopyRight https://www.fuint.cn
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @ApiModel(value = "订单列表查询请求VO")
-public class OrderListReqVO {
+public class OrderListReqVO extends PageParams {
 
     @ApiModelProperty(value = "用户ID", example = "1")
     private Integer userId;
@@ -37,10 +40,4 @@ public class OrderListReqVO {
 
     @ApiModelProperty(value = "下单时间止", example = "2024-12-31 23:59:59")
     private String endTime;
-
-    @ApiModelProperty(value = "页码", example = "1")
-    private Integer page = 1;
-
-    @ApiModelProperty(value = "每页大小", example = "10")
-    private Integer pageSize = 10;
 }

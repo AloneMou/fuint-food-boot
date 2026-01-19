@@ -8,9 +8,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
-import javax.validation.constraints.Min;
 import java.util.Date;
-import java.util.List;
 
 /**
  * 员工分页查询请求VO
@@ -60,5 +58,5 @@ public class MtUserPageReqVO extends PageParams {
     @DateTimeFormat(pattern = DatePattern.NORM_DATETIME_PATTERN)
     @JsonFormat(pattern = DatePattern.NORM_DATETIME_PATTERN, timezone = "GMT+8")
     @ApiModelProperty(value = "创建结束时间", example = "2024-12-31 23:59:59")
-    private String endTime;
+    private Date endTime;
 }

@@ -21,6 +21,9 @@ public class OrderPayReqVO {
     @ApiModelProperty(value = "订单ID", required = true, example = "1")
     private Integer orderId;
 
+    @ApiModelProperty(value = "用户ID（用于权限验证）", example = "1")
+    private Integer userId;
+
     @NotNull(message = "支付金额不能为空")
     @ApiModelProperty(value = "支付金额", required = true, example = "100.00")
     private BigDecimal payAmount;

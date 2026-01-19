@@ -3,26 +3,21 @@ package com.fuint.openapi.v1.member.coupon;
 import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
-import com.fuint.common.Constants;
 import com.fuint.framework.exception.BusinessCheckException;
-import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pojo.CommonResult;
+import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.service.OpenApiUserCouponService;
 import com.fuint.openapi.v1.member.coupon.vo.UserCouponPageReqVO;
-import com.fuint.openapi.v1.member.coupon.vo.UserCouponPageRespVO;
 import com.fuint.openapi.v1.member.coupon.vo.UserCouponRespVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * OpenApi-会员优惠券相关接口
@@ -48,28 +43,14 @@ public class OpenUserCouponController extends BaseController {
      * @return 用户优惠券分页列表
      */
     @GetMapping("/page")
-    @ApiOperation(value = "分页查询用户优惠券列表", notes = "支持按用户ID、状态等条件分页查询")
+    @ApiOperation(value = "分页查询用户优惠券列表", notes = "支持按用户ID、状态等条件分页查询，使用MyBatis Plus优化性能")
     @ApiSignature
     @RateLimiter(time = 60, count = 200, keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<UserCouponPageRespVO> pageUserCoupons(@Valid UserCouponPageReqVO pageReqVO) {
+    public CommonResult<PageResult<UserCouponRespVO>> pageUserCoupons(@Valid UserCouponPageReqVO pageReqVO) {
         try {
-            // 构建分页请求
-            PaginationRequest paginationRequest = new PaginationRequest();
-            paginationRequest.setCurrentPage(pageReqVO.getPage() == null ? Constants.PAGE_NUMBER : pageReqVO.getPage());
-            paginationRequest.setPageSize(pageReqVO.getPageSize() == null ? Constants.PAGE_SIZE : pageReqVO.getPageSize());
-
-            // 构建查询参数
-            Map<String, Object> params = new HashMap<>();
-            params.put("userId", pageReqVO.getUserId().toString());
-            if (StringUtils.isNotEmpty(pageReqVO.getStatus())) {
-                params.put("status", pageReqVO.getStatus());
-            }
-            paginationRequest.setSearchParams(params);
-
-            // 调用Service层处理业务逻辑（包含性能优化）
-            UserCouponPageRespVO pageRespVO = openApiUserCouponService.queryUserCouponPage(paginationRequest);
-
-            return CommonResult.success(pageRespVO);
+            // 调用Service层处理业务逻辑（使用MyBatis Plus分页，批量查询关联数据）
+            PageResult<UserCouponRespVO> pageResult = openApiUserCouponService.queryUserCouponPage(pageReqVO);
+            return CommonResult.success(pageResult);
         } catch (BusinessCheckException e) {
             return CommonResult.error(500, e.getMessage());
         }

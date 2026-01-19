@@ -6,12 +6,13 @@ import com.fuint.common.param.CouponReceiveParam;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.v1.member.coupon.vo.UserCouponPageReqVO;
 import com.fuint.repository.model.MtCouponGoods;
 import com.fuint.repository.model.MtUserCoupon;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -159,4 +160,12 @@ public interface UserCouponService extends IService<MtUserCoupon> {
      * 清空会员卡券缓存
      */
     void clear();
+
+    /**
+     * 分页查询用户优惠券列表（使用 MyBatis Plus）
+     *
+     * @param pageReqVO 分页查询参数
+     * @return 分页结果
+     */
+    PageResult<MtUserCoupon> getUserCouponPage(UserCouponPageReqVO pageReqVO);
 }

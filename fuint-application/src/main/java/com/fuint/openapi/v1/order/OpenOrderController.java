@@ -12,27 +12,22 @@ import com.fuint.common.dto.OrderDto;
 import com.fuint.common.dto.ResCartDto;
 import com.fuint.common.dto.UserOrderDto;
 import com.fuint.common.enums.*;
-import com.fuint.common.param.OrderListParam;
 import com.fuint.common.service.*;
 import com.fuint.framework.exception.BusinessCheckException;
-import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.pojo.CommonResult;
+import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.service.OpenApiOrderService;
 import com.fuint.openapi.v1.order.vo.*;
 import com.fuint.repository.mapper.MtOrderGoodsMapper;
+import com.fuint.repository.mapper.MtOrderMapper;
 import com.fuint.repository.mapper.MtUserActionMapper;
 import com.fuint.repository.model.*;
-import com.github.pagehelper.Page;
-import com.github.pagehelper.PageHelper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -86,6 +81,9 @@ public class OpenOrderController extends BaseController {
 
     @Resource
     private MtOrderGoodsMapper mtOrderGoodsMapper;
+
+    @Resource
+    private MtOrderMapper mtOrderMapper;
 
     @Resource
     private com.fuint.openapi.service.EventCallbackService eventCallbackService;
@@ -213,11 +211,13 @@ public class OpenOrderController extends BaseController {
         respVO.setStoreId(storeId);
 
         // 转换优惠券列表
+        @SuppressWarnings("unchecked")
         List<Map<String, Object>> availableCouponsMap = (List<Map<String, Object>>) preCreateResult.get("availableCoupons");
         List<AvailableCouponVO> availableCoupons = convertAvailableCoupons(availableCouponsMap);
         respVO.setAvailableCoupons(availableCoupons);
 
         // 转换商品列表
+        @SuppressWarnings("unchecked")
         List<ResCartDto> goodsListDto = (List<ResCartDto>) preCreateResult.get("goodsList");
         List<OrderGoodsDetailVO> goodsList = convertGoodsList(goodsListDto, reqVO.getUserId(), merchantId);
         respVO.setGoodsList(goodsList);
@@ -322,6 +322,11 @@ public class OpenOrderController extends BaseController {
             return CommonResult.error(404, "订单不存在");
         }
 
+        // 验证订单是否属于用户
+        if (reqVO.getUserId() != null && !order.getUserId().equals(reqVO.getUserId())) {
+            return CommonResult.error(403, "无权操作该订单");
+        }
+
         String oldStatus = order.getStatus();
 
         // 如果已支付，执行退款
@@ -358,6 +363,11 @@ public class OpenOrderController extends BaseController {
             return CommonResult.error(404, "订单不存在");
         }
 
+        // 验证订单是否属于用户
+        if (reqVO.getUserId() != null && !order.getUserId().equals(reqVO.getUserId())) {
+            return CommonResult.error(403, "无权操作该订单");
+        }
+
         // 设置为已支付
         Boolean result = orderService.setOrderPayed(reqVO.getOrderId(), reqVO.getPayAmount());
 
@@ -387,11 +397,20 @@ public class OpenOrderController extends BaseController {
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> refundOrder(@Valid @RequestBody OrderRefundReqVO reqVO) throws BusinessCheckException {
+        // 发送申请退款回调
+        MtOrder order = orderService.getOrderInfo(reqVO.getOrderId());
+        if (order == null) {
+            return CommonResult.error(404, "订单不存在");
+        }
+
+        // 验证订单权限
+        if (reqVO.getUserId() != null && !order.getUserId().equals(reqVO.getUserId())) {
+            return CommonResult.error(403, "无权操作该订单");
+        }
+
         AccountInfo accountInfo = new AccountInfo();
         accountInfo.setAccountName("OpenApi-System");
 
-        // 发送申请退款回调
-        MtOrder order = orderService.getOrderInfo(reqVO.getOrderId());
         eventCallbackService.sendPaymentStatusChangedCallback(order, "REFUNDING");
 
         Boolean result = refundService.doRefund(reqVO.getOrderId(), reqVO.getAmount().toString(), reqVO.getRemark(), accountInfo);
@@ -409,38 +428,46 @@ public class OpenOrderController extends BaseController {
     /**
      * 获取订单详情
      *
-     * @param id 订单ID
+     * @param reqVO 订单详情请求参数
      * @return 订单详情
      * @throws BusinessCheckException 业务异常
      */
     @ApiOperation(value = "订单详情", notes = "包含订单与订单商品所有信息，预计等待时间，前有多少杯咖啡")
-    @GetMapping(value = "/detail/{id}")
+    @GetMapping(value = "/detail")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<Map<String, Object>> getOrderDetail(@PathVariable("id") Integer id) throws BusinessCheckException {
-        UserOrderDto orderDto = orderService.getOrderById(id);
+    public CommonResult<Map<String, Object>> getOrderDetail(@Valid OrderDetailReqVO reqVO) throws BusinessCheckException {
+        UserOrderDto orderDto = orderService.getOrderById(reqVO.getOrderId());
         if (orderDto == null) {
             return CommonResult.error(404, "订单不存在");
+        }
+
+        // 验证订单权限
+        if (reqVO.getUserId() != null && !orderDto.getUserId().equals(reqVO.getUserId())) {
+            return CommonResult.error(403, "无权访问该订单");
+        }
+        if (reqVO.getMerchantId() != null && !orderDto.getMerchantId().equals(reqVO.getMerchantId())) {
+            return CommonResult.error(403, "无权访问该订单");
         }
 
         Map<String, Object> result = new HashMap<>();
         result.put("order", orderDto);
 
-        // 计算队列信息
+        // 计算队列信息（优化：使用一条SQL聚合查询）
         // 假设状态为已支付（待制作/制作中）的订单在排队
         LambdaQueryWrapper<MtOrder> queryWrapper = Wrappers.lambdaQuery();
         queryWrapper.eq(MtOrder::getStatus, OrderStatusEnum.PAID.getKey());
-        queryWrapper.lt(MtOrder::getId, id); // 在当前订单之前的
+        queryWrapper.lt(MtOrder::getId, reqVO.getOrderId()); // 在当前订单之前的
         List<MtOrder> queueOrders = orderService.list(queryWrapper);
 
         int coffeeCount = 0;
-        for (MtOrder qOrder : queueOrders) {
-            Map<String, Object> params = new HashMap<>();
-            params.put("ORDER_ID", qOrder.getId());
-            List<MtOrderGoods> goodsList = mtOrderGoodsMapper.selectByMap(params);
-            for (MtOrderGoods goods : goodsList) {
-                coffeeCount += goods.getNum();
-            }
+        if (CollUtil.isNotEmpty(queueOrders)) {
+            List<Integer> queueOrderIds = queueOrders.stream()
+                    .map(MtOrder::getId)
+                    .collect(Collectors.toList());
+            // 使用批量查询，一次性统计所有订单的商品数量
+            Integer count = mtOrderGoodsMapper.countGoodsByOrderIds(queueOrderIds);
+            coffeeCount = count != null ? count : 0;
         }
 
         result.put("queueCount", coffeeCount);
@@ -456,24 +483,37 @@ public class OpenOrderController extends BaseController {
      * @return 订单列表
      * @throws BusinessCheckException 业务异常
      */
-    @ApiOperation(value = "订单列表", notes = "支持多条件分页查询")
+    @ApiOperation(value = "订单列表", notes = "支持多条件分页查询，使用MyBatis Plus优化性能")
     @GetMapping(value = "/list")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<PaginationResponse<UserOrderDto>> getOrderList(@Valid OrderListReqVO reqVO) throws BusinessCheckException {
-        OrderListParam param = new OrderListParam();
-        param.setUserId(reqVO.getUserId());
-        param.setMerchantId(reqVO.getMerchantId());
-        param.setStoreId(reqVO.getStoreId());
-        param.setStatus(reqVO.getStatus());
-        param.setPayStatus(reqVO.getPayStatus());
-        param.setStartTime(reqVO.getStartTime());
-        param.setEndTime(reqVO.getEndTime());
-        param.setPage(reqVO.getPage());
-        param.setPageSize(reqVO.getPageSize());
+    public CommonResult<PageResult<UserOrderDto>> getOrderList(@Valid OrderListReqVO reqVO) throws BusinessCheckException {
+        // 使用 MyBatis Plus 分页查询
+        PageResult<MtOrder> pageResult = mtOrderMapper.selectOrderPage(reqVO);
+        
+        if (CollUtil.isEmpty(pageResult.getList())) {
+            return CommonResult.success(PageResult.empty());
+        }
 
-        // 针对商品名称模糊查询，OrderListParam可能不支持，这里如果需要可以自行实现Lambda查询
-        PaginationResponse<UserOrderDto> result = orderService.getUserOrderList(param);
+        // 转换为 UserOrderDto
+        List<UserOrderDto> userOrderList = new ArrayList<>();
+        for (MtOrder order : pageResult.getList()) {
+            try {
+                UserOrderDto orderDto = orderService.getOrderById(order.getId());
+                if (orderDto != null) {
+                    userOrderList.add(orderDto);
+                }
+            } catch (Exception e) {
+                log.warn("获取订单详情失败: orderId={}, error={}", order.getId(), e.getMessage());
+            }
+        }
+
+        PageResult<UserOrderDto> result = new PageResult<>();
+        result.setTotal(pageResult.getTotal());
+        result.setTotalPages(pageResult.getTotalPages());
+        result.setCurrentPage(pageResult.getCurrentPage());
+        result.setPageSize(pageResult.getPageSize());
+        result.setList(userOrderList);
 
         return CommonResult.success(result);
     }
@@ -520,95 +560,52 @@ public class OpenOrderController extends BaseController {
      * @param reqVO 查询参数
      * @return 评价列表
      */
-    @ApiOperation(value = "订单评价拉取", notes = "支持分页拉取，时间范围筛选，商品sku范围筛选")
+    @ApiOperation(value = "订单评价拉取", notes = "支持分页拉取，时间范围筛选，商品SKU范围筛选，使用MyBatis Plus优化")
     @GetMapping(value = "/evaluations")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<PaginationResponse<MtUserAction>> getEvaluations(@Valid EvaluationListReqVO reqVO) {
-        PageHelper.startPage(reqVO.getPage(), reqVO.getPageSize());
-
-        LambdaQueryWrapper<MtUserAction> queryWrapper = Wrappers.lambdaQuery();
-        queryWrapper.eq(MtUserAction::getAction, "NPS_EVALUATION");
-
-        if (StringUtils.isNotEmpty(reqVO.getStartTime())) {
-            queryWrapper.ge(MtUserAction::getCreateTime, reqVO.getStartTime());
-        }
-        if (StringUtils.isNotEmpty(reqVO.getEndTime())) {
-            queryWrapper.le(MtUserAction::getCreateTime, reqVO.getEndTime());
-        }
-
-        // SKU筛选逻辑：由于评价记录在Action的JSON参数里，需要解析或配合订单商品表
-        // 这里简单实现，如果传了SKU，则先找出包含这些SKU的订单
-        if (reqVO.getSkuIds() != null && !reqVO.getSkuIds().isEmpty()) {
-            LambdaQueryWrapper<MtOrderGoods> ogWrapper = Wrappers.lambdaQuery();
-            ogWrapper.in(MtOrderGoods::getSkuId, reqVO.getSkuIds());
-            List<MtOrderGoods> ogList = mtOrderGoodsMapper.selectList(ogWrapper);
-            List<Integer> orderIds = ogList.stream().map(MtOrderGoods::getOrderId).distinct().collect(Collectors.toList());
-            if (orderIds.isEmpty()) {
-                PageRequest pageRequest = PageRequest.of(reqVO.getPage() - 1, reqVO.getPageSize());
-                org.springframework.data.domain.Page<MtUserAction> emptyPage = new PageImpl<>(new ArrayList<>(), pageRequest, 0);
-                return CommonResult.success(new PaginationResponse<MtUserAction>(emptyPage, MtUserAction.class));
-            }
-            // 匹配Param中的orderId
-            // 由于是JSON字符串，简单处理：
-            queryWrapper.and(wrapper -> {
-                for (int i = 0; i < orderIds.size(); i++) {
-                    Integer id = orderIds.get(i);
-                    if (i == 0) {
-                        wrapper.like(MtUserAction::getParam, "\"orderId\":" + id);
-                    } else {
-                        wrapper.or().like(MtUserAction::getParam, "\"orderId\":" + id);
-                    }
-                }
-                return wrapper;
-            });
-        }
-
-        queryWrapper.orderByDesc(MtUserAction::getId);
-        List<MtUserAction> list = mtUserActionMapper.selectList(queryWrapper);
-
-        Page<MtUserAction> pageHelper = (Page<MtUserAction>) list;
-        PageRequest pageRequest = PageRequest.of(reqVO.getPage() - 1, reqVO.getPageSize());
-        org.springframework.data.domain.Page<MtUserAction> springPage = new PageImpl<>(list, pageRequest, pageHelper.getTotal());
-
-        PaginationResponse<MtUserAction> response = new PaginationResponse<MtUserAction>(springPage, MtUserAction.class);
-        response.setContent(list);
-
-        return CommonResult.success(response);
+    public CommonResult<PageResult<MtUserAction>> getEvaluations(@Valid EvaluationPageReqVO reqVO) {
+        // 使用 MyBatis Plus 分页查询
+        PageResult<MtUserAction> pageResult = mtUserActionMapper.selectUserActionPage(reqVO);
+        return CommonResult.success(pageResult);
     }
 
     /**
      * 标记订单可取餐
      *
-     * @param orderId 订单ID
+     * @param reqVO 标记订单可取餐请求参数
      * @return 操作结果
      * @throws BusinessCheckException 业务异常
      */
     @ApiOperation(value = "标记订单可取餐", notes = "标记订单商品可取餐，并发送可取餐状态通知回调")
-    @PostMapping(value = "/ready/{orderId}")
+    @PostMapping(value = "/ready")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<Boolean> markOrderReady(
-            @ApiParam(value = "订单ID", required = true, example = "1")
-            @PathVariable("orderId") Integer orderId) throws BusinessCheckException {
-        MtOrder order = orderService.getOrderInfo(orderId);
+    public CommonResult<Boolean> markOrderReady(@Valid @RequestBody OrderReadyReqVO reqVO) throws BusinessCheckException {
+        MtOrder order = orderService.getOrderInfo(reqVO.getOrderId());
         if (order == null) {
             return CommonResult.error(404, "订单不存在");
         }
 
+        // 验证商户权限
+        if (reqVO.getMerchantId() != null && !order.getMerchantId().equals(reqVO.getMerchantId())) {
+            return CommonResult.error(403, "无权操作该订单");
+        }
+
         // 更新订单状态为已发货（可取餐）
         OrderDto orderDto = new OrderDto();
-        orderDto.setId(orderId);
+        orderDto.setId(reqVO.getOrderId());
         orderDto.setStatus(OrderStatusEnum.DELIVERED.getKey());
         orderService.updateOrder(orderDto);
 
         // 获取更新后的订单信息
-        MtOrder updatedOrder = orderService.getOrderInfo(orderId);
+        MtOrder updatedOrder = orderService.getOrderInfo(reqVO.getOrderId());
 
-        // 获取订单商品列表
-        Map<String, Object> params = new HashMap<>();
-        params.put("ORDER_ID", orderId);
-        List<MtOrderGoods> goodsList = mtOrderGoodsMapper.selectByMap(params);
+        // 获取订单商品列表（优化：使用 MyBatis Plus 查询）
+        LambdaQueryWrapper<MtOrderGoods> goodsWrapper = Wrappers.lambdaQuery();
+        goodsWrapper.eq(MtOrderGoods::getOrderId, reqVO.getOrderId());
+        List<MtOrderGoods> goodsList = mtOrderGoodsMapper.selectList(goodsWrapper);
+        
         List<Map<String, Object>> items = new ArrayList<>();
         for (MtOrderGoods orderGoods : goodsList) {
             Map<String, Object> item = new HashMap<>();
@@ -686,24 +683,6 @@ public class OpenOrderController extends BaseController {
         return new Date();
     }
 
-    /**
-     * 计算会员折扣金额
-     * 会员折扣是在优惠券和积分抵扣之后应用的
-     * 计算公式：会员折扣金额 = (总金额 - 优惠券金额 - 积分抵扣金额) * (1 - 会员折扣率)
-     */
-    private BigDecimal calculateMemberDiscountAmount(BigDecimal totalAmount, BigDecimal discountAmount,
-                                                     BigDecimal pointAmount, BigDecimal deliveryFee,
-                                                     BigDecimal payableAmount) {
-        // 应用会员折扣前的金额 = 总金额 - 优惠券金额 - 积分抵扣金额
-        BigDecimal beforeMemberDiscount = totalAmount.subtract(discountAmount).subtract(pointAmount);
-        
-        // 应用会员折扣后的金额 = 应付金额 - 配送费
-        BigDecimal afterMemberDiscount = payableAmount.subtract(deliveryFee);
-        
-        // 会员折扣金额 = 折扣前金额 - 折扣后金额
-        BigDecimal memberDiscount = beforeMemberDiscount.subtract(afterMemberDiscount);
-        return memberDiscount.max(BigDecimal.ZERO);
-    }
 
     /**
      * 转换可用优惠券列表
@@ -807,9 +786,6 @@ public class OpenOrderController extends BaseController {
         }
 
         String basePath = settingService.getUploadBasePath();
-        
-        // 获取会员折扣率
-        BigDecimal memberDiscountRate = getMemberDiscountRate(userId, merchantId);
 
         for (ResCartDto cartDto : goodsListDto) {
             OrderGoodsDetailVO goodsVO = new OrderGoodsDetailVO();
@@ -860,33 +836,6 @@ public class OpenOrderController extends BaseController {
         }
 
         return goodsList;
-    }
-
-    /**
-     * 获取会员折扣率
-     */
-    private BigDecimal getMemberDiscountRate(Integer userId, Integer merchantId) {
-        try {
-            MtUser userInfo = memberService.queryMemberById(userId);
-            if (userInfo == null) {
-                return BigDecimal.ONE;
-            }
-
-            MtUserGrade userGrade = userGradeService.queryUserGradeById(
-                    merchantId,
-                    userInfo.getGradeId() != null ? Integer.parseInt(userInfo.getGradeId()) : 1,
-                    userId
-            );
-
-            if (userGrade != null && userGrade.getDiscount() != null && userGrade.getDiscount() > 0) {
-                BigDecimal discount = BigDecimal.valueOf(userGrade.getDiscount())
-                        .divide(new BigDecimal("10"), 2, BigDecimal.ROUND_HALF_UP);
-                return discount.compareTo(BigDecimal.ZERO) > 0 ? discount : BigDecimal.ONE;
-            }
-        } catch (Exception e) {
-            log.warn("获取会员折扣率失败: userId={}, merchantId={}", userId, merchantId, e);
-        }
-        return BigDecimal.ONE;
     }
 
 }

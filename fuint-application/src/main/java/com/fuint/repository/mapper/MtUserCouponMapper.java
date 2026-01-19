@@ -1,8 +1,12 @@
 package com.fuint.repository.mapper;
 
+import com.fuint.common.enums.StatusEnum;
+import com.fuint.common.mybatis.query.LambdaQueryWrapperX;
+import com.fuint.framework.pojo.PageResult;
+import com.fuint.openapi.v1.member.coupon.vo.UserCouponPageReqVO;
+import com.fuint.repository.base.BaseMapperX;
 import com.fuint.repository.bean.CouponNumBean;
 import com.fuint.repository.model.MtUserCoupon;
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -13,7 +17,7 @@ import java.util.List;
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
-public interface MtUserCouponMapper extends BaseMapper<MtUserCoupon> {
+public interface MtUserCouponMapper extends BaseMapperX<MtUserCoupon> {
 
     Boolean updateExpireTime(@Param("couponId") Integer couponId, @Param("expireTime") String expireTime);
 
@@ -37,4 +41,19 @@ public interface MtUserCouponMapper extends BaseMapper<MtUserCoupon> {
 
     List<MtUserCoupon> getUserCouponListByExpireTime(@Param("userId") Integer userId, @Param("status") String status, @Param("startTime") String startTime, @Param("endTime") String endTime);
 
+    /**
+     * 分页查询用户优惠券列表（使用 MyBatis Plus）
+     *
+     * @param pageReqVO 分页查询参数
+     * @return 分页结果
+     */
+    default PageResult<MtUserCoupon> selectUserCouponPage(UserCouponPageReqVO pageReqVO) {
+        return selectPage(pageReqVO, new LambdaQueryWrapperX<MtUserCoupon>()
+                .eqIfPresent(MtUserCoupon::getUserId, pageReqVO.getUserId())
+                .eqIfPresent(MtUserCoupon::getStatus, pageReqVO.getStatus())
+                .ne(MtUserCoupon::getStatus, StatusEnum.DISABLE.getKey())
+                .orderByDesc(MtUserCoupon::getCreateTime)
+                .orderByDesc(MtUserCoupon::getId)
+        );
+    }
 }

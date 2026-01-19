@@ -1,11 +1,9 @@
 package com.fuint.openapi.service;
 
 import com.fuint.framework.exception.BusinessCheckException;
-import com.fuint.framework.pagination.PaginationRequest;
-import com.fuint.framework.pagination.PaginationResponse;
-import com.fuint.openapi.v1.member.coupon.vo.UserCouponPageRespVO;
+import com.fuint.framework.pojo.PageResult;
+import com.fuint.openapi.v1.member.coupon.vo.UserCouponPageReqVO;
 import com.fuint.openapi.v1.member.coupon.vo.UserCouponRespVO;
-import com.fuint.repository.model.MtUserCoupon;
 
 /**
  * OpenAPI用户优惠券服务接口
@@ -18,11 +16,11 @@ public interface OpenApiUserCouponService {
     /**
      * 分页查询用户优惠券列表
      *
-     * @param paginationRequest 分页请求参数
+     * @param pageReqVO 分页查询参数
      * @return 用户优惠券分页响应
      * @throws BusinessCheckException 业务异常
      */
-    UserCouponPageRespVO queryUserCouponPage(PaginationRequest paginationRequest) throws BusinessCheckException;
+    PageResult<UserCouponRespVO> queryUserCouponPage(UserCouponPageReqVO pageReqVO) throws BusinessCheckException;
 
     /**
      * 根据ID获取用户优惠券详情

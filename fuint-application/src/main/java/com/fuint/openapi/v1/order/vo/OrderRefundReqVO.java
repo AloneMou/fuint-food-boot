@@ -21,6 +21,9 @@ public class OrderRefundReqVO {
     @ApiModelProperty(value = "订单ID", required = true, example = "1")
     private Integer orderId;
 
+    @ApiModelProperty(value = "用户ID（用于权限验证）", example = "1")
+    private Integer userId;
+
     @NotNull(message = "退款金额不能为空")
     @ApiModelProperty(value = "退款金额", required = true, example = "10.00")
     private BigDecimal amount;

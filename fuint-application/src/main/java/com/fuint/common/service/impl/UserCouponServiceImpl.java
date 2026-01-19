@@ -864,4 +864,9 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
     public void clear() {
         log.debug("清理缓存");
     }
+
+    @Override
+    public com.fuint.framework.pojo.PageResult<MtUserCoupon> getUserCouponPage(com.fuint.openapi.v1.member.coupon.vo.UserCouponPageReqVO pageReqVO) {
+        return mtUserCouponMapper.selectUserCouponPage(pageReqVO);
+    }
 }

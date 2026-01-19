@@ -8,21 +8,16 @@ import cn.hutool.core.util.ReUtil;
 import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
-import com.fuint.common.enums.CouponExpireTypeEnum;
 import com.fuint.common.enums.StaffCategoryEnum;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.enums.YesOrNoEnum;
 import com.fuint.common.service.*;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.exception.ServiceException;
-import com.fuint.framework.pagination.PaginationRequest;
-import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.enums.UserErrorCodeConstants;
-import com.fuint.openapi.v1.member.coupon.vo.UserCouponPageReqVO;
-import com.fuint.openapi.v1.member.coupon.vo.UserCouponRespVO;
 import com.fuint.openapi.v1.member.user.vo.*;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.*;
@@ -267,21 +262,25 @@ public class OpenUserController extends BaseController {
             if (mtUser == null) {
                 return CommonResult.error(UserErrorCodeConstants.USER_NOT_FOUND);
             }
-            List<MtUser> userLs = Collections.singletonList(mtUser);
-            Set<Integer> userIds = convertSet(filterList(userLs, user -> ObjectUtil.isNotNull(user.getId())), MtUser::getId);
-            Set<Integer> storeIds = convertSet(filterList(userLs, user -> ObjectUtil.isNotNull(user.getStoreId())), MtUser::getStoreId);
-            Set<Integer> groupIds = convertSet(filterList(userLs, user -> ObjectUtil.isNotNull(user.getGroupId())), MtUser::getGroupId);
-            Set<Integer> gradeIds = convertSet(filterList(userLs, user -> StringUtils.isNotBlank(user.getGradeId())), user -> Integer.parseInt(user.getGradeId()));
+            
+            // 使用单个查询方法，避免批量查询的开销
+            MtStaff staff = staffService.queryStaffByUserId(mtUser.getId());
+            MtUserGrade grade = StringUtils.isNotBlank(mtUser.getGradeId()) ? 
+                userGradeService.getById(Integer.parseInt(mtUser.getGradeId())) : null;
+            MtUserGroup group = mtUser.getGroupId() != null ? 
+                memberGroupService.getById(mtUser.getGroupId()) : null;
+            MtStore store = mtUser.getStoreId() != null ? 
+                storeService.getById(mtUser.getStoreId()) : null;
 
-            List<MtStaff> staffs = staffService.queryStaffListByUserIds(userIds);
-            List<MtUserGrade> grades = userGradeService.getUserGradeListByIds(gradeIds);
-            List<MtUserGroup> groups = memberGroupService.getUserGroupByIds(groupIds);
-            List<MtStore> stores = storeService.getStoreByIds(storeIds);
-
-            Map<Integer, MtStaff> staffMap = convertMap(staffs, MtStaff::getUserId);
-            Map<Integer, String> gradeMap = convertMap(grades, MtUserGrade::getId, MtUserGrade::getName);
-            Map<Integer, String> groupMap = convertMap(groups, MtUserGroup::getId, MtUserGroup::getName);
-            Map<Integer, String> storeMap = convertMap(stores, MtStore::getId, MtStore::getName);
+            Map<Integer, MtStaff> staffMap = staff != null ? 
+                Collections.singletonMap(mtUser.getId(), staff) : Collections.emptyMap();
+            Map<Integer, String> gradeMap = grade != null ? 
+                Collections.singletonMap(grade.getId(), grade.getName()) : Collections.emptyMap();
+            Map<Integer, String> groupMap = group != null ? 
+                Collections.singletonMap(group.getId(), group.getName()) : Collections.emptyMap();
+            Map<Integer, String> storeMap = store != null ? 
+                Collections.singletonMap(store.getId(), store.getName()) : Collections.emptyMap();
+            
             return CommonResult.success(convertToRespVO(mtUser, groupMap, gradeMap, storeMap, staffMap));
         } catch (BusinessCheckException e) {
             return CommonResult.error(500, "获取员工详情失败: " + e.getMessage());
@@ -304,24 +303,24 @@ public class OpenUserController extends BaseController {
         if (CollUtil.isEmpty(userLs)) {
             return CommonResult.success(PageResult.empty());
         }
+        
+        // 收集关联数据的ID
         Set<Integer> userIds = convertSet(filterList(userLs, user -> ObjectUtil.isNotNull(user.getId())), MtUser::getId);
         Set<Integer> storeIds = convertSet(filterList(userLs, user -> ObjectUtil.isNotNull(user.getStoreId())), MtUser::getStoreId);
         Set<Integer> groupIds = convertSet(filterList(userLs, user -> ObjectUtil.isNotNull(user.getGroupId())), MtUser::getGroupId);
         Set<Integer> gradeIds = convertSet(filterList(userLs, user -> StringUtils.isNotBlank(user.getGradeId())), user -> Integer.parseInt(user.getGradeId()));
 
-        List<MtStaff> staffs = staffService.queryStaffListByUserIds(userIds);
-        List<MtUserGrade> grades = userGradeService.getUserGradeListByIds(gradeIds);
-        List<MtUserGroup> groups = memberGroupService.getUserGroupByIds(groupIds);
-        List<MtStore> stores = storeService.getStoreByIds(storeIds);
+        // 批量查询关联数据（添加空集合检查，避免无效查询）
+        Map<Integer, MtStaff> staffMap = buildStaffMap(userIds);
+        Map<Integer, String> gradeMap = buildGradeMap(gradeIds);
+        Map<Integer, String> groupMap = buildGroupMap(groupIds);
+        Map<Integer, String> storeMap = buildStoreMap(storeIds);
 
-        Map<Integer, MtStaff> staffMap = convertMap(staffs, MtStaff::getUserId);
-        Map<Integer, String> gradeMap = convertMap(grades, MtUserGrade::getId, MtUserGrade::getName);
-        Map<Integer, String> groupMap = convertMap(groups, MtUserGroup::getId, MtUserGroup::getName);
-        Map<Integer, String> storeMap = convertMap(stores, MtStore::getId, MtStore::getName);
-
+        // 转换为响应VO
         List<MtUserRespVO> respVOList = userLs.stream()
                 .map(user -> convertToRespVO(user, groupMap, gradeMap, storeMap, staffMap))
                 .collect(Collectors.toList());
+        
         PageResult<MtUserRespVO> pageRespVO = new PageResult<>();
         pageRespVO.setTotal(result.getTotal());
         pageRespVO.setTotalPages(result.getTotalPages());
@@ -351,6 +350,62 @@ public class OpenUserController extends BaseController {
         respVO.setStaffId(staff.getId());
         respVO.setStoreName(storeMap.getOrDefault(mtUser.getStoreId(), null));
         return respVO;
+    }
+
+    /**
+     * 构建员工信息Map
+     * 
+     * @param userIds 用户ID集合
+     * @return 员工信息Map（key: userId, value: MtStaff）
+     */
+    private Map<Integer, MtStaff> buildStaffMap(Set<Integer> userIds) {
+        if (CollUtil.isEmpty(userIds)) {
+            return Collections.emptyMap();
+        }
+        List<MtStaff> staffs = staffService.queryStaffListByUserIds(userIds);
+        return convertMap(staffs, MtStaff::getUserId);
+    }
+
+    /**
+     * 构建等级信息Map
+     * 
+     * @param gradeIds 等级ID集合
+     * @return 等级信息Map（key: gradeId, value: gradeName）
+     */
+    private Map<Integer, String> buildGradeMap(Set<Integer> gradeIds) {
+        if (CollUtil.isEmpty(gradeIds)) {
+            return Collections.emptyMap();
+        }
+        List<MtUserGrade> grades = userGradeService.getUserGradeListByIds(gradeIds);
+        return convertMap(grades, MtUserGrade::getId, MtUserGrade::getName);
+    }
+
+    /**
+     * 构建分组信息Map
+     * 
+     * @param groupIds 分组ID集合
+     * @return 分组信息Map（key: groupId, value: groupName）
+     */
+    private Map<Integer, String> buildGroupMap(Set<Integer> groupIds) {
+        if (CollUtil.isEmpty(groupIds)) {
+            return Collections.emptyMap();
+        }
+        List<MtUserGroup> groups = memberGroupService.getUserGroupByIds(groupIds);
+        return convertMap(groups, MtUserGroup::getId, MtUserGroup::getName);
+    }
+
+    /**
+     * 构建店铺信息Map
+     * 
+     * @param storeIds 店铺ID集合
+     * @return 店铺信息Map（key: storeId, value: storeName）
+     */
+    private Map<Integer, String> buildStoreMap(Set<Integer> storeIds) {
+        if (CollUtil.isEmpty(storeIds)) {
+            return Collections.emptyMap();
+        }
+        List<MtStore> stores = storeService.getStoreByIds(storeIds);
+        return convertMap(stores, MtStore::getId, MtStore::getName);
     }
 
 }
