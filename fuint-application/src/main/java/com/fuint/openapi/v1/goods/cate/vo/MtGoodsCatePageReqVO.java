@@ -1,10 +1,10 @@
 package com.fuint.openapi.v1.goods.cate.vo;
 
+import com.fuint.framework.pojo.PageParams;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-
-import javax.validation.constraints.Min;
+import lombok.EqualsAndHashCode;
 
 /**
  * 商品分类分页查询请求VO
@@ -12,17 +12,10 @@ import javax.validation.constraints.Min;
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @ApiModel(value = "商品分类分页查询请求VO")
-public class MtGoodsCatePageReqVO {
-
-    @ApiModelProperty(value = "当前页码", example = "1")
-    @Min(value = 1, message = "页码最小为1")
-    private Integer page = 1;
-
-    @ApiModelProperty(value = "每页数量", example = "10")
-    @Min(value = 1, message = "每页数量最小为1")
-    private Integer pageSize = 10;
+public class MtGoodsCatePageReqVO extends PageParams {
 
     @ApiModelProperty(value = "分类名称（模糊搜索）", example = "饮品")
     private String name;

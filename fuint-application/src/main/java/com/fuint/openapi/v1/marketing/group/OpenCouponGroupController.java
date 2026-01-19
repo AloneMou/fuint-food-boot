@@ -6,9 +6,8 @@ import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.fuint.common.dto.ReqCouponGroupDto;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.framework.exception.BusinessCheckException;
-import com.fuint.framework.pagination.PaginationRequest;
-import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.pojo.CommonResult;
+import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.service.OpenApiCouponGroupService;
 import com.fuint.openapi.v1.marketing.group.vo.CouponGroupCreateReqVO;
@@ -19,21 +18,16 @@ import com.fuint.repository.model.MtCouponGroup;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.fuint.openapi.enums.CouponGroupErrorCodeConstants.COUPON_GROUP_CREATE_FAILED;
 
@@ -145,67 +139,27 @@ public class OpenCouponGroupController extends BaseController {
     @GetMapping("/page")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<PaginationResponse<CouponGroupRespVO>> getCouponGroupList(@Valid CouponGroupPageReqVO reqVO) throws BusinessCheckException {
-        log.info("[getCouponGroupList] 分页查询优惠券分组列表，请求参数: {}", reqVO);
-
-        // 设置默认值
-        Integer pageNo = reqVO.getPageNo() != null ? reqVO.getPageNo() : 1;
-        Integer pageSize = reqVO.getPageSize() != null ? reqVO.getPageSize() : 20;
-        if (pageSize > 100) {
-            pageSize = 100; // 限制最大每页100条
-        }
-
-        // 构建分页请求
-        PaginationRequest paginationRequest = new PaginationRequest();
-        paginationRequest.setCurrentPage(pageNo);
-        paginationRequest.setPageSize(pageSize);
-
-        // 构建查询参数
-        Map<String, Object> params = new HashMap<>();
-        if (reqVO.getMerchantId() != null && reqVO.getMerchantId() > 0) {
-            params.put("merchantId", reqVO.getMerchantId());
-        }
-        if (reqVO.getStoreId() != null && reqVO.getStoreId() > 0) {
-            params.put("storeId", reqVO.getStoreId());
-        }
-        if (StringUtils.isNotEmpty(reqVO.getName())) {
-            params.put("name", reqVO.getName());
-        }
-        if (StringUtils.isNotEmpty(reqVO.getStatus())) {
-            params.put("status", reqVO.getStatus());
-        }
-        paginationRequest.setSearchParams(params);
-
-        // 查询分页数据
-        PaginationResponse<MtCouponGroup> paginationResponse = openApiCouponGroupService.queryCouponGroupListByPagination(paginationRequest);
-
+    public CommonResult<PageResult<CouponGroupRespVO>> getCouponGroupList(@Valid CouponGroupPageReqVO reqVO) throws BusinessCheckException {
+        PageResult<MtCouponGroup> pageResult = openApiCouponGroupService.getCouponGroupPage(reqVO);
         // 转换为响应VO
         List<CouponGroupRespVO> respList = new ArrayList<>();
-        if (paginationResponse.getContent() != null && !paginationResponse.getContent().isEmpty()) {
-            for (MtCouponGroup group : paginationResponse.getContent()) {
-                CouponGroupRespVO respVO = buildCouponGroupRespVO(group);
-                // 补充统计信息
-                try {
-                    Integer couponNum = openApiCouponGroupService.getCouponNum(group.getId());
-                    Integer sendNum = openApiCouponGroupService.getSendNum(group.getId());
-                } catch (Exception e) {
-                    log.warn("[getCouponGroupList] 获取分组统计信息失败，分组ID: {}", group.getId(), e);
-                }
-                respList.add(respVO);
+        for (MtCouponGroup group : pageResult.getList()) {
+            CouponGroupRespVO respVO = buildCouponGroupRespVO(group);
+            // 补充统计信息
+            try {
+                Integer couponNum = openApiCouponGroupService.getCouponNum(group.getId());
+                respVO.setCouponNum(couponNum);
+            } catch (Exception e) {
+                log.warn("[getCouponGroupList] 获取分组统计信息失败，分组ID: {}", group.getId(), e);
             }
+            respList.add(respVO);
         }
-
-        // 构建返回结果
-        PageRequest pageRequest = PageRequest.of(pageNo - 1, pageSize);
-        PageImpl<CouponGroupRespVO> pageImpl = new PageImpl<>(respList, pageRequest, paginationResponse.getTotalElements());
-        PaginationResponse<CouponGroupRespVO> result = new PaginationResponse<>(pageImpl, CouponGroupRespVO.class);
-        result.setContent(respList);
-        result.setTotalElements(paginationResponse.getTotalElements());
-        result.setTotalPages(paginationResponse.getTotalPages());
-        result.setCurrentPage(pageNo);
-        result.setPageSize(pageSize);
-
-        log.info("[getCouponGroupList] 查询成功，总记录数: {}", paginationResponse.getTotalElements());
+        PageResult<CouponGroupRespVO> result = new PageResult<>();
+        result.setTotal(pageResult.getTotal());
+        result.setTotalPages(pageResult.getTotalPages());
+        result.setCurrentPage(pageResult.getCurrentPage());
+        result.setPageSize(pageResult.getPageSize());
+        result.setList(respList);
         return CommonResult.success(result);
     }
 

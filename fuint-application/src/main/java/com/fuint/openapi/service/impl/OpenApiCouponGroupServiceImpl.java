@@ -10,8 +10,10 @@ import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.util.object.BeanUtils;
 import com.fuint.openapi.service.OpenApiCouponGroupService;
+import com.fuint.openapi.v1.marketing.group.vo.CouponGroupPageReqVO;
 import com.fuint.repository.mapper.MtCouponGroupMapper;
 import com.fuint.repository.mapper.MtCouponMapper;
 import com.fuint.repository.mapper.MtUserCouponMapper;
@@ -283,5 +285,10 @@ public class OpenApiCouponGroupServiceImpl implements OpenApiCouponGroupService 
         }
 
         return 0;
+    }
+
+    @Override
+    public PageResult<MtCouponGroup> getCouponGroupPage(CouponGroupPageReqVO pageReqVO) {
+        return mtCouponGroupMapper.selectCouponGroupPage(pageReqVO);
     }
 }

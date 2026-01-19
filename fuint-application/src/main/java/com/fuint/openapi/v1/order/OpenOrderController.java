@@ -91,12 +91,6 @@ public class OpenOrderController extends BaseController {
     private com.fuint.openapi.service.EventCallbackService eventCallbackService;
 
     @Resource
-    private CouponService couponService;
-
-    @Resource
-    private UserCouponService userCouponService;
-
-    @Resource
     private UserGradeService userGradeService;
 
     /**

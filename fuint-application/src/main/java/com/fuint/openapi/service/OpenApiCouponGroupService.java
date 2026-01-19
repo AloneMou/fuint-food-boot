@@ -4,6 +4,8 @@ import com.fuint.common.dto.ReqCouponGroupDto;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.pojo.PageResult;
+import com.fuint.openapi.v1.marketing.group.vo.CouponGroupPageReqVO;
 import com.fuint.repository.model.MtCouponGroup;
 
 import java.math.BigDecimal;
@@ -89,4 +91,12 @@ public interface OpenApiCouponGroupService {
      * @throws BusinessCheckException 业务异常
      */
     Integer getSendNum(Integer id) throws BusinessCheckException;
+
+
+    /**
+     * 查询优惠劵分组列表
+     *
+     * @return 优惠劵分组分页数据
+     */
+    PageResult<MtCouponGroup> getCouponGroupPage(CouponGroupPageReqVO pageReqVO);
 }
