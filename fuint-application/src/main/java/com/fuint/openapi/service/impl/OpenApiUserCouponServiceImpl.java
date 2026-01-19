@@ -197,6 +197,18 @@ public class OpenApiUserCouponServiceImpl implements OpenApiUserCouponService {
             } catch (Exception e) {
                 log.warn("解析优惠券有效期失败: {}", effectiveDate, e);
             }
+        }else if (StringUtils.isNotEmpty(effectiveDate) && effectiveDate.contains("-")){
+            try {
+                String[] dates = effectiveDate.split("-");
+                if (dates.length == 2) {
+                    Date startTime = parseDateFromString(dates[0].trim());
+                    Date endTime = parseDateFromString(dates[1].trim());
+                    respVO.setEffectiveStartTime(startTime);
+                    respVO.setEffectiveEndTime(endTime);
+                }
+            } catch (Exception e) {
+                log.warn("解析优惠券有效期失败: {}", effectiveDate, e);
+            }
         }
 
         // 设置适用店铺（从Map中获取，避免重复查询）
