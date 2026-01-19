@@ -81,4 +81,16 @@ public class UserCouponRespVO {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @ApiModelProperty(value = "创建时间")
     private Date createTime;
+
+    @ApiModelProperty("用户ID")
+    private Integer userId;
+
+    @ApiModelProperty("商户ID")
+    private Integer merchantId;
+
+    @ApiModelProperty("使用店铺ID")
+    private Integer storeId;
+
+    @ApiModelProperty("使用的订单ID")
+    private Integer orderId;
 }

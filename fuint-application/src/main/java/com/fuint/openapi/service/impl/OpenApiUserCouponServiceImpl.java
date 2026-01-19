@@ -9,6 +9,7 @@ import com.fuint.common.service.*;
 import com.fuint.common.util.DateUtil;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pojo.PageResult;
+import com.fuint.framework.util.object.BeanUtils;
 import com.fuint.openapi.service.OpenApiUserCouponService;
 import com.fuint.openapi.v1.member.coupon.vo.UserCouponPageReqVO;
 import com.fuint.openapi.v1.member.coupon.vo.UserCouponRespVO;
@@ -149,7 +150,7 @@ public class OpenApiUserCouponServiceImpl implements OpenApiUserCouponService {
                                               Map<String, String> storeNamesMap,
                                               Map<Integer, Long> confirmCountMap,
                                               String baseImage) {
-        UserCouponRespVO respVO = new UserCouponRespVO();
+        UserCouponRespVO respVO = BeanUtils.toBean(userCoupon, UserCouponRespVO.class);
         respVO.setCreateTime(userCoupon.getCreateTime());
         // 设置用户优惠券基础信息
         respVO.setUserCouponId(userCoupon.getId());
@@ -214,12 +215,11 @@ public class OpenApiUserCouponServiceImpl implements OpenApiUserCouponService {
         // 设置适用店铺（从Map中获取，避免重复查询）
         String storeNames = storeNamesMap.getOrDefault(couponInfo.getStoreIds(), "");
         respVO.setStoreNames(storeNames);
-
         // 判断是否可用（需要同时满足优惠券有效和状态为未使用）
         boolean canUse = couponService.isCouponEffective(couponInfo, userCoupon)
                 && UserCouponStatusEnum.UNUSED.getKey().equals(userCoupon.getStatus());
         respVO.setCanUse(canUse);
-
+        respVO.setUsedTime(userCoupon.getUsedTime());
         // 设置提示信息（根据优惠券类型）
         String tips = buildCouponTips(couponInfo, userCoupon, confirmCountMap);
         respVO.setTips(tips);
