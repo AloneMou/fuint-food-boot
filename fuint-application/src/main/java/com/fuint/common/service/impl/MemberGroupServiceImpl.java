@@ -11,6 +11,7 @@ import com.fuint.common.service.*;
 import com.fuint.common.util.CommonUtil;
 import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
+import com.fuint.framework.exception.ServiceException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.repository.mapper.MtUserGroupMapper;
@@ -29,6 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.String;
 import java.util.*;
+
+import static com.fuint.framework.exception.enums.GlobalErrorCodeConstants.BAD_REQUEST;
 
 /**
  * 会员分组业务实现类
@@ -192,8 +195,7 @@ public class MemberGroupServiceImpl extends ServiceImpl<MtUserGroupMapper, MtUse
     public MtUserGroup updateMemberGroup(MemberGroupDto memberGroupDto) throws BusinessCheckException {
         MtUserGroup userGroup = queryMemberGroupById(memberGroupDto.getId());
         if (null == userGroup || StatusEnum.DISABLE.getKey().equalsIgnoreCase(userGroup.getStatus())) {
-            logger.error("该分组不存在或已被删除");
-            throw new BusinessCheckException("该分组不存在或已被删除");
+            throw new ServiceException(BAD_REQUEST.getCode(), "该分组不存在或已被删除");
         }
         if (memberGroupDto.getName() != null) {
             userGroup.setName(CommonUtil.replaceXSS(memberGroupDto.getName()));
@@ -204,7 +206,6 @@ public class MemberGroupServiceImpl extends ServiceImpl<MtUserGroupMapper, MtUse
         if (memberGroupDto.getStatus() != null) {
             userGroup.setStatus(memberGroupDto.getStatus());
         }
-
         userGroup.setUpdateTime(new Date());
         userGroup.setOperator(memberGroupDto.getOperator());
         this.updateById(userGroup);
@@ -241,10 +242,10 @@ public class MemberGroupServiceImpl extends ServiceImpl<MtUserGroupMapper, MtUse
      * @param groupId 分组ID
      * @return
      */
+    @Override
     public Long getMemberNum(Integer groupId) {
         List<Integer> groupIds = getGroupIds(groupId);
-        Long totalMember = mtUserGroupMapper.getMemberNum(groupIds);
-        return totalMember;
+        return mtUserGroupMapper.getMemberNum(groupIds);
     }
 
     /**

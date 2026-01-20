@@ -1,12 +1,20 @@
 package com.fuint.openapi.v1.marketing.coupon;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.lang.UUID;
 import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fuint.common.Constants;
 import com.fuint.common.dto.ReqCouponDto;
+import com.fuint.common.enums.CouponExpireTypeEnum;
 import com.fuint.common.enums.StatusEnum;
+import com.fuint.framework.pojo.PageResult;
+import com.fuint.framework.util.string.StrUtils;
+import com.fuint.openapi.service.OpenApiCouponGroupService;
 import com.fuint.openapi.service.OpenApiCouponService;
 import com.fuint.common.service.*;
 import com.fuint.framework.exception.BusinessCheckException;
@@ -33,6 +41,11 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.fuint.framework.util.collection.CollectionUtils.convertMap;
+import static com.fuint.framework.util.collection.CollectionUtils.convertSet;
+import static com.fuint.openapi.enums.CouponErrorCodeConstants.COUPON_NOT_FOUND;
+import static com.fuint.openapi.enums.UserErrorCodeConstants.USER_NOT_FOUND;
+
 /**
  * OpenApi-优惠券管理相关接口
  *
@@ -49,16 +62,11 @@ public class OpenCouponController extends BaseController {
     private OpenApiCouponService openApiCouponService;
 
     @Resource
-    private CouponGroupService couponGroupService;
+    private OpenApiCouponGroupService openApiCouponGroupService;
 
     @Resource
     private MemberService memberService;
 
-    @Resource
-    private MemberGroupService memberGroupService;
-
-    @Resource
-    private GoodsService goodsService;
 
     @Resource
     private MtCouponGoodsMapper mtCouponGoodsMapper;
@@ -66,101 +74,68 @@ public class OpenCouponController extends BaseController {
     @Resource
     private MtGoodsMapper mtGoodsMapper;
 
-    /**
-     * 创建优惠券
-     *
-     * @param createReqVO 创建请求参数
-     * @return 创建结果
-     */
+    @Resource
+    private StoreService storeService;
+
+    @Resource
+    private UserGradeService userGradeService;
+
     @PostMapping("/create")
     @ApiOperation(value = "创建优惠券", notes = "创建优惠券，支持配置多商品、数量、固定金额、费率、最大优惠额")
     @ApiSignature
-    @RateLimiter(time = 60, count = 100, keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<MtCouponRespVO> createCoupon(@Valid @RequestBody MtCouponCreateReqVO createReqVO) {
-        try {
-            // 转换VO到DTO
-            ReqCouponDto reqCouponDto = convertToDto(createReqVO);
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    public CommonResult<Integer> createCoupon(@Valid @RequestBody MtCouponCreateReqVO createReqVO) {
+        ReqCouponDto reqCouponDto = convertToDto(createReqVO);
+        MtCoupon coupon = openApiCouponService.createCoupon(reqCouponDto);
+        return CommonResult.success(coupon.getId());
 
-            // 调用OpenAPI service创建优惠券
-            MtCoupon coupon = openApiCouponService.createCoupon(reqCouponDto);
-
-            // 转换返回结果
-            MtCouponRespVO respVO = convertToRespVO(coupon);
-
-            return CommonResult.success(respVO);
-        } catch (BusinessCheckException | ParseException e) {
-            return CommonResult.error(500, e.getMessage());
-        }
     }
 
-    /**
-     * 更新优惠券
-     *
-     * @param updateReqVO 更新请求参数
-     * @return 更新结果
-     */
     @PutMapping("/update")
     @ApiOperation(value = "更新优惠券", notes = "更新优惠券信息")
     @ApiSignature
-    @RateLimiter(time = 60, count = 100, keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<MtCouponRespVO> updateCoupon(@Valid @RequestBody MtCouponUpdateReqVO updateReqVO) {
-        try {
-            // 检查优惠券是否存在
-            MtCoupon existCoupon = openApiCouponService.queryCouponById(updateReqVO.getId());
-            if (existCoupon == null) {
-                return CommonResult.error(404, "优惠券不存在");
-            }
-
-            // 转换VO到DTO
-            ReqCouponDto reqCouponDto = convertToDto(updateReqVO);
-            reqCouponDto.setId(updateReqVO.getId());
-
-            // 调用OpenAPI service更新优惠券
-            MtCoupon coupon = openApiCouponService.updateCoupon(reqCouponDto);
-
-            // 转换返回结果
-            MtCouponRespVO respVO = convertToRespVO(coupon);
-
-            return CommonResult.success(respVO);
-        } catch (BusinessCheckException | ParseException e) {
-            return CommonResult.error(500, e.getMessage());
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    public CommonResult<Boolean> updateCoupon(@Valid @RequestBody MtCouponUpdateReqVO updateReqVO) {
+        MtCoupon existCoupon = openApiCouponService.queryCouponById(updateReqVO.getId());
+        if (existCoupon == null) {
+            return CommonResult.error(COUPON_NOT_FOUND);
         }
+        if (StatusEnum.DISABLE.getKey().equals(existCoupon.getStatus())) {
+            return CommonResult.error(COUPON_NOT_FOUND);
+        }
+        ReqCouponDto reqCouponDto = convertToDto(updateReqVO);
+        reqCouponDto.setId(updateReqVO.getId());
+        openApiCouponService.updateCoupon(reqCouponDto);
+        return CommonResult.success(true);
+
     }
 
-    /**
-     * 分页查询优惠券列表
-     *
-     * @param pageReqVO 分页查询参数
-     * @return 分页结果
-     */
+
     @GetMapping("/page")
     @ApiOperation(value = "分页查询优惠券列表", notes = "支持按名称、类型、状态等条件查询")
     @ApiSignature
     @RateLimiter(time = 60, count = 200, keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<MtCouponPageRespVO> pageCoupons(@Valid @ModelAttribute MtCouponPageReqVO pageReqVO) {
-        // 限制最大分页大小，防止深度分页
-        if (pageReqVO.getPageSize() != null && pageReqVO.getPageSize() > 100) {
-            pageReqVO.setPageSize(100);
-        }
-
+    public CommonResult<PageResult<MtCouponRespVO>> pageCoupons(@Valid @ModelAttribute MtCouponPageReqVO pageReqVO) {
         // 使用优化后的MyBatis Plus分页查询
-        IPage<MtCouponRespVO> page = openApiCouponService.queryCouponPage(pageReqVO);
-        List<MtCouponRespVO> list = page.getRecords();
-
-        if (list != null && !list.isEmpty()) {
+        PageResult<MtCoupon> page = openApiCouponService.queryCouponPage(pageReqVO);
+        List<MtCouponRespVO> list = page.getList().stream().map(this::convertToRespVO).collect(Collectors.toList());
+        if (CollUtil.isNotEmpty(list)) {
             // 批量填充商品信息
             fillGoodsInfo(list);
+            // 批量填充店铺信息
+            fillStoreInfo(list);
+            // 批量填充会员等级信息
+            fillGradeInfo(list);
+            // 批量填充优惠券分组信息
+            fillGroupInfo(list);
         }
-
-        // 转换为响应VO
-        MtCouponPageRespVO pageRespVO = new MtCouponPageRespVO();
-        pageRespVO.setTotalElements(page.getTotal());
-        pageRespVO.setTotalPages((int) page.getPages());
-        pageRespVO.setCurrentPage((int) page.getCurrent());
-        pageRespVO.setPageSize((int) page.getSize());
-        pageRespVO.setContent(list);
-
-        return CommonResult.success(pageRespVO);
+        PageResult<MtCouponRespVO> pageResult = new PageResult<>();
+        pageResult.setList(list);
+        pageResult.setTotal(page.getTotal());
+        pageResult.setCurrentPage(page.getCurrentPage());
+        pageResult.setPageSize(page.getPageSize());
+        pageResult.setTotalPages(page.getTotalPages());
+        return CommonResult.success(pageResult);
     }
 
     /**
@@ -174,18 +149,14 @@ public class OpenCouponController extends BaseController {
         LambdaQueryWrapper<MtCouponGoods> wrapper = Wrappers.lambdaQuery();
         wrapper.in(MtCouponGoods::getCouponId, couponIds);
         List<MtCouponGoods> couponGoodsList = mtCouponGoodsMapper.selectList(wrapper);
-
         if (couponGoodsList.isEmpty()) return;
-
         // 2. 收集所有商品ID
         Set<Integer> goodsIds = couponGoodsList.stream().map(MtCouponGoods::getGoodsId).collect(Collectors.toSet());
         if (goodsIds.isEmpty()) return;
-
         // 3. 批量查询商品信息
         List<MtGoods> goodsList = mtGoodsMapper.selectBatchIds(goodsIds);
         Map<Integer, String> goodsNameMap = goodsList.stream()
                 .collect(Collectors.toMap(MtGoods::getId, MtGoods::getName, (v1, v2) -> v1));
-
         // 4. 组装数据
         Map<Integer, List<CouponGoodsItemVO>> couponGoodsMap = new HashMap<>();
         for (MtCouponGoods cg : couponGoodsList) {
@@ -193,11 +164,9 @@ public class OpenCouponController extends BaseController {
                 CouponGoodsItemVO item = new CouponGoodsItemVO();
                 item.setGoodsId(cg.getGoodsId());
                 item.setGoodsName(goodsNameMap.get(cg.getGoodsId()));
-
                 couponGoodsMap.computeIfAbsent(cg.getCouponId(), k -> new ArrayList<>()).add(item);
             }
         }
-
         // 5. 填充到VO
         for (MtCouponRespVO vo : list) {
             if (couponGoodsMap.containsKey(vo.getId())) {
@@ -207,27 +176,88 @@ public class OpenCouponController extends BaseController {
     }
 
     /**
-     * 获取优惠券详情
+     * 批量填充门店信息
      *
-     * @param id 优惠券ID
-     * @return 优惠券详情
+     * @param list 优惠券列表
      */
+    private void fillStoreInfo(List<MtCouponRespVO> list) {
+        Set<Integer> storeIds = new HashSet<>();
+        for (MtCouponRespVO vo : list) {
+            if (vo.getStoreIds() != null) {
+                storeIds.addAll(vo.getStoreIds());
+            }
+        }
+        List<MtStore> storeList = storeService.getStoreByIds(storeIds);
+        Map<Integer, String> storeNameMap = convertMap(storeList, MtStore::getId, MtStore::getName);
+        for (MtCouponRespVO vo : list) {
+            if (vo.getStoreIds() != null) {
+                List<MtCouponRespVO.CouponStoreItemVO> storeLs = new ArrayList<>();
+                for (Integer storeId : vo.getStoreIds()) {
+                    MtCouponRespVO.CouponStoreItemVO item = new MtCouponRespVO.CouponStoreItemVO();
+                    item.setStoreId(storeId);
+                    item.setStoreName(storeNameMap.get(storeId));
+                    storeLs.add(item);
+                }
+                vo.setStoreLs(storeLs);
+            }
+        }
+    }
+
+    /**
+     * 批量填充会员等级信息
+     *
+     * @param list 优惠券列表
+     */
+    private void fillGradeInfo(List<MtCouponRespVO> list) {
+        Set<Integer> gradeIds = new HashSet<>();
+        for (MtCouponRespVO vo : list) {
+            if (vo.getGradeIds() != null) {
+                gradeIds.addAll(vo.getGradeIds());
+            }
+        }
+        List<MtUserGrade> gradeList = userGradeService.getUserGradeListByIds(gradeIds);
+        Map<Integer, String> gradeNameMap = convertMap(gradeList, MtUserGrade::getId, MtUserGrade::getName);
+        for (MtCouponRespVO vo : list) {
+            if (vo.getGradeIds() != null) {
+                List<MtCouponRespVO.CouponGradeItemVO> gradeLs = new ArrayList<>();
+                for (Integer gradeId : vo.getGradeIds()) {
+                    MtCouponRespVO.CouponGradeItemVO item = new MtCouponRespVO.CouponGradeItemVO();
+                    item.setGradeId(gradeId);
+                    item.setGradeName(gradeNameMap.get(gradeId));
+                }
+                vo.setGradeLs(gradeLs);
+            }
+        }
+    }
+
+    private void fillGroupInfo(List<MtCouponRespVO> list) {
+        Set<Integer> groupIds = convertSet(list, MtCouponRespVO::getGroupId);
+        List<MtCouponGroup> groups = openApiCouponGroupService.getCouponGroupListByIds(groupIds);
+        Map<Integer, String> groupNameMap = convertMap(groups, MtCouponGroup::getId, MtCouponGroup::getName);
+        for (MtCouponRespVO vo : list) {
+            vo.setGroupName(groupNameMap.getOrDefault(vo.getGroupId(), ""));
+        }
+    }
+
     @GetMapping("/get/{id}")
     @ApiOperation(value = "获取优惠券详情", notes = "根据ID获取优惠券详细信息")
     @ApiSignature
     @RateLimiter(time = 60, count = 200, keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<MtCouponRespVO> getCoupon(@PathVariable("id") Integer id) {
-        try {
-            MtCoupon coupon = openApiCouponService.queryCouponById(id);
-            if (coupon == null) {
-                return CommonResult.error(404, "优惠券不存在");
-            }
-
-            MtCouponRespVO respVO = convertToRespVO(coupon);
-            return CommonResult.success(respVO);
-        } catch (BusinessCheckException e) {
-            return CommonResult.error(500, e.getMessage());
+        MtCoupon coupon = openApiCouponService.queryCouponById(id);
+        if (coupon == null) {
+            return CommonResult.error(COUPON_NOT_FOUND);
         }
+        if (coupon.getStatus().equals(StatusEnum.DISABLE.getKey())) {
+            return CommonResult.error(COUPON_NOT_FOUND);
+        }
+        MtCouponRespVO respVO = convertToRespVO(coupon);
+        List<MtCouponRespVO> couponLs = Collections.singletonList(respVO);
+        fillGoodsInfo(couponLs);
+        fillStoreInfo(couponLs);
+        fillGradeInfo(couponLs);
+        fillGroupInfo(couponLs);
+        return CommonResult.success(CollUtil.get(couponLs, 0));
     }
 
     /**
@@ -245,11 +275,14 @@ public class OpenCouponController extends BaseController {
             // 检查优惠券是否存在
             MtCoupon coupon = openApiCouponService.queryCouponById(sendReqVO.getCouponId());
             if (coupon == null) {
-                return CommonResult.error(404, "优惠券不存在");
+                return CommonResult.error(COUPON_NOT_FOUND);
+            }
+            if (StatusEnum.DISABLE.getKey().equals(coupon.getStatus())) {
+                return CommonResult.error(COUPON_NOT_FOUND);
             }
 
             // 生成批次号
-            String uuid = UUID.randomUUID().toString().replaceAll("-", "");
+            String uuid = UUID.randomUUID(true).toString();
             List<Integer> userIdList = new ArrayList<>();
 
             // 根据发放对象类型获取用户列表
@@ -263,7 +296,7 @@ public class OpenCouponController extends BaseController {
                     if (user != null) {
                         userIdList.add(user.getId());
                     } else {
-                        return CommonResult.error(404, "用户不存在");
+                        return CommonResult.error(USER_NOT_FOUND);
                     }
                 } else {
                     return CommonResult.error(400, "请提供用户ID或手机号");
@@ -301,7 +334,7 @@ public class OpenCouponController extends BaseController {
             }
 
             // 批量发券
-            Boolean sendMessage = sendReqVO.getSendMessage() != null && sendReqVO.getSendMessage();
+//            Boolean sendMessage = sendReqVO.getSendMessage() != null && sendReqVO.getSendMessage();
             String operator = StringUtils.isNotEmpty(sendReqVO.getOperator()) ? sendReqVO.getOperator() : "system";
             openApiCouponService.batchSendCoupon(sendReqVO.getCouponId(), userIdList, sendReqVO.getNum(), uuid, operator);
 
@@ -309,8 +342,6 @@ public class OpenCouponController extends BaseController {
             result.put("uuid", uuid);
             result.put("userCount", userIdList.size());
             result.put("totalCouponCount", userIdList.size() * sendReqVO.getNum());
-            result.put("message", "发券成功");
-
             return CommonResult.success(result);
         } catch (BusinessCheckException e) {
             return CommonResult.error(500, e.getMessage());
@@ -327,25 +358,19 @@ public class OpenCouponController extends BaseController {
     @ApiOperation(value = "撤销优惠券", notes = "根据批次号撤销已发放的优惠券")
     @ApiSignature
     @RateLimiter(time = 60, count = 50, keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<Map<String, Object>> revokeCoupon(@Valid @RequestBody CouponRevokeReqVO revokeReqVO) {
-        try {
-            // 检查优惠券是否存在
-            MtCoupon coupon = openApiCouponService.queryCouponById(revokeReqVO.getCouponId());
-            if (coupon == null) {
-                return CommonResult.error(404, "优惠券不存在");
-            }
-
-            String operator = StringUtils.isNotEmpty(revokeReqVO.getOperator()) ? revokeReqVO.getOperator() : "system";
-            openApiCouponService.revokeCoupon(revokeReqVO.getCouponId(), revokeReqVO.getUuid(), operator);
-
-            Map<String, Object> result = new HashMap<>();
-            result.put("message", "撤销成功");
-            result.put("uuid", revokeReqVO.getUuid());
-
-            return CommonResult.success(result);
-        } catch (BusinessCheckException e) {
-            return CommonResult.error(500, e.getMessage());
+    public CommonResult<Boolean> revokeCoupon(@Valid @RequestBody CouponRevokeReqVO revokeReqVO) {
+        // 检查优惠券是否存在
+        MtCoupon coupon = openApiCouponService.queryCouponById(revokeReqVO.getCouponId());
+        if (coupon == null) {
+            return CommonResult.error(COUPON_NOT_FOUND);
         }
+        if (StatusEnum.DISABLE.getKey().equals(coupon.getStatus())) {
+            return CommonResult.error(COUPON_NOT_FOUND);
+        }
+        String operator = StringUtils.isNotEmpty(revokeReqVO.getOperator()) ? revokeReqVO.getOperator() : "system";
+        openApiCouponService.revokeCoupon(revokeReqVO.getCouponId(), revokeReqVO.getUuid(), operator);
+        return CommonResult.success(true);
+
     }
 
     /**
@@ -354,15 +379,24 @@ public class OpenCouponController extends BaseController {
     private ReqCouponDto convertToDto(MtCouponCreateReqVO createReqVO) {
         ReqCouponDto dto = new ReqCouponDto();
         BeanUtils.copyProperties(createReqVO, dto);
-
         // 处理商品列表
-        if (createReqVO.getGoodsList() != null && !createReqVO.getGoodsList().isEmpty()) {
-            String goodsIds = createReqVO.getGoodsList().stream()
-                    .map(item -> item.getGoodsId().toString())
-                    .collect(Collectors.joining(","));
-            dto.setGoodsIds(goodsIds);
+        if (CollUtil.isNotEmpty(createReqVO.getGoodsList())) {
+            dto.setGoodsIds(CollUtil.join(createReqVO.getGoodsList(), ","));
         }
-
+        if (CollUtil.isNotEmpty(createReqVO.getStoreIds())) {
+            dto.setStoreIds(CollUtil.join(createReqVO.getStoreIds(), ","));
+        }
+        if (CollUtil.isNotEmpty(createReqVO.getGradeIds())) {
+            dto.setGradeIds(CollUtil.join(createReqVO.getGradeIds(), ","));
+        }
+        dto.setStatus(StatusEnum.ENABLED.getKey());
+        if (createReqVO.getBeginTime() != null) {
+            dto.setBeginTime(DateUtil.format(createReqVO.getBeginTime(), DatePattern.NORM_DATETIME_PATTERN));
+        }
+        if (createReqVO.getEndTime() != null) {
+            dto.setEndTime(DateUtil.format(createReqVO.getEndTime(), DatePattern.NORM_DATETIME_PATTERN));
+        }
+        dto.setExpireType(createReqVO.getExpireType().getKey());
         return dto;
     }
 
@@ -372,42 +406,15 @@ public class OpenCouponController extends BaseController {
     private MtCouponRespVO convertToRespVO(MtCoupon coupon) {
         MtCouponRespVO respVO = new MtCouponRespVO();
         BeanUtils.copyProperties(coupon, respVO);
-
-        // 获取分组名称
-        try {
-            MtCouponGroup group = couponGroupService.queryCouponGroupById(coupon.getGroupId());
-            if (group != null) {
-                respVO.setGroupName(group.getName());
-            }
-        } catch (BusinessCheckException e) {
-            // ignore
-        }
-
-        // 获取商品列表
-        List<MtCouponGoods> couponGoodsList = mtCouponGoodsMapper.getCouponGoods(coupon.getId());
-        if (couponGoodsList != null && !couponGoodsList.isEmpty()) {
-            List<CouponGoodsItemVO> goodsList = couponGoodsList.stream().map(cg -> {
-                CouponGoodsItemVO item = new CouponGoodsItemVO();
-                item.setGoodsId(cg.getGoodsId());
-                try {
-                    MtGoods goods = goodsService.queryGoodsById(cg.getGoodsId());
-                    if (goods != null) {
-                        item.setGoodsName(goods.getName());
-                    }
-                } catch (BusinessCheckException e) {
-                    // ignore
-                }
-                return item;
-            }).collect(Collectors.toList());
-            respVO.setGoodsList(goodsList);
-        }
-
+        respVO.setExpireType(CouponExpireTypeEnum.getType(coupon.getExpireType()));
+        respVO.setGoodsIds(openApiCouponService.getCouponGoodsIds(coupon.getId()));
+        respVO.setStoreIds(StrUtils.splitToInt(coupon.getStoreIds(), ","));
+        respVO.setGradeIds(StrUtils.splitToInt(coupon.getGradeIds(), ","));
         // 获取已发放数量和剩余数量
         Integer sendNum = openApiCouponService.getSendNum(coupon.getId());
         respVO.setSentNum(sendNum);
         Integer leftNum = openApiCouponService.getLeftNum(coupon.getId());
         respVO.setLeftNum(leftNum);
-
         return respVO;
     }
 }

@@ -1,6 +1,9 @@
 package com.fuint.openapi.service.impl;
 
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fuint.common.dto.ReqCouponDto;
@@ -8,24 +11,27 @@ import com.fuint.common.enums.CouponExpireTypeEnum;
 import com.fuint.common.enums.SendWayEnum;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.enums.UserCouponStatusEnum;
+import com.fuint.common.service.UserCouponService;
 import com.fuint.common.util.CommonUtil;
-import com.fuint.common.util.DateUtil;
 import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
+import com.fuint.framework.exception.ServiceException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.util.SeqUtil;
 import com.fuint.openapi.service.OpenApiCouponService;
 import com.fuint.openapi.v1.marketing.coupon.vo.MtCouponPageReqVO;
-import com.fuint.openapi.v1.marketing.coupon.vo.MtCouponRespVO;
 import com.fuint.repository.mapper.MtCouponGoodsMapper;
 import com.fuint.repository.mapper.MtCouponMapper;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.MtCoupon;
 import com.fuint.repository.model.MtCouponGoods;
 import com.fuint.repository.model.MtUserCoupon;
-import lombok.AllArgsConstructor;
+import com.fuint.repository.utils.MyBatisUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageImpl;
@@ -33,10 +39,15 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
 import java.math.BigDecimal;
-import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.fuint.framework.exception.enums.GlobalErrorCodeConstants.BAD_REQUEST;
+import static com.fuint.framework.exception.util.ServiceExceptionUtil.exception;
+import static com.fuint.openapi.enums.CouponErrorCodeConstants.*;
+import static com.fuint.openapi.enums.RedisKeyConstants.COUPON_REVOKE_LOCK;
 
 /**
  * OpenAPI优惠券业务实现类
@@ -47,25 +58,36 @@ import java.util.stream.Collectors;
  * @since 2026/1/17
  */
 @Service
-@AllArgsConstructor
 public class OpenApiCouponServiceImpl implements OpenApiCouponService {
 
     private static final Logger logger = LoggerFactory.getLogger(OpenApiCouponServiceImpl.class);
 
-    private final MtCouponMapper mtCouponMapper;
-    private final MtUserCouponMapper mtUserCouponMapper;
-    private final MtCouponGoodsMapper mtCouponGoodsMapper;
+    @Resource
+    private MtCouponMapper mtCouponMapper;
+
+    @Resource
+    private MtUserCouponMapper mtUserCouponMapper;
+
+    @Resource
+    private UserCouponService userCouponService;
+
+    @Resource
+    private MtCouponGoodsMapper mtCouponGoodsMapper;
+
+    /**
+     * Redisson 客户端
+     */
+    @Resource
+    private RedissonClient redissonClient;
 
     /**
      * 分页查询优惠券列表 (Optimized)
      */
     @Override
-    public IPage<MtCouponRespVO> queryCouponPage(MtCouponPageReqVO reqVO) {
-        long current = reqVO.getPage() == null ? 1 : reqVO.getPage();
-        long size = reqVO.getPageSize() == null ? 10 : reqVO.getPageSize();
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<MtCouponRespVO> page = 
-                new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(current, size);
-        return mtCouponMapper.selectCouponPage(page, reqVO);
+    public PageResult<MtCoupon> queryCouponPage(MtCouponPageReqVO reqVO) {
+        IPage<MtCoupon> mpPage = mtCouponMapper.selectCouponPage(MyBatisUtils.buildPage(reqVO), reqVO);
+        // 转换返回
+        return new PageResult<>(mpPage.getRecords(), mpPage.getTotal(), mpPage.getPages(), mpPage.getCurrent(), mpPage.getSize());
     }
 
     /**
@@ -123,7 +145,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
         // 原代码：PageRequest.of(paginationRequest.getCurrentPage(), ...)
         PageRequest pageRequest = PageRequest.of(paginationRequest.getCurrentPage() > 0 ? paginationRequest.getCurrentPage() - 1 : 0, paginationRequest.getPageSize());
         PageImpl<MtCoupon> pageImpl = new PageImpl<>(dataList, pageRequest, page.getTotal());
-        
+
         PaginationResponse<MtCoupon> paginationResponse = new PaginationResponse(pageImpl, MtCoupon.class);
         paginationResponse.setTotalPages((int) page.getPages());
         paginationResponse.setTotalElements(page.getTotal());
@@ -139,7 +161,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "OpenAPI创建优惠券")
-    public MtCoupon createCoupon(ReqCouponDto reqCouponDto) throws BusinessCheckException, ParseException {
+    public MtCoupon createCoupon(ReqCouponDto reqCouponDto) {
         logger.info("[OpenApiCouponService] 创建优惠券, 参数: {}", reqCouponDto);
 
         // 参数校验
@@ -147,7 +169,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
 
         MtCoupon mtCoupon = new MtCoupon();
         buildCouponFromDto(mtCoupon, reqCouponDto);
-        
+
         // 创建时间
         mtCoupon.setCreateTime(new Date());
         mtCoupon.setUpdateTime(new Date());
@@ -170,28 +192,18 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "OpenAPI更新优惠券")
-    public MtCoupon updateCoupon(ReqCouponDto reqCouponDto) throws BusinessCheckException, ParseException {
-        logger.info("[OpenApiCouponService] 更新优惠券, 参数: {}", reqCouponDto);
-
-        if (reqCouponDto.getId() == null) {
-            throw new BusinessCheckException("优惠券ID不能为空");
-        }
-
+    public void updateCoupon(ReqCouponDto reqCouponDto) {
         // 检查优惠券是否存在
         MtCoupon mtCoupon = mtCouponMapper.selectById(reqCouponDto.getId());
         if (mtCoupon == null) {
-            throw new BusinessCheckException("优惠券不存在");
+            throw exception(COUPON_NOT_FOUND);
         }
-
         // 参数校验
         validateCouponDto(reqCouponDto);
-
         buildCouponFromDto(mtCoupon, reqCouponDto);
         mtCoupon.setUpdateTime(new Date());
-
         // 更新优惠券
         mtCouponMapper.updateById(mtCoupon);
-
         // 更新适用商品
         if (StringUtils.isNotEmpty(reqCouponDto.getGoodsIds())) {
             // 先删除原有商品
@@ -199,9 +211,6 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
             // 再添加新商品
             saveCouponGoods(mtCoupon.getId(), reqCouponDto.getGoodsIds());
         }
-
-        logger.info("[OpenApiCouponService] 更新优惠券成功, 优惠券ID: {}", mtCoupon.getId());
-        return mtCoupon;
     }
 
     /**
@@ -209,15 +218,10 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
      */
     @Override
     public MtCoupon queryCouponById(Integer id) throws BusinessCheckException {
-        if (id == null || id <= 0) {
-            throw new BusinessCheckException("优惠券ID不能为空");
-        }
-
         MtCoupon coupon = mtCouponMapper.selectById(id);
         if (coupon == null) {
-            throw new BusinessCheckException("优惠券不存在");
+            throw new ServiceException(COUPON_NOT_FOUND);
         }
-
         return coupon;
     }
 
@@ -227,16 +231,12 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "OpenAPI删除优惠券")
-    public void deleteCoupon(Integer id, String operator) throws BusinessCheckException {
-        logger.info("[OpenApiCouponService] 删除优惠券, 优惠券ID: {}, 操作人: {}", id, operator);
-
+    public void deleteCoupon(Integer id, String operator) {
         MtCoupon coupon = queryCouponById(id);
         coupon.setStatus(StatusEnum.DISABLE.getKey());
         coupon.setUpdateTime(new Date());
         coupon.setOperator(operator);
-
         mtCouponMapper.updateById(coupon);
-        logger.info("[OpenApiCouponService] 删除优惠券成功, 优惠券ID: {}", id);
     }
 
     /**
@@ -245,34 +245,33 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "OpenAPI批量发放优惠券")
-    public Boolean batchSendCoupon(Integer couponId, List<Integer> userIds, Integer num, String uuid, String operator) throws BusinessCheckException {
-        logger.info("[OpenApiCouponService] 批量发放优惠券, 优惠券ID: {}, 用户数: {}, 数量: {}, 批次号: {}", 
-                couponId, userIds.size(), num, uuid);
-
-        // 检查优惠券是否存在
-        MtCoupon coupon = queryCouponById(couponId);
-        
-        // 检查优惠券状态
-        if (!StatusEnum.ENABLED.getKey().equals(coupon.getStatus())) {
-            throw new BusinessCheckException("优惠券未启用,无法发放");
+    public void batchSendCoupon(Integer couponId, List<Integer> userIds, Integer num, String uuid, String operator) throws BusinessCheckException {
+        RLock lock = redissonClient.getLock(COUPON_REVOKE_LOCK + couponId);
+        if (!lock.tryLock()) {
+            throw new ServiceException(COUPON_BATCH_PROCESSING);
         }
-
-        // 检查剩余数量
-        Integer leftNum = getLeftNum(couponId);
-        Integer needNum = userIds.size() * num;
-        if (coupon.getTotal() > 0 && leftNum < needNum) {
-            throw new BusinessCheckException("优惠券库存不足,剩余: " + leftNum + ", 需要: " + needNum);
-        }
-
-        // 批量发放
-        for (Integer userId : userIds) {
-            for (int i = 0; i < num; i++) {
-                sendCouponToUser(coupon, userId, uuid, operator);
+        try {
+            // 检查优惠券是否存在
+            MtCoupon coupon = queryCouponById(couponId);
+            // 检查优惠券状态
+            if (!StatusEnum.ENABLED.getKey().equals(coupon.getStatus())) {
+                throw new BusinessCheckException("优惠券未启用,无法发放");
             }
+            // 检查剩余数量
+            Integer leftNum = getLeftNum(couponId);
+            Integer needNum = userIds.size() * num;
+            if (coupon.getTotal() > 0 && leftNum < needNum) {
+                throw exception(COUPON_STOCK_NOT_ENOUGH, leftNum, needNum);
+            }
+            // 批量发放
+            for (Integer userId : userIds) {
+                for (int i = 0; i < num; i++) {
+                    sendCouponToUser(coupon, userId, uuid, operator);
+                }
+            }
+        } finally {
+            lock.unlock();
         }
-
-        logger.info("[OpenApiCouponService] 批量发放优惠券成功, 优惠券ID: {}, 发放数量: {}", couponId, needNum);
-        return true;
     }
 
     /**
@@ -282,28 +281,22 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "OpenAPI撤销优惠券")
     public void revokeCoupon(Integer couponId, String uuid, String operator) throws BusinessCheckException {
-        logger.info("[OpenApiCouponService] 撤销优惠券, 优惠券ID: {}, 批次号: {}", couponId, uuid);
-
-        LambdaQueryWrapper<MtUserCoupon> wrapper = Wrappers.lambdaQuery();
-        wrapper.eq(MtUserCoupon::getCouponId, couponId);
-        wrapper.eq(MtUserCoupon::getUuid, uuid);
-        wrapper.eq(MtUserCoupon::getStatus, UserCouponStatusEnum.UNUSED.getKey());
-
-        List<MtUserCoupon> userCoupons = mtUserCouponMapper.selectList(wrapper);
-        
-        if (userCoupons.isEmpty()) {
-            logger.warn("[OpenApiCouponService] 未找到可撤销的优惠券");
-            return;
+        RLock lock = redissonClient.getLock(COUPON_REVOKE_LOCK + couponId);
+        if (!lock.tryLock()) {
+            throw new ServiceException(COUPON_REVOKE_PROCESSING);
         }
-
-        for (MtUserCoupon userCoupon : userCoupons) {
-            userCoupon.setStatus(UserCouponStatusEnum.DISABLE.getKey());
-            userCoupon.setUpdateTime(new Date());
-            userCoupon.setOperator(operator);
-            mtUserCouponMapper.updateById(userCoupon);
+        try {
+            LambdaUpdateWrapper<MtUserCoupon> updateWrapper = new LambdaUpdateWrapper<>();
+            updateWrapper.set(MtUserCoupon::getStatus, UserCouponStatusEnum.DISABLE.getKey());
+            updateWrapper.set(MtUserCoupon::getUpdateTime, new Date());
+            updateWrapper.set(MtUserCoupon::getOperator, operator);
+            updateWrapper.eq(MtUserCoupon::getCouponId, couponId);
+            updateWrapper.eq(MtUserCoupon::getStatus, UserCouponStatusEnum.UNUSED.getKey());
+            updateWrapper.eq(StringUtils.isNotBlank(uuid), MtUserCoupon::getUuid, uuid);
+            userCouponService.update(updateWrapper);
+        } finally {
+            lock.unlock();
         }
-
-        logger.info("[OpenApiCouponService] 撤销优惠券成功, 撤销数量: {}", userCoupons.size());
     }
 
     /**
@@ -350,35 +343,35 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
     /**
      * 校验优惠券DTO参数
      */
-    private void validateCouponDto(ReqCouponDto dto) throws BusinessCheckException, ParseException {
+    private void validateCouponDto(ReqCouponDto dto) {
         if (dto.getName() == null || dto.getName().trim().isEmpty()) {
-            throw new BusinessCheckException("优惠券名称不能为空");
+            throw new ServiceException(BAD_REQUEST.getCode(), "优惠券名称不能为空");
         }
 
         if (dto.getType() == null) {
-            throw new BusinessCheckException("优惠券类型不能为空");
+            throw new ServiceException(BAD_REQUEST.getCode(), "优惠券类型不能为空");
         }
 
         if (dto.getExpireType() == null) {
-            throw new BusinessCheckException("有效期类型不能为空");
+            throw new ServiceException(BAD_REQUEST.getCode(), "有效期类型不能为空");
         }
 
         // 固定有效期验证
         if (CouponExpireTypeEnum.FIX.getKey().equals(dto.getExpireType())) {
             if (StringUtils.isEmpty(dto.getBeginTime()) || StringUtils.isEmpty(dto.getEndTime())) {
-                throw new BusinessCheckException("固定有效期的开始时间和结束时间不能为空");
+                throw new ServiceException(BAD_REQUEST.getCode(), "固定有效期的开始时间和结束时间不能为空");
             }
-            Date startTime = DateUtil.parseDate(dto.getBeginTime());
-            Date endTime = DateUtil.parseDate(dto.getEndTime());
+            Date startTime = cn.hutool.core.date.DateUtil.parse(dto.getBeginTime(), DatePattern.NORM_DATETIME_PATTERN);
+            Date endTime = cn.hutool.core.date.DateUtil.parse(dto.getEndTime(), DatePattern.NORM_DATETIME_PATTERN);
             if (endTime.before(startTime)) {
-                throw new BusinessCheckException("结束时间不能早于开始时间");
+                throw new ServiceException(BAD_REQUEST.getCode(), "结束时间不能早于开始时间");
             }
         }
 
         // 灵活有效期验证
         if (CouponExpireTypeEnum.FLEX.getKey().equals(dto.getExpireType())) {
             if (dto.getExpireTime() == null || dto.getExpireTime() <= 0) {
-                throw new BusinessCheckException("灵活有效期的天数必须大于0");
+                throw new ServiceException(BAD_REQUEST.getCode(), "灵活有效期的天数必须大于0");
             }
         }
     }
@@ -386,7 +379,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
     /**
      * 从DTO构建优惠券对象
      */
-    private void buildCouponFromDto(MtCoupon coupon, ReqCouponDto dto) throws ParseException {
+    private void buildCouponFromDto(MtCoupon coupon, ReqCouponDto dto) {
         // 基本信息
         if (dto.getMerchantId() != null) {
             coupon.setMerchantId(dto.getMerchantId());
@@ -403,7 +396,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
         if (dto.getName() != null) {
             coupon.setName(CommonUtil.replaceXSS(dto.getName()));
         }
-        
+
         // 发放设置
         if (dto.getTotal() != null) {
             coupon.setTotal(dto.getTotal());
@@ -441,12 +434,11 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
         // 有效期设置
         coupon.setExpireType(dto.getExpireType());
         if (CouponExpireTypeEnum.FIX.getKey().equals(dto.getExpireType())) {
-            coupon.setBeginTime(DateUtil.parseDate(dto.getBeginTime()));
-            coupon.setEndTime(DateUtil.parseDate(dto.getEndTime()));
+            coupon.setBeginTime(DateUtil.parse(dto.getBeginTime(), DatePattern.NORM_DATETIME_PATTERN));
+            coupon.setEndTime(DateUtil.parse(dto.getEndTime(), DatePattern.NORM_DATETIME_PATTERN));
         } else if (CouponExpireTypeEnum.FLEX.getKey().equals(dto.getExpireType())) {
             coupon.setExpireTime(dto.getExpireTime());
         }
-
         // 使用规则
         if (dto.getInRule() != null) {
             coupon.setInRule(CommonUtil.replaceXSS(dto.getInRule()));
@@ -489,7 +481,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
         } else {
             coupon.setStatus(StatusEnum.ENABLED.getKey());
         }
-        
+
         if (dto.getOperator() != null) {
             coupon.setOperator(dto.getOperator());
         }
@@ -554,8 +546,8 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
 
         // 生成券码 (12位随机数)
         String code = SeqUtil.getRandomNumber(4) +
-                      SeqUtil.getRandomNumber(4) + 
-                      SeqUtil.getRandomNumber(4);
+                SeqUtil.getRandomNumber(4) +
+                SeqUtil.getRandomNumber(4);
         userCoupon.setCode(code);
 
         mtUserCouponMapper.insert(userCoupon);

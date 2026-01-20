@@ -193,20 +193,24 @@ public class StaffServiceImpl extends ServiceImpl<MtStaffMapper, MtStaff> implem
         if (!lock.tryLock()) {
             throw new ServiceException(BAD_REQUEST.getCode(), "频繁提交，正在同步");
         }
-        MtStaff staff = mtStaffMapper.selectByMobile(reqStaff.getMobile());
-        if (staff == null) {
-            staff = BeanUtil.toBean(reqStaff, MtStaff.class);
-            staff.setAuditedStatus(StatusEnum.ENABLED.getKey());
-            staff.setUserId(reqStaff.getUserId());
-            staff.setCreateTime(new Date());
-            staff.setUpdateTime(new Date());
-            this.save(staff);
+        try {
+            MtStaff staff = mtStaffMapper.selectByMobile(reqStaff.getMobile());
+            if (staff == null) {
+                staff = BeanUtil.toBean(reqStaff, MtStaff.class);
+                staff.setAuditedStatus(StatusEnum.ENABLED.getKey());
+                staff.setUserId(reqStaff.getUserId());
+                staff.setCreateTime(new Date());
+                staff.setUpdateTime(new Date());
+                this.save(staff);
+                return staff;
+            }
+            if (!Objects.equals(staff.getUserId(), reqStaff.getUserId())) {
+                throw new ServiceException(BAD_REQUEST.getCode(), "[" + reqStaff.getMobile() + "]手机号已存在");
+            }
             return staff;
+        } finally {
+            lock.unlock();
         }
-        if (!Objects.equals(staff.getUserId(), reqStaff.getUserId())) {
-            throw new ServiceException(BAD_REQUEST.getCode(), "[" + reqStaff.getMobile() + "]手机号已存在");
-        }
-        return staff;
     }
 
     @Override
@@ -215,22 +219,26 @@ public class StaffServiceImpl extends ServiceImpl<MtStaffMapper, MtStaff> implem
         if (!lock.tryLock()) {
             throw new ServiceException(BAD_REQUEST.getCode(), "频繁提交，正在同步");
         }
-        MtStaff staff = mtStaffMapper.selectByMobile(reqStaff.getMobile());
-        if (staff == null) {
-            staff = BeanUtil.toBean(reqStaff, MtStaff.class);
-            staff.setAuditedStatus(StatusEnum.ENABLED.getKey());
-            staff.setUserId(reqStaff.getUserId());
-            staff.setCreateTime(new Date());
-            staff.setUpdateTime(new Date());
-            this.save(staff);
-            return staff;
-        } else {
-            MtStaff updateOb = BeanUtil.toBean(reqStaff, MtStaff.class);
-            updateOb.setId(staff.getId());
-            updateOb.setUpdateTime(new Date());
-            updateOb.setUserId(updateOb.getUserId());
-            this.updateById(updateOb);
-            return staff;
+        try {
+            MtStaff staff = mtStaffMapper.selectByMobile(reqStaff.getMobile());
+            if (staff == null) {
+                staff = BeanUtil.toBean(reqStaff, MtStaff.class);
+                staff.setAuditedStatus(StatusEnum.ENABLED.getKey());
+                staff.setUserId(reqStaff.getUserId());
+                staff.setCreateTime(new Date());
+                staff.setUpdateTime(new Date());
+                this.save(staff);
+                return staff;
+            } else {
+                MtStaff updateOb = BeanUtil.toBean(reqStaff, MtStaff.class);
+                updateOb.setId(staff.getId());
+                updateOb.setUpdateTime(new Date());
+                updateOb.setUserId(updateOb.getUserId());
+                this.updateById(updateOb);
+                return staff;
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -240,10 +248,15 @@ public class StaffServiceImpl extends ServiceImpl<MtStaffMapper, MtStaff> implem
         if (!lock.tryLock()) {
             throw new ServiceException(BAD_REQUEST.getCode(), "频繁提交，正在同步");
         }
-        MtStaff staff = mtStaffMapper.selectByMobile(phone);
-        if (staff != null) {
-            this.removeById(staff.getId());
+        try {
+            MtStaff staff = mtStaffMapper.selectByMobile(phone);
+            if (staff != null) {
+                this.removeById(staff.getId());
+            }
+        } finally {
+            lock.unlock();
         }
+
     }
 
     /**

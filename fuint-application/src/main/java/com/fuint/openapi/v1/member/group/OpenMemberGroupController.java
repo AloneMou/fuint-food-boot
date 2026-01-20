@@ -25,14 +25,17 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.fuint.openapi.enums.UserErrorCodeConstants.USER_GROUP_NOT_FOUND;
+
 /**
  * OpenApi会员分组相关接口
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -45,20 +48,12 @@ public class OpenMemberGroupController extends BaseController {
     @Resource
     private MemberGroupService memberGroupService;
 
-    /**
-     * 创建会员分组
-     *
-     * @param createReqVO 创建请求参数
-     * @return 分组ID
-     * @throws BusinessCheckException 业务异常
-     */
     @ApiOperation(value = "创建会员分组", notes = "创建一个新的会员分组")
     @PostMapping(value = "/create")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Integer> createMemberGroup(@Valid @RequestBody MtMemberGroupCreateReqVO createReqVO) throws BusinessCheckException {
         MemberGroupDto memberGroupDto = BeanUtils.toBean(createReqVO, MemberGroupDto.class);
-        
         // 设置默认值
         if (memberGroupDto.getMerchantId() == null) {
             memberGroupDto.setMerchantId(1);
@@ -69,20 +64,11 @@ public class OpenMemberGroupController extends BaseController {
         if (memberGroupDto.getParentId() == null) {
             memberGroupDto.setParentId(0);
         }
-        
         memberGroupDto.setOperator("openapi");
-        
         MtUserGroup group = memberGroupService.addMemberGroup(memberGroupDto);
         return CommonResult.success(group.getId());
     }
 
-    /**
-     * 更新会员分组
-     *
-     * @param updateReqVO 更新请求参数
-     * @return 是否成功
-     * @throws BusinessCheckException 业务异常
-     */
     @ApiOperation(value = "更新会员分组", notes = "根据ID更新会员分组信息")
     @PutMapping(value = "/update")
     @ApiSignature
@@ -91,23 +77,14 @@ public class OpenMemberGroupController extends BaseController {
         // 检查分组是否存在
         MtUserGroup existGroup = memberGroupService.queryMemberGroupById(updateReqVO.getId());
         if (existGroup == null) {
-            return CommonResult.error(404, "会员分组不存在");
+            return CommonResult.error(USER_GROUP_NOT_FOUND);
         }
-        
         MemberGroupDto memberGroupDto = BeanUtils.toBean(updateReqVO, MemberGroupDto.class);
         memberGroupDto.setOperator("openapi");
-        
         memberGroupService.updateMemberGroup(memberGroupDto);
         return CommonResult.success(true);
     }
 
-    /**
-     * 删除会员分组
-     *
-     * @param id 分组ID
-     * @return 是否成功
-     * @throws BusinessCheckException 业务异常
-     */
     @ApiOperation(value = "删除会员分组", notes = "根据ID删除会员分组（逻辑删除）")
     @DeleteMapping(value = "/delete/{id}")
     @ApiSignature
@@ -115,24 +92,15 @@ public class OpenMemberGroupController extends BaseController {
     public CommonResult<Boolean> deleteMemberGroup(
             @ApiParam(value = "分组ID", required = true, example = "1")
             @PathVariable("id") Integer id) throws BusinessCheckException {
-        
         // 检查分组是否存在
         MtUserGroup existGroup = memberGroupService.queryMemberGroupById(id);
         if (existGroup == null) {
-            return CommonResult.error(404, "会员分组不存在");
+            return CommonResult.error(USER_GROUP_NOT_FOUND);
         }
-        
         memberGroupService.deleteMemberGroup(id, "openapi");
         return CommonResult.success(true);
     }
 
-    /**
-     * 获取会员分组详情
-     *
-     * @param id 分组ID
-     * @return 分组详情
-     * @throws BusinessCheckException 业务异常
-     */
     @ApiOperation(value = "获取会员分组详情", notes = "根据ID获取会员分组详细信息")
     @GetMapping(value = "/detail/{id}")
     @ApiSignature
@@ -140,14 +108,14 @@ public class OpenMemberGroupController extends BaseController {
     public CommonResult<MtMemberGroupRespVO> getMemberGroupDetail(
             @ApiParam(value = "分组ID", required = true, example = "1")
             @PathVariable("id") Integer id) throws BusinessCheckException {
-        
         MtUserGroup mtUserGroup = memberGroupService.queryMemberGroupById(id);
         if (mtUserGroup == null) {
-            return CommonResult.error(404, "会员分组不存在");
+            return CommonResult.error(USER_GROUP_NOT_FOUND);
         }
-        
+        if (StatusEnum.DISABLE.getKey().equals(mtUserGroup.getStatus())) {
+            return CommonResult.error(USER_GROUP_NOT_FOUND);
+        }
         MtMemberGroupRespVO respVO = convertToRespVO(mtUserGroup);
-        
         return CommonResult.success(respVO);
     }
 
@@ -163,12 +131,12 @@ public class OpenMemberGroupController extends BaseController {
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<MtMemberGroupPageRespVO> getMemberGroupPage(@Valid MtMemberGroupPageReqVO pageReqVO) throws BusinessCheckException {
-        
+
         // 构建分页请求
         PaginationRequest paginationRequest = new PaginationRequest();
         paginationRequest.setCurrentPage(pageReqVO.getPage());
         paginationRequest.setPageSize(pageReqVO.getPageSize());
-        
+
         // 构建查询参数
         Map<String, Object> params = new HashMap<>();
         if (StringUtils.isNotEmpty(pageReqVO.getName())) {
@@ -186,26 +154,26 @@ public class OpenMemberGroupController extends BaseController {
         if (pageReqVO.getStoreId() != null) {
             params.put("storeId", pageReqVO.getStoreId().toString());
         }
-        
+
         paginationRequest.setSearchParams(params);
-        
+
         // 执行查询
         PaginationResponse<UserGroupDto> paginationResponse = memberGroupService.queryMemberGroupListByPagination(paginationRequest);
-        
+
         // 构建响应
         MtMemberGroupPageRespVO respVO = new MtMemberGroupPageRespVO();
-        
+
         // 转换数据
         List<MtMemberGroupRespVO> list = paginationResponse.getContent().stream()
                 .map(this::convertUserGroupDtoToRespVO)
                 .collect(Collectors.toList());
-        
+
         respVO.setList(list);
         respVO.setTotal(paginationResponse.getTotalElements());
         respVO.setTotalPages(paginationResponse.getTotalPages());
         respVO.setCurrentPage(pageReqVO.getPage());
         respVO.setPageSize(pageReqVO.getPageSize());
-        
+
         return CommonResult.success(respVO);
     }
 
@@ -213,7 +181,7 @@ public class OpenMemberGroupController extends BaseController {
      * 获取所有启用的会员分组列表
      *
      * @param merchantId 商户ID（可选）
-     * @param storeId 店铺ID（可选）
+     * @param storeId    店铺ID（可选）
      * @return 分组列表
      * @throws BusinessCheckException 业务异常
      */
@@ -221,10 +189,7 @@ public class OpenMemberGroupController extends BaseController {
     @GetMapping(value = "/list")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<List<MtMemberGroupRespVO>> getMemberGroupList(
-            @ApiParam(value = "商户ID", example = "1") @RequestParam(required = false) Integer merchantId,
-            @ApiParam(value = "店铺ID", example = "1") @RequestParam(required = false) Integer storeId) throws BusinessCheckException {
-        
+    public CommonResult<List<MtMemberGroupRespVO>> getMemberGroupList(Integer merchantId, Integer storeId) throws BusinessCheckException {
         Map<String, Object> params = new HashMap<>();
         params.put("status", StatusEnum.ENABLED.getKey());
         if (merchantId != null) {
@@ -233,50 +198,46 @@ public class OpenMemberGroupController extends BaseController {
         if (storeId != null) {
             params.put("storeId", storeId.toString());
         }
-        
         PaginationRequest paginationRequest = new PaginationRequest();
         paginationRequest.setCurrentPage(1);
         paginationRequest.setPageSize(Constants.MAX_ROWS);
         paginationRequest.setSearchParams(params);
-        
         PaginationResponse<UserGroupDto> paginationResponse = memberGroupService.queryMemberGroupListByPagination(paginationRequest);
-        
         // 转换为响应VO
         List<MtMemberGroupRespVO> respList = paginationResponse.getContent().stream()
                 .map(this::convertUserGroupDtoToRespVO)
                 .collect(Collectors.toList());
-        
         return CommonResult.success(respList);
     }
 
     /**
      * 更新会员分组状态
      *
-     * @param id 分组ID
+     * @param id     分组ID
      * @param status 状态：A-正常；N-禁用；D-删除
      * @return 是否成功
      * @throws BusinessCheckException 业务异常
      */
     @ApiOperation(value = "更新会员分组状态", notes = "更新指定会员分组的状态")
-    @PatchMapping(value = "/status/{id}")
+    @PutMapping(value = "/status/{id}")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> updateMemberGroupStatus(
             @ApiParam(value = "分组ID", required = true, example = "1") @PathVariable("id") Integer id,
             @ApiParam(value = "状态：A-正常；N-禁用；D-删除", required = true, example = "A") @RequestParam String status) throws BusinessCheckException {
-        
+
         // 检查分组是否存在
         MtUserGroup existGroup = memberGroupService.queryMemberGroupById(id);
         if (existGroup == null) {
             return CommonResult.error(404, "会员分组不存在");
         }
-        
+
         // 更新状态
         MemberGroupDto memberGroupDto = new MemberGroupDto();
         memberGroupDto.setId(id);
         memberGroupDto.setStatus(status);
         memberGroupDto.setOperator("openapi");
-        
+
         memberGroupService.updateMemberGroup(memberGroupDto);
         return CommonResult.success(true);
     }
@@ -285,7 +246,14 @@ public class OpenMemberGroupController extends BaseController {
      * 转换MtUserGroup为响应VO
      */
     private MtMemberGroupRespVO convertToRespVO(MtUserGroup mtUserGroup) {
-        return BeanUtils.toBean(mtUserGroup, MtMemberGroupRespVO.class);
+        MtMemberGroupRespVO respVO = BeanUtils.toBean(mtUserGroup, MtMemberGroupRespVO.class);
+        respVO.setMemberNum(memberGroupService.getMemberNum(mtUserGroup.getId()));
+        List<UserGroupDto> childrenLs = memberGroupService.getChildren(mtUserGroup.getId());
+        List<MtMemberGroupRespVO> children = childrenLs.stream()
+                .map(this::convertUserGroupDtoToRespVO)
+                .collect(Collectors.toList());
+        respVO.setChildren(children);
+        return respVO;
     }
 
     /**
@@ -293,15 +261,17 @@ public class OpenMemberGroupController extends BaseController {
      */
     private MtMemberGroupRespVO convertUserGroupDtoToRespVO(UserGroupDto userGroupDto) {
         MtMemberGroupRespVO respVO = BeanUtils.toBean(userGroupDto, MtMemberGroupRespVO.class);
-        
+
         // 处理子分组
         if (userGroupDto.getChildren() != null && !userGroupDto.getChildren().isEmpty()) {
             List<MtMemberGroupRespVO> children = userGroupDto.getChildren().stream()
                     .map(this::convertUserGroupDtoToRespVO)
                     .collect(Collectors.toList());
             respVO.setChildren(children);
+        } else {
+            respVO.setChildren(new ArrayList<>());
         }
-        
+
         return respVO;
     }
 }

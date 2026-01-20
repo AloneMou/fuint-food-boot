@@ -2,7 +2,7 @@ package com.fuint.common.enums;
 
 /**
  * 卡券过期类型枚举
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -33,5 +33,14 @@ public enum CouponExpireTypeEnum {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public static CouponExpireTypeEnum getType(String key) {
+        for (CouponExpireTypeEnum item : CouponExpireTypeEnum.values()) {
+            if (item.getKey().equals(key)) {
+                return item;
+            }
+        }
+        return CouponExpireTypeEnum.FIX;
     }
 }

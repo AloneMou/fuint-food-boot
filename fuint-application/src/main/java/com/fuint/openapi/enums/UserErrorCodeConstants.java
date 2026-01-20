@@ -29,7 +29,6 @@ public interface UserErrorCodeConstants {
     
     // ========== 优惠券相关错误 100_2_101 ~ 100_2_150 ==========
     ErrorCode COUPON_STATUS_INVALID = new ErrorCode(100_2_101, "优惠券状态无效");
-    ErrorCode COUPON_NOT_FOUND = new ErrorCode(100_2_102, "优惠券不存在");
     
     // ========== 查询相关错误 100_2_151 ~ 100_2_200 ==========
     ErrorCode QUERY_PAGE_INVALID = new ErrorCode(100_2_151, "页码参数无效");

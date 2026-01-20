@@ -68,4 +68,20 @@ public interface MemberGroupService extends IService<MtUserGroup> {
      * @return 会员分组
      */
     List<MtUserGroup> getUserGroupByIds(Collection<Integer> ids);
+
+    /**
+     * 获取会员分组子类ID
+     *
+     * @param groupId 分组ID
+     * @return 会员数量
+     */
+    Long getMemberNum(Integer groupId);
+
+    /**
+     * 获取会员分组子类
+     *
+     * @param groupId 分组ID
+     * @return 会员分组
+     */
+    List<UserGroupDto> getChildren(Integer groupId);
 }

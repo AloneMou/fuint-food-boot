@@ -31,9 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.fuint.framework.exception.util.ServiceExceptionUtil.exception;
 import static com.fuint.openapi.enums.CouponGroupErrorCodeConstants.COUPON_GROUP_ALREADY_DELETED;
@@ -290,5 +288,13 @@ public class OpenApiCouponGroupServiceImpl implements OpenApiCouponGroupService 
     @Override
     public PageResult<MtCouponGroup> getCouponGroupPage(CouponGroupPageReqVO pageReqVO) {
         return mtCouponGroupMapper.selectCouponGroupPage(pageReqVO);
+    }
+
+    @Override
+    public List<MtCouponGroup> getCouponGroupListByIds(Collection<Integer> ids) {
+        if (CollUtil.isNotEmpty(ids)) {
+            return mtCouponGroupMapper.selectBatchIds(ids);
+        }
+        return Collections.emptyList();
     }
 }

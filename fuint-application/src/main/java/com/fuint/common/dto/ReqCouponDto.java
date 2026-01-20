@@ -68,11 +68,11 @@ public class ReqCouponDto implements Serializable {
     @ApiModelProperty("价值金额")
     private BigDecimal amount;
 
-    @ApiModelProperty("优惠费率（0-100，100表示全免）")
-    private Integer discountRate;
-
-    @ApiModelProperty("最大优惠金额")
-    private BigDecimal maxDiscountAmount;
+//    @ApiModelProperty("优惠费率（0-100，100表示全免）")
+//    private Integer discountRate;
+//
+//    @ApiModelProperty("最大优惠金额")
+//    private BigDecimal maxDiscountAmount;
 
     @ApiModelProperty("发放方式")
     private String sendWay;

@@ -1,17 +1,13 @@
 package com.fuint.openapi.service;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fuint.common.dto.ReqCouponDto;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.pojo.PageResult;
 import com.fuint.openapi.v1.marketing.coupon.vo.MtCouponPageReqVO;
-import com.fuint.openapi.v1.marketing.coupon.vo.MtCouponRespVO;
 import com.fuint.repository.model.MtCoupon;
-import com.fuint.repository.model.MtUserCoupon;
 
-import java.math.BigDecimal;
-import java.text.ParseException;
 import java.util.List;
 
 /**
@@ -30,7 +26,7 @@ public interface OpenApiCouponService {
      * @param reqVO 分页请求参数
      * @return 分页结果
      */
-    IPage<MtCouponRespVO> queryCouponPage(MtCouponPageReqVO reqVO);
+    PageResult<MtCoupon> queryCouponPage(MtCouponPageReqVO reqVO);
 
     /**
      * 分页查询优惠券列表 (Old)
@@ -48,7 +44,7 @@ public interface OpenApiCouponService {
      * @return 创建的优惠券
      * @throws BusinessCheckException 业务异常
      */
-    MtCoupon createCoupon(ReqCouponDto reqCouponDto) throws BusinessCheckException, ParseException;
+    MtCoupon createCoupon(ReqCouponDto reqCouponDto);
 
     /**
      * 更新优惠券
@@ -57,7 +53,7 @@ public interface OpenApiCouponService {
      * @return 更新后的优惠券
      * @throws BusinessCheckException 业务异常
      */
-    MtCoupon updateCoupon(ReqCouponDto reqCouponDto) throws BusinessCheckException, ParseException;
+    void updateCoupon(ReqCouponDto reqCouponDto);
 
     /**
      * 根据ID获取优惠券信息
@@ -75,7 +71,7 @@ public interface OpenApiCouponService {
      * @param operator 操作人
      * @throws BusinessCheckException 业务异常
      */
-    void deleteCoupon(Integer id, String operator) throws BusinessCheckException;
+    void deleteCoupon(Integer id, String operator);
 
     /**
      * 批量发放优惠券
@@ -85,10 +81,9 @@ public interface OpenApiCouponService {
      * @param num      每个用户发放数量
      * @param uuid     批次号
      * @param operator 操作人
-     * @return 是否成功
      * @throws BusinessCheckException 业务异常
      */
-    Boolean batchSendCoupon(Integer couponId, List<Integer> userIds, Integer num, String uuid, String operator) throws BusinessCheckException;
+    void batchSendCoupon(Integer couponId, List<Integer> userIds, Integer num, String uuid, String operator) throws BusinessCheckException;
 
     /**
      * 撤销已发放的优惠券

@@ -24,7 +24,6 @@ public class CouponRevokeReqVO implements Serializable {
     @ApiModelProperty(value = "优惠券ID", required = true, example = "1")
     private Integer couponId;
 
-    @NotBlank(message = "批次号不能为空")
     @ApiModelProperty(value = "批次号（发券时返回的UUID）", required = true, example = "a1b2c3d4e5f6g7h8i9j0")
     private String uuid;
 

@@ -52,6 +52,8 @@ public interface MtUserCouponMapper extends BaseMapperX<MtUserCoupon> {
                 .eqIfPresent(MtUserCoupon::getUserId, pageReqVO.getUserId())
                 .eqIfPresent(MtUserCoupon::getStatus, pageReqVO.getStatus())
                 .eqIfPresent(MtUserCoupon::getType, pageReqVO.getCouponType())
+                .eqIfPresent(MtUserCoupon::getCouponId, pageReqVO.getCouponId())
+                .eqIfPresent(MtUserCoupon::getUuid, pageReqVO.getUuid())
                 .ne(MtUserCoupon::getStatus, StatusEnum.DISABLE.getKey())
                 .orderByDesc(MtUserCoupon::getCreateTime)
                 .orderByDesc(MtUserCoupon::getId)

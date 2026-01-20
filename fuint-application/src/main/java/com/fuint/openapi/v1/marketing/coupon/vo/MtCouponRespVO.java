@@ -1,12 +1,16 @@
 package com.fuint.openapi.v1.marketing.coupon.vo;
 
+import cn.hutool.core.date.DatePattern;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fuint.common.enums.CouponExpireTypeEnum;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -18,7 +22,6 @@ import java.util.List;
  */
 @Data
 @ApiModel(value = "优惠券响应VO")
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class MtCouponRespVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -35,8 +38,8 @@ public class MtCouponRespVO implements Serializable {
     @ApiModelProperty(value = "商户ID", example = "1")
     private Integer merchantId;
 
-    @ApiModelProperty(value = "店铺ID", example = "1")
-    private Integer storeId;
+//    @ApiModelProperty(value = "店铺ID", example = "1")
+//    private Integer storeId;
 
     @ApiModelProperty(value = "券类型", example = "C")
     private String type;
@@ -53,35 +56,34 @@ public class MtCouponRespVO implements Serializable {
     @ApiModelProperty(value = "适用商品", example = "allGoods")
     private String applyGoods;
 
-    @ApiModelProperty(value = "适用商品列表")
-    private List<CouponGoodsItemVO> goodsList;
+    @ApiModelProperty(value = "适用商品ID列表")
+    private List<Integer> goodsIds;
 
-    @ApiModelProperty(value = "领取码", example = "")
+    @ApiModelProperty(value = "适用商品列表")
+    private List<CouponGoodsItemVO> goodsList = new ArrayList<>();
+
+    @ApiModelProperty(value = "领取码")
     private String receiveCode;
 
-    @ApiModelProperty(value = "使用专项", example = "")
+    @ApiModelProperty(value = "使用专项")
     private String useFor;
 
     @ApiModelProperty(value = "过期类型", example = "FIX")
-    private String expireType;
+    private CouponExpireTypeEnum expireType;
 
     @ApiModelProperty(value = "有效天数", example = "30")
     private Integer expireTime;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @ApiModelProperty(value = "开始有效期", example = "2026-01-01 00:00:00")
     private Date beginTime;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @ApiModelProperty(value = "结束有效期", example = "2026-12-31 23:59:59")
     private Date endTime;
 
     @ApiModelProperty(value = "面额", example = "20.00")
     private BigDecimal amount;
-
-    @ApiModelProperty(value = "优惠费率", example = "0")
-    private Integer discountRate;
-
-    @ApiModelProperty(value = "最大优惠金额", example = "50.00")
-    private BigDecimal maxDiscountAmount;
 
     @ApiModelProperty(value = "发放方式", example = "backend")
     private String sendWay;
@@ -99,10 +101,16 @@ public class MtCouponRespVO implements Serializable {
     private String exceptTime;
 
     @ApiModelProperty(value = "适用店铺ID", example = "1,2,3")
-    private String storeIds;
+    private List<Integer> storeIds;
+
+    @ApiModelProperty(value = "适用店铺列表")
+    private List<CouponStoreItemVO> storeLs;
 
     @ApiModelProperty(value = "适用会员等级", example = "1,2")
-    private String gradeIds;
+    private List<Integer> gradeIds;
+
+    @ApiModelProperty(value = "适用会员等级列表")
+    private List<CouponGradeItemVO> gradeLs;
 
     @ApiModelProperty(value = "描述信息", example = "满100元可用")
     private String description;
@@ -119,21 +127,38 @@ public class MtCouponRespVO implements Serializable {
     @ApiModelProperty(value = "核销规则", example = "100")
     private String outRule;
 
+    @JsonFormat(pattern = DatePattern.NORM_DATETIME_PATTERN, timezone = "GMT+8")
     @ApiModelProperty(value = "创建时间", example = "2026-01-17 10:00:00")
     private Date createTime;
 
+    @JsonFormat(pattern = DatePattern.NORM_DATETIME_PATTERN, timezone = "GMT+8")
     @ApiModelProperty(value = "更新时间", example = "2026-01-17 10:00:00")
     private Date updateTime;
-
-    @ApiModelProperty(value = "最后操作人", example = "admin")
-    private String operator;
-
-    @ApiModelProperty(value = "状态", example = "A")
-    private String status;
 
     @ApiModelProperty(value = "已发放数量", example = "100")
     private Integer sentNum;
 
     @ApiModelProperty(value = "剩余数量", example = "900")
     private Integer leftNum;
+
+    @Data
+    public static class CouponStoreItemVO implements Serializable {
+
+        @ApiModelProperty(value = "店铺ID", example = "1")
+        private Integer storeId;
+
+        @ApiModelProperty(value = "店铺名称", example = "门店A")
+        private String storeName;
+
+    }
+
+    @Data
+    public static class CouponGradeItemVO implements Serializable {
+
+        @ApiModelProperty(value = "会员等级ID", example = "1")
+        private Integer gradeId;
+
+        @ApiModelProperty(value = "会员等级名称", example = "普通会员")
+        private String gradeName;
+    }
 }

@@ -9,7 +9,7 @@
         select * from mt_coupon t where t.GROUP_ID = #{groupId}
     </select>
 
-    <select id="selectCouponPage" resultType="com.fuint.openapi.v1.marketing.coupon.vo.MtCouponRespVO">
+    <select id="selectCouponPage"  resultType="com.fuint.repository.model.MtCoupon">
         SELECT
         t.*,
         g.NAME as groupName,
@@ -37,10 +37,17 @@
             <if test="req.type != null and req.type != ''">
                 AND t.TYPE = #{req.type}
             </if>
-            <if test="req.status != null and req.status != ''">
-                AND t.STATUS = #{req.status}
+            <if test="req.couponIds != null and req.couponIds.size()>0">
+                AND t.ID IN
+                <foreach item="item" collection="req.couponIds" separator="," close=")" open="(" index="">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="req.goodsId != null">
+                and t.id in (select coupon_id from mt_coupon_goods mcg where mcg.goods_id = #{req.goodsId} and
+                mcg.status = 'A')
             </if>
         </where>
-        ORDER BY t.ID DESC
+        ORDER BY t.create_time DESC
     </select>
 </mapper>

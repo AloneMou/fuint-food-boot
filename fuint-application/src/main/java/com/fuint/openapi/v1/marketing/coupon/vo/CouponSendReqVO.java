@@ -44,8 +44,8 @@ public class CouponSendReqVO implements Serializable {
     @ApiModelProperty(value = "每人发放数量", required = true, example = "1")
     private Integer num;
 
-    @ApiModelProperty(value = "是否发送消息通知", example = "false")
-    private Boolean sendMessage;
+//    @ApiModelProperty(value = "是否发送消息通知", example = "false")
+//    private Boolean sendMessage;
 
     @ApiModelProperty(value = "操作人", hidden = true)
     private String operator;

@@ -28,4 +28,10 @@ public class UserCouponPageReqVO extends PageParams {
 
     @ApiModelProperty(value = "优惠券类型（精确匹配）：C-优惠券；P-储值卡；T-计次卡", example = "C")
     private String couponType;
+
+    @ApiModelProperty(value = "优惠券ID（精确匹配）", example = "1")
+    private Integer couponId;
+
+    @ApiModelProperty(value = "批次号(精确匹配)", example = "1")
+    private String uuid;
 }

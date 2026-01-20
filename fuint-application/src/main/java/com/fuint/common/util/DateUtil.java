@@ -3,6 +3,7 @@ package com.fuint.common.util;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
+
 import java.util.GregorianCalendar;
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -13,7 +14,7 @@ import java.util.Optional;
 
 /**
  * DateUtil 工具类
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -32,29 +33,29 @@ public class DateUtil {
     }
 
     public static String formatDate(Date date, String pattern) {
-        if(StringUtils.isEmpty(pattern)) {
+        if (StringUtils.isEmpty(pattern)) {
             pattern = "yyyy-MM-dd";
         }
         return DateFormatUtils.format(date, pattern);
     }
 
     public static String formatDate(Calendar calendar, String pattern) {
-        if(StringUtils.isEmpty(pattern)) {
+        if (StringUtils.isEmpty(pattern)) {
             pattern = "yyyy-MM-dd";
         }
         return DateFormatUtils.format(calendar, pattern);
     }
 
     public static Date parseDate(String strDate) throws ParseException {
-        return StringUtils.isEmpty(strDate)?null: DateUtils.parseDate(strDate, PATTERNS);
+        return StringUtils.isEmpty(strDate) ? null : DateUtils.parseDate(strDate, PATTERNS);
     }
 
     public static Date parseDate(String strDate, String... patterns) throws ParseException {
-        return StringUtils.isEmpty(strDate)?null:DateUtils.parseDate(strDate, patterns);
+        return StringUtils.isEmpty(strDate) ? null : DateUtils.parseDate(strDate, patterns);
     }
 
     public static String getNow(String pattern) {
-        return formatDate((Calendar)Calendar.getInstance(), pattern);
+        return formatDate((Calendar) Calendar.getInstance(), pattern);
     }
 
     public static BigDecimal getDiffDays(Date startDate, Date endDate) {
@@ -113,14 +114,14 @@ public class DateUtil {
         return Integer.parseInt(String.valueOf(between_days));
     }
 
-    public static Integer getCurrentYearMonths(){
+    public static Integer getCurrentYearMonths() {
         Calendar cal = Calendar.getInstance();
         int year = cal.get(Calendar.YEAR);
-        int month = cal.get(Calendar.MONTH )+1;
-        return Integer.parseInt(String.valueOf(year)+String.valueOf(month));
+        int month = cal.get(Calendar.MONTH) + 1;
+        return Integer.parseInt(String.valueOf(year) + String.valueOf(month));
     }
 
-    public static Date getDateAddHours(Date date,Integer num) {
+    public static Date getDateAddHours(Date date, Integer num) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
         calendar.add(Calendar.HOUR, Optional.ofNullable(num).orElse(0));
@@ -150,30 +151,30 @@ public class DateUtil {
 
     /**
      * 当天开始时间
-     * */
+     */
     public static Date getDayBegin() {
-       Calendar cal = new GregorianCalendar();
-       cal.set(Calendar.HOUR_OF_DAY, 0);
-       cal.set(Calendar.MINUTE, 0);
-       cal.set(Calendar.SECOND, 0);
-       cal.set(Calendar.MILLISECOND, 0);
-       return cal.getTime();
+        Calendar cal = new GregorianCalendar();
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return cal.getTime();
     }
 
     /**
      * 当天结束时间
-     * */
+     */
     public static Date getDayEnd() {
-       Calendar cal = new GregorianCalendar();
-       cal.set(Calendar.HOUR_OF_DAY, 23);
-       cal.set(Calendar.MINUTE, 59);
-       cal.set(Calendar.SECOND, 59);
-       return cal.getTime();
+        Calendar cal = new GregorianCalendar();
+        cal.set(Calendar.HOUR_OF_DAY, 23);
+        cal.set(Calendar.MINUTE, 59);
+        cal.set(Calendar.SECOND, 59);
+        return cal.getTime();
     }
 
     /**
      * 当天开始时间
-     * */
+     */
     public static Date getDayBegin(int day) {
         Calendar cal = new GregorianCalendar();
         cal.set(Calendar.DAY_OF_YEAR, cal.get(Calendar.DAY_OF_YEAR) - day);
@@ -186,7 +187,7 @@ public class DateUtil {
 
     /**
      * 当天结束时间
-     * */
+     */
     public static Date getDayEnd(int day) {
         Calendar cal = new GregorianCalendar();
         cal.set(Calendar.DAY_OF_YEAR, cal.get(Calendar.DAY_OF_YEAR) - day);

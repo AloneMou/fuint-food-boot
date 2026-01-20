@@ -23,9 +23,6 @@ public class CouponGoodsItemVO implements Serializable {
     @ApiModelProperty(value = "商品ID", required = true, example = "1")
     private Integer goodsId;
 
-    @ApiModelProperty(value = "商品数量", example = "1")
-    private Integer quantity;
-
     @ApiModelProperty(value = "商品名称", example = "商品A")
     private String goodsName;
 }

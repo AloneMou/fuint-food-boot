@@ -9,6 +9,8 @@ import com.fuint.openapi.v1.marketing.group.vo.CouponGroupPageReqVO;
 import com.fuint.repository.model.MtCouponGroup;
 
 import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * OpenAPI优惠券分组业务接口
@@ -99,4 +101,13 @@ public interface OpenApiCouponGroupService {
      * @return 优惠劵分组分页数据
      */
     PageResult<MtCouponGroup> getCouponGroupPage(CouponGroupPageReqVO pageReqVO);
+
+
+    /**
+     * 根据ID列表查询优惠劵分组列表
+     *
+     * @param ids ID列表
+     * @return 优惠劵分组列表
+     */
+    List<MtCouponGroup> getCouponGroupListByIds(Collection<Integer> ids);
 }

@@ -21,13 +21,7 @@ public interface MtCouponMapper extends BaseMapper<MtCoupon> {
 
     List<MtCoupon> queryByGroupId(@Param("groupId") Integer groupId);
 
-    /**
-     * 分页查询优惠券列表
-     *
-     * @param page 分页参数
-     * @param req  查询参数
-     * @return 分页结果
-     */
-    IPage<MtCouponRespVO> selectCouponPage(IPage<MtCouponRespVO> page, @Param("req") MtCouponPageReqVO req);
+
+    IPage<MtCoupon> selectCouponPage(IPage<MtCouponRespVO> page, @Param("req") MtCouponPageReqVO req);
 
 }

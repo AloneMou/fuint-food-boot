@@ -10,7 +10,7 @@ import java.util.Date;
 
 /**
  * 用户优惠券响应VO
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -93,4 +93,7 @@ public class UserCouponRespVO {
 
     @ApiModelProperty("使用的订单ID")
     private Integer orderId;
+
+    @ApiModelProperty("批次号")
+    private String uuid;
 }

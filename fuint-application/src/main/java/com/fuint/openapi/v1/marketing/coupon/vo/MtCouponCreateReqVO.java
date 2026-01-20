@@ -1,5 +1,7 @@
 package com.fuint.openapi.v1.marketing.coupon.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fuint.common.enums.CouponExpireTypeEnum;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -8,6 +10,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -50,7 +53,7 @@ public class MtCouponCreateReqVO implements Serializable {
     private String applyGoods;
 
     @ApiModelProperty(value = "适用商品ID列表")
-    private List<CouponGoodsItemVO> goodsList;
+    private List<Long> goodsList;
 
     @ApiModelProperty(value = "领取码", example = "")
     private String receiveCode;
@@ -58,18 +61,20 @@ public class MtCouponCreateReqVO implements Serializable {
     @ApiModelProperty(value = "使用专项", example = "")
     private String useFor;
 
-    @NotBlank(message = "过期类型不能为空")
-    @ApiModelProperty(value = "过期类型：FIX固定期限、FLEX领取后生效", required = true, example = "FIX")
-    private String expireType;
+    @NotNull(message = "过期类型不能为空")
+    @ApiModelProperty(value = "过期类型：FIX固定期限、FLEX领取后F生效", required = true, example = "FIX")
+    private CouponExpireTypeEnum expireType;
 
     @ApiModelProperty(value = "有效天数（expireType=FLEX时必填）", example = "30")
     private Integer expireTime;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @ApiModelProperty(value = "开始有效期（expireType=FIX时必填）", example = "2026-01-01 00:00:00")
-    private String beginTime;
+    private Date beginTime;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @ApiModelProperty(value = "结束有效期（expireType=FIX时必填）", example = "2026-12-31 23:59:59")
-    private String endTime;
+    private Date endTime;
 
     @NotNull(message = "优惠金额不能为空")
     @ApiModelProperty(value = "面额/固定金额", required = true, example = "20.00")
@@ -79,8 +84,8 @@ public class MtCouponCreateReqVO implements Serializable {
     @ApiModelProperty(value = "发放方式：front前台领取、backend后台发放、offline线下发放", required = true, example = "backend")
     private String sendWay;
 
-    @ApiModelProperty(value = "每次发放数量", example = "1")
-    private Integer sendNum;
+//    @ApiModelProperty(value = "每次发放数量", example = "1")
+//    private Integer sendNum;
 
     @ApiModelProperty(value = "发行总数量", example = "1000")
     private Integer total;
@@ -91,11 +96,11 @@ public class MtCouponCreateReqVO implements Serializable {
     @ApiModelProperty(value = "不可用日期，逗号隔开。周末：weekend；其他：2026-01-01_2026-01-07", example = "")
     private String exceptTime;
 
-    @ApiModelProperty(value = "适用店铺ID，逗号分隔", example = "1,2,3")
-    private String storeIds;
+    @ApiModelProperty(value = "适用店铺ID")
+    private List<Integer> storeIds;
 
-    @ApiModelProperty(value = "适用会员等级，逗号分隔", example = "1,2")
-    private String gradeIds;
+    @ApiModelProperty(value = "适用会员等级")
+    private List<Integer> gradeIds;
 
     @ApiModelProperty(value = "描述信息", example = "满100元可用")
     private String description;
