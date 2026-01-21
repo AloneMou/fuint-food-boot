@@ -1,19 +1,28 @@
 package com.fuint.openapi.service.impl;
 
-import com.fuint.common.dto.CouponDto;
-import com.fuint.common.dto.GoodsSpecValueDto;
-import com.fuint.common.dto.ResCartDto;
+import cn.hutool.core.util.ObjectUtil;
+import com.alibaba.fastjson.JSONObject;
+import com.fuint.common.dto.*;
 import com.fuint.common.enums.*;
 import com.fuint.common.service.*;
+import com.fuint.common.util.CommonUtil;
 import com.fuint.common.util.DateUtil;
+import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.exception.ServiceException;
+import com.fuint.framework.util.SeqUtil;
 import com.fuint.openapi.service.OpenApiOrderService;
+import com.fuint.openapi.v1.order.vo.OrderCreateReqVO;
+import com.fuint.openapi.v1.order.vo.OrderGoodsItemVO;
 import com.fuint.repository.mapper.*;
 import com.fuint.repository.model.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import weixin.popular.util.JsonUtil;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
@@ -21,7 +30,10 @@ import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.fuint.openapi.enums.OrderErrorCodeConstants.GOODS_NOT_EMPTY;
+import static com.fuint.framework.exception.util.ServiceExceptionUtil.exception;
+import static com.fuint.openapi.enums.GoodsErrorCodeConstants.GOODS_SKU_NOT_ENOUGH;
+import static com.fuint.openapi.enums.GoodsErrorCodeConstants.GOODS_SKU_NOT_EXIST;
+import static com.fuint.openapi.enums.OrderErrorCodeConstants.*;
 import static com.fuint.openapi.enums.UserErrorCodeConstants.USER_NOT_FOUND;
 
 /**
@@ -30,6 +42,7 @@ import static com.fuint.openapi.enums.UserErrorCodeConstants.USER_NOT_FOUND;
  * @author mjw
  * @since 2026/1/18 15:24
  */
+@Slf4j
 @Service
 public class OpenApiOrderServiceImpl implements OpenApiOrderService {
 
@@ -58,19 +71,10 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
     private MtOrderAddressMapper mtOrderAddressMapper;
 
     @Resource
-    private MtConfirmLogMapper mtConfirmLogMapper;
-
-    @Resource
     private MtUserCouponMapper mtUserCouponMapper;
 
     @Resource
     private MtGoodsSkuMapper mtGoodsSkuMapper;
-
-    @Resource
-    private MtRegionMapper mtRegionMapper;
-
-    @Resource
-    private MtUserGradeMapper mtUserGradeMapper;
 
     @Resource
     private MtCouponGoodsMapper mtCouponGoodsMapper;
@@ -201,6 +205,15 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
     @Resource
     private PrinterService printerService;
 
+    @Resource
+    private MtConfirmLogMapper mtConfirmLogMapper;
+
+    @Resource
+    private MtUserGradeMapper mtUserGradeMapper;
+
+    @Resource
+    private OrderService orderService;
+
     @Override
     public Map<String, Object> calculateCartGoods(Integer merchantId, Integer userId, List<MtCart> cartList, Integer couponId, boolean isUsePoint, String platform, String orderMode) throws BusinessCheckException {
         MtUser userInfo = memberService.queryMemberById(userId);
@@ -264,14 +277,14 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
      * 订单预创建（实时算价）
      * 不实际创建订单，仅进行价格试算和优惠券匹配
      *
-     * @param merchantId    商户ID
-     * @param userId        用户ID
-     * @param cartList      购物车列表
-     * @param userCouponId  指定使用的用户优惠券ID（为0时自动匹配最优券）
-     * @param usePoint      使用积分数量
-     * @param platform      平台
-     * @param orderMode     订单模式
-     * @param storeId       店铺ID
+     * @param merchantId   商户ID
+     * @param userId       用户ID
+     * @param cartList     购物车列表
+     * @param userCouponId 指定使用的用户优惠券ID（为0时自动匹配最优券）
+     * @param usePoint     使用积分数量
+     * @param platform     平台
+     * @param orderMode    订单模式
+     * @param storeId      店铺ID
      * @return 订单预创建结果（包含价格信息和可用优惠券列表）
      * @throws BusinessCheckException
      */
@@ -348,6 +361,671 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
     }
 
     /**
+     * 保存订单信息
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @OperationServiceLog(description = "提交订单信息")
+    public MtOrder saveOrder(OrderCreateReqVO createReqVO) {
+        Integer merchantId = createReqVO.getMerchantId();
+        MtUser userInfo = memberService.queryMemberById(createReqVO.getUserId());
+        if (userInfo == null) {
+            throw exception(USER_NOT_FOUND);
+        }
+        Integer storeId = createReqVO.getStoreId();
+        if (ObjectUtil.isNotNull(createReqVO.getTableId())) {
+            MtTable mtTable = tableService.queryTableById(createReqVO.getTableId());
+            if (mtTable != null && mtTable.getStoreId() > 0) {
+                storeId = mtTable.getStoreId();
+            }
+        }
+        if (createReqVO.getStoreId() != null && ObjectUtil.notEqual(createReqVO.getStoreId(), storeId)) {
+            throw exception(ORDER_STORE_NOT_EQUAL_TO_DESK);
+        }
+        MtSetting config = settingService.querySettingByName(merchantId, storeId, SettingTypeEnum.ORDER.getKey(), OrderSettingEnum.IS_CLOSE.getKey());
+        if (config != null && config.getValue().equals(YesOrNoEnum.TRUE.getKey())) {
+            throw exception(SYSTEM_CLOSED_TRANSACTION);
+        }
+        MtOrder mtOrder = new MtOrder();
+        // 检查店铺是否已被禁用
+        if (createReqVO.getStoreId() != null && createReqVO.getStoreId() > 0) {
+            MtStore storeInfo = storeService.queryStoreById(createReqVO.getStoreId());
+            if (storeInfo != null) {
+                if (!storeInfo.getStatus().equals(StatusEnum.ENABLED.getKey())) {
+                    createReqVO.setStoreId(0);
+                }
+            }
+        }
+        MtSetting pointSetting = settingService.querySettingByName(merchantId, SettingTypeEnum.POINT.getKey(), PointSettingEnum.CAN_USE_AS_MONEY.getKey());
+        // 使用积分数量
+        if (pointSetting != null && pointSetting.getValue().equals(YesOrNoEnum.TRUE.getKey())) {
+            mtOrder.setUsePoint(createReqVO.getUsePoint());
+            if (createReqVO.getUsePoint() == null || createReqVO.getUsePoint() <= 0) {
+                mtOrder.setUsePoint(0);
+            }
+        } else {
+            if (createReqVO.getUsePoint() != null && createReqVO.getUsePoint() > 0) {
+                throw exception(ORDER_USE_POINT_NOT_ALLOWED);
+            }
+            mtOrder.setUsePoint(0);
+        }
+
+
+        String orderSn = CommonUtil.createOrderSN(createReqVO.getUserId() + "");
+        mtOrder.setOrderSn(orderSn);
+        mtOrder.setUserId(createReqVO.getUserId());
+        mtOrder.setMerchantId(createReqVO.getMerchantId());
+        mtOrder.setStoreId(createReqVO.getStoreId());
+        mtOrder.setTableId(createReqVO.getTableId());
+        mtOrder.setCouponId(createReqVO.getUserCouponId());
+        mtOrder.setRemark(createReqVO.getRemark());
+        mtOrder.setStatus(OrderStatusEnum.CREATED.getKey());
+        mtOrder.setType(createReqVO.getType().getKey());
+        mtOrder.setAmount(BigDecimal.ZERO);
+        mtOrder.setPayAmount(BigDecimal.ZERO);
+        mtOrder.setDiscount(BigDecimal.ZERO);
+        mtOrder.setPayStatus(PayStatusEnum.WAIT.getKey());
+        mtOrder.setPlatform(createReqVO.getPlatform());
+        mtOrder.setPointAmount(BigDecimal.ZERO);
+        mtOrder.setOrderMode(createReqVO.getOrderMode());
+        mtOrder.setPayType(createReqVO.getPayType());
+        mtOrder.setOperator("OPEN_API");
+        mtOrder.setStaffId(null);
+        mtOrder.setIsVisitor(YesOrNoEnum.NO.getKey());
+        mtOrder.setUpdateTime(new Date());
+        mtOrder.setDeliveryFee(BigDecimal.ZERO);
+        mtOrder.setSettleStatus(SettleStatusEnum.WAIT.getKey());
+        if (mtOrder.getId() == null || mtOrder.getId() <= 0) {
+            mtOrder.setCreateTime(new Date());
+        }
+        if (mtOrder.getVerifyCode() == null && !createReqVO.getPlatform().equals(PlatformTypeEnum.PC.getCode())) {
+            mtOrder.setVerifyCode(SeqUtil.getRandomNumber(6));
+        }
+        // 首先生成订单
+        mtOrderMapper.insert(mtOrder);
+        MtOrder orderInfo = mtOrderMapper.selectById(mtOrder.getId());
+        mtOrder.setId(orderInfo.getId());
+
+        MtUserGrade userGrade = userGradeService.queryUserGradeById(createReqVO.getMerchantId(), userInfo.getGradeId() != null ? Integer.parseInt(userInfo.getGradeId()) : 1, createReqVO.getUserId());
+        BigDecimal percent = new BigDecimal("0");
+        if (userGrade != null && userGrade.getDiscount() != null && userGrade.getDiscount() > 0) {
+            // 会员折扣
+            percent = BigDecimal.valueOf(userGrade.getDiscount()).divide(new BigDecimal("10"), BigDecimal.ROUND_CEILING, RoundingMode.FLOOR);
+            if (percent.compareTo(new BigDecimal("0")) <= 0) {
+                percent = new BigDecimal("1");
+            }
+        }
+
+        // 如果没有指定店铺，则读取默认的店铺
+        if (createReqVO.getStoreId() == null || createReqVO.getStoreId() <= 0) {
+            Map<String, Object> params = new HashMap<>();
+            params.put("status", StatusEnum.ENABLED.getKey());
+            params.put("is_default", YesOrNoEnum.YES.getKey());
+            List<MtStore> storeList = storeService.queryStoresByParams(params);
+            if (!storeList.isEmpty()) {
+                mtOrder.setStoreId(storeList.get(0).getId());
+            } else {
+                mtOrder.setStoreId(0);
+            }
+        }
+
+        mtOrder.setUpdateTime(new Date());
+        if (mtOrder.getCreateTime() == null) {
+            mtOrder.setCreateTime(new Date());
+        }
+        List<MtCart> cartList = new ArrayList<>();
+        if (createReqVO.getType().equals(OrderTypeEnum.GOODS)) {
+            for (OrderGoodsItemVO item : createReqVO.getItems()) {
+                MtCart mtCart = new MtCart();
+                mtCart.setGoodsId(item.getGoodsId());
+                mtCart.setSkuId(item.getSkuId());
+                mtCart.setNum(item.getQuantity());
+                mtCart.setId(0);
+                mtCart.setUserId(createReqVO.getUserId());
+                mtCart.setStatus(StatusEnum.ENABLED.getKey());
+                cartList.add(mtCart);
+            }
+        }
+
+        boolean isUsePoint = mtOrder.getUsePoint() > 0;
+        Map<String, Object> cartData = calculateCartGoods(orderInfo.getMerchantId(), mtOrder.getUserId(), cartList, mtOrder.getCouponId(), isUsePoint, mtOrder.getPlatform(), orderInfo.getOrderMode());
+        mtOrder.setAmount(new BigDecimal(cartData.get("totalPrice").toString()));
+        mtOrder.setUsePoint(Integer.parseInt(cartData.get("usePoint").toString()));
+        mtOrder.setDiscount(new BigDecimal(cartData.get("couponAmount").toString()));
+
+        // 实付金额
+        BigDecimal payAmount = mtOrder.getAmount().subtract(mtOrder.getPointAmount()).subtract(mtOrder.getDiscount());
+        if (payAmount.compareTo(new BigDecimal("0")) > 0) {
+            mtOrder.setPayAmount(payAmount);
+        } else {
+            mtOrder.setPayAmount(new BigDecimal("0"));
+        }
+        // 购物使用了卡券
+        if (ObjectUtil.isNotNull(mtOrder.getCouponId())) {
+            // 查询是否适用商品
+            MtUserCoupon userCoupon = mtUserCouponMapper.selectById(mtOrder.getCouponId());
+            if (userCoupon == null) {
+                throw exception(USER_COUPON_NOT_FOUND);
+            }
+            if (!userCoupon.getUserId().equals(createReqVO.getUserId())) {
+                throw exception(USER_COUPON_NOT_BELONG_TO_USER);
+            }
+            MtCoupon couponInfo = couponService.queryCouponById(userCoupon.getCouponId());
+            if (couponInfo.getApplyGoods() != null && couponInfo.getApplyGoods().equals(ApplyGoodsEnum.PARK_GOODS.getKey())) {
+                List<MtCouponGoods> couponGoodsList = mtCouponGoodsMapper.getCouponGoods(couponInfo.getId());
+                if (couponGoodsList != null && !couponGoodsList.isEmpty() && !cartList.isEmpty()) {
+                    List<Integer> applyGoodsIds = new ArrayList<>();
+                    List<Integer> goodsIds = new ArrayList<>();
+                    for (MtCouponGoods mtCouponGoods : couponGoodsList) {
+                        applyGoodsIds.add(mtCouponGoods.getGoodsId());
+                    }
+                    for (MtCart mtCart : cartList) {
+                        goodsIds.add(mtCart.getGoodsId());
+                    }
+                    List<Integer> intersection = applyGoodsIds.stream()
+                            .filter(goodsIds::contains)
+                            .collect(Collectors.toList());
+                    if (intersection.isEmpty()) {
+                        throw new BusinessCheckException("该卡券不适用于购买的商品列表");
+                    }
+                }
+            }
+            updateOrder(mtOrder);
+            String useCode = couponService.useCoupon(mtOrder.getCouponId(), mtOrder.getUserId(), mtOrder.getStoreId(), mtOrder.getId(), mtOrder.getDiscount(), "购物使用卡券");
+            // 卡券使用失败
+            if (StringUtils.isEmpty(useCode)) {
+                mtOrder.setDiscount(new BigDecimal("0"));
+                mtOrder.setCouponId(0);
+            }
+        }
+
+        // 会员付款类订单
+        if (createReqVO.getType().equals(OrderTypeEnum.PAYMENT)) {
+            if (userInfo.getGradeId() != null && mtOrder.getIsVisitor().equals(YesOrNoEnum.NO.getKey())) {
+                if (percent.compareTo(new BigDecimal("0")) > 0) {
+                    // 会员折扣
+                    BigDecimal payAmountDiscount = mtOrder.getPayAmount().multiply(percent);
+                    if (payAmountDiscount.compareTo(new BigDecimal("0")) > 0) {
+                        mtOrder.setDiscount(mtOrder.getDiscount().add(mtOrder.getPayAmount().subtract(payAmountDiscount)));
+                        mtOrder.setPayAmount(payAmountDiscount);
+                    } else {
+                        mtOrder.setPayAmount(new BigDecimal("0"));
+                    }
+                }
+            }
+        }
+
+        // 再次更新订单
+        try {
+            orderInfo = updateOrder(mtOrder);
+        } catch (
+                Exception e) {
+            log.error("OrderService 生成订单失败...");
+            throw new BusinessCheckException("生成订单失败，请稍后重试");
+        }
+
+        // 扣减积分
+        if (mtOrder.getUsePoint() > 0) {
+            try {
+                MtPoint reqPointDto = new MtPoint();
+                reqPointDto.setUserId(mtOrder.getUserId());
+                reqPointDto.setAmount(-mtOrder.getUsePoint());
+                reqPointDto.setOrderSn(orderSn);
+                reqPointDto.setDescription("支付扣除" + mtOrder.getUsePoint() + "积分");
+                reqPointDto.setOperator("");
+                pointService.addPoint(reqPointDto);
+            } catch (BusinessCheckException e) {
+                log.error("OrderService 扣减积分失败...{}", e.getMessage());
+                throw new BusinessCheckException("扣减积分失败，请稍后重试");
+            }
+        }
+
+        // 如果是商品订单，生成订单商品
+        if (mtOrder.getType().equals(OrderTypeEnum.GOODS.getKey()) && !cartList.isEmpty()) {
+            Object listObject = cartData.get("list");
+            List<ResCartDto> lists = (ArrayList<ResCartDto>) listObject;
+            BigDecimal memberDiscount = new BigDecimal("0");
+            for (ResCartDto cart : lists) {
+                MtOrderGoods orderGoods = new MtOrderGoods();
+                orderGoods.setOrderId(orderInfo.getId());
+                orderGoods.setGoodsId(cart.getGoodsId());
+                orderGoods.setSkuId(cart.getSkuId());
+                orderGoods.setNum(cart.getNum());
+                // 计算会员折扣
+                BigDecimal price = cart.getGoodsInfo().getPrice();
+                boolean isDiscount = cart.getGoodsInfo().getIsMemberDiscount().equals(YesOrNoEnum.YES.getKey());
+                if (percent.compareTo(new BigDecimal("0")) > 0 && isDiscount) {
+                    orderGoods.setPrice(price.multiply(percent));
+                    BigDecimal discount = price.subtract(price.multiply(percent)).multiply(new BigDecimal(cart.getNum()));
+                    orderGoods.setDiscount(discount);
+                    memberDiscount = memberDiscount.add(discount);
+                } else {
+                    orderGoods.setPrice(price);
+                    orderGoods.setDiscount(new BigDecimal("0"));
+                }
+                orderGoods.setStatus(StatusEnum.ENABLED.getKey());
+                orderGoods.setCreateTime(new Date());
+                orderGoods.setUpdateTime(new Date());
+                mtOrderGoodsMapper.insert(orderGoods);
+                // 扣减库存
+                MtGoods goodsInfo = mtGoodsMapper.selectById(cart.getGoodsId());
+                if (goodsInfo.getIsSingleSpec().equals(YesOrNoEnum.YES.getKey())) {
+                    // 单规格减去库存
+                    int stock = goodsInfo.getStock() - cart.getNum();
+                    if (stock < 0) {
+                        throw new BusinessCheckException("商品“" + goodsInfo.getName() + "”库存不足，订单提交失败");
+                    }
+                    goodsInfo.setStock(stock);
+                    mtGoodsMapper.updateById(goodsInfo);
+                } else {
+                    // 多规格减去库存
+                    MtGoodsSku mtGoodsSku = mtGoodsSkuMapper.selectById(cart.getSkuId());
+                    if (mtGoodsSku != null) {
+                        int stock = mtGoodsSku.getStock() - cart.getNum();
+                        if (stock < 0) {
+                            throw new BusinessCheckException("商品sku编码“" + mtGoodsSku.getSkuNo() + "”库存不足，订单提交失败");
+                        }
+                        mtGoodsSku.setStock(stock);
+                        mtGoodsSkuMapper.updateById(mtGoodsSku);
+                        if (goodsInfo.getStock() != null && goodsInfo.getStock() > 0) {
+                            int goodsStock = goodsInfo.getStock() - cart.getNum();
+                            if (goodsStock >= 0) {
+                                goodsInfo.setStock(goodsStock);
+                                mtGoodsMapper.updateById(goodsInfo);
+                            }
+                        }
+                    }
+                }
+                if (cart.getId() > 0) {
+                    mtCartMapper.deleteById(cart.getId());
+                }
+            }
+
+            // 会员折扣
+            if (memberDiscount.compareTo(new BigDecimal("0")) > 0) {
+                orderInfo.setDiscount(orderInfo.getDiscount().add(memberDiscount));
+                if (orderInfo.getPayAmount().subtract(memberDiscount).compareTo(new BigDecimal("0")) > 0) {
+                    orderInfo.setPayAmount(orderInfo.getPayAmount().subtract(memberDiscount));
+                } else {
+                    orderInfo.setPayAmount(new BigDecimal("0"));
+                }
+                orderInfo.setUpdateTime(new Date());
+                orderInfo = updateOrder(orderInfo);
+            }
+
+            // 需要配送的订单，生成配送地址
+            if (mtOrder.getOrderMode().equals(OrderModeEnum.EXPRESS.getKey())) {
+                MtAddress mtAddress = null;
+                if (ObjectUtil.isNotNull(createReqVO.getAddressId())) {
+                    mtAddress = addressService.getById(createReqVO.getAddressId());
+                    if (mtAddress == null) {
+                        throw new BusinessCheckException("配送地址出错了，请重新选择配送地址");
+                    }
+                    if (ObjectUtil.equals(mtAddress.getUserId(), mtOrder.getUserId())) {
+                        throw new BusinessCheckException("配送地址出错了，请重新选择配送地址");
+                    }
+                }
+                if (ObjectUtil.isNull(mtAddress)) {
+                    Map<String, Object> params = new HashMap<>();
+                    params.put("userId", mtOrder.getUserId().toString());
+                    params.put("isDefault", YesOrNoEnum.YES.getKey());
+                    List<MtAddress> addressList = addressService.queryListByParams(params);
+                    if (!addressList.isEmpty()) {
+                        mtAddress = addressList.get(0);
+                    } else {
+                        throw new BusinessCheckException("配送地址出错了，请重新选择配送地址");
+                    }
+                }
+                MtOrderAddress orderAddress = new MtOrderAddress();
+                orderAddress.setOrderId(orderInfo.getId());
+                orderAddress.setUserId(mtOrder.getUserId());
+                orderAddress.setName(mtAddress.getName());
+                orderAddress.setMobile(mtAddress.getMobile());
+                orderAddress.setCityId(mtAddress.getCityId());
+                orderAddress.setProvinceId(mtAddress.getProvinceId());
+                orderAddress.setRegionId(mtAddress.getRegionId());
+                orderAddress.setDetail(mtAddress.getDetail());
+                orderAddress.setCreateTime(new Date());
+                mtOrderAddressMapper.insert(orderAddress);
+            }
+        }
+        if (createReqVO.getPreTotalAmount().compareTo(orderInfo.getPayAmount()) != 0) {
+            // 价格不一致
+            throw exception(PRICE_NOT_CONSISTENT);
+        }
+        return orderInfo;
+    }
+
+
+    /**
+     * 更新订单
+     *
+     * @param orderDto 订单参数
+     * @return
+     * @throws BusinessCheckException
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @OperationServiceLog(description = "更新订单信息")
+    public MtOrder updateOrder(OrderDto orderDto) throws BusinessCheckException {
+        log.info("orderService.updateOrder orderDto = {}", JsonUtil.toJSONString(orderDto));
+        MtOrder mtOrder = mtOrderMapper.selectById(orderDto.getId());
+        if (null == mtOrder || OrderStatusEnum.DELETED.getKey().equals(mtOrder.getStatus())) {
+            throw new BusinessCheckException("该订单状态异常");
+        }
+
+        mtOrder.setId(orderDto.getId());
+        mtOrder.setUpdateTime(new Date());
+
+        if (null != orderDto.getOperator()) {
+            mtOrder.setOperator(orderDto.getOperator());
+        }
+
+        if (null != orderDto.getStatus()) {
+            if (orderDto.getStatus().equals(OrderStatusEnum.CANCEL.getKey()) || orderDto.getStatus().equals(OrderStatusEnum.CREATED.getKey())) {
+                orderDto.setPayStatus(PayStatusEnum.WAIT.getKey());
+            }
+            if (orderDto.getStatus().equals(OrderStatusEnum.CANCEL.getKey())) {
+                cancelOrder(orderDto.getId(), "取消订单");
+            } else {
+                mtOrder.setStatus(orderDto.getStatus());
+            }
+            if (orderDto.getStatus().equals(OrderStatusEnum.PAID.getKey())) {
+                mtOrder.setPayStatus(PayStatusEnum.SUCCESS.getKey());
+                mtOrder.setPayTime(new Date());
+            }
+        }
+
+        if (null != orderDto.getPayAmount()) {
+            mtOrder.setPayAmount(orderDto.getPayAmount());
+        }
+
+        if (null != orderDto.getAmount()) {
+            mtOrder.setAmount(orderDto.getAmount());
+        }
+
+        if (null != orderDto.getVerifyCode() && StringUtils.isNotEmpty(orderDto.getVerifyCode())) {
+            if (orderDto.getVerifyCode().equals(mtOrder.getVerifyCode())) {
+                mtOrder.setStatus(OrderStatusEnum.DELIVERED.getKey());
+                mtOrder.setVerifyCode("");
+            } else {
+                throw new BusinessCheckException("核销码错误，请确认！");
+            }
+        }
+
+        if (null != orderDto.getDiscount()) {
+            mtOrder.setDiscount(orderDto.getDiscount());
+        }
+
+        if (null != orderDto.getPayTime()) {
+            mtOrder.setPayTime(orderDto.getPayTime());
+        }
+
+        if (null != orderDto.getPayType()) {
+            mtOrder.setPayType(orderDto.getPayType());
+        }
+
+        if (null != orderDto.getPayStatus()) {
+            mtOrder.setPayStatus(orderDto.getPayStatus());
+        }
+
+        if (null != orderDto.getExpressInfo()) {
+            mtOrder.setExpressInfo(JSONObject.toJSONString(orderDto.getExpressInfo()));
+        }
+
+        if (null != orderDto.getOrderMode()) {
+            mtOrder.setOrderMode(orderDto.getOrderMode());
+        }
+
+        if (null != orderDto.getRemark()) {
+            mtOrder.setRemark(orderDto.getRemark());
+        }
+
+        mtOrderMapper.updateById(mtOrder);
+        return mtOrder;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @OperationServiceLog(description = "取消订单")
+    public MtOrder cancelOrder(Integer orderId, String remark) {
+        MtOrder mtOrder = mtOrderMapper.selectById(orderId);
+        if (mtOrder != null && mtOrder.getStatus().equals(OrderStatusEnum.CREATED.getKey()) && mtOrder.getPayStatus().equals(PayStatusEnum.WAIT.getKey())) {
+            if (StringUtils.isNotEmpty(remark)) {
+                mtOrder.setRemark(remark);
+            }
+
+            mtOrder.setStatus(OrderStatusEnum.CANCEL.getKey());
+            mtOrderMapper.updateById(mtOrder);
+
+            // 返还积分
+            if (mtOrder.getPointAmount() != null && mtOrder.getUsePoint() > 0) {
+                MtPoint reqPointDto = new MtPoint();
+                reqPointDto.setUserId(mtOrder.getUserId());
+                reqPointDto.setAmount(mtOrder.getUsePoint());
+                reqPointDto.setDescription("订单取消" + mtOrder.getOrderSn() + "退回" + mtOrder.getUsePoint() + "积分");
+                reqPointDto.setOrderSn(mtOrder.getOrderSn());
+                reqPointDto.setOperator("");
+                pointService.addPoint(reqPointDto);
+            }
+
+            // 返还卡券
+            List<MtConfirmLog> confirmLogList = mtConfirmLogMapper.getOrderConfirmLogList(mtOrder.getId());
+            if (confirmLogList.size() > 0) {
+                for (MtConfirmLog log : confirmLogList) {
+                    MtCoupon couponInfo = couponService.queryCouponById(log.getCouponId());
+                    MtUserCoupon userCouponInfo = mtUserCouponMapper.selectById(log.getUserCouponId());
+
+                    if (userCouponInfo != null) {
+                        // 优惠券直接置为未使用
+                        if (couponInfo.getType().equals(CouponTypeEnum.COUPON.getKey())) {
+                            userCouponInfo.setStatus(UserCouponStatusEnum.UNUSED.getKey());
+                            mtUserCouponMapper.updateById(userCouponInfo);
+                        }
+
+                        // 储值卡把余额加回去
+                        if (couponInfo.getType().equals(CouponTypeEnum.PRESTORE.getKey())) {
+                            BigDecimal balance = userCouponInfo.getBalance();
+                            BigDecimal newBalance = balance.add(log.getAmount());
+                            if (newBalance.compareTo(userCouponInfo.getAmount()) <= 0) {
+                                userCouponInfo.setBalance(newBalance);
+                                userCouponInfo.setStatus(UserCouponStatusEnum.UNUSED.getKey());
+                            }
+                            mtUserCouponMapper.updateById(userCouponInfo);
+                        }
+
+                        // 撤销核销记录
+                        log.setStatus(StatusEnum.DISABLE.getKey());
+                        mtConfirmLogMapper.updateById(log);
+                    }
+                }
+            }
+
+            // 返还库存
+            Map<String, Object> params = new HashMap<>();
+            params.put("ORDER_ID", mtOrder.getId());
+            List<MtOrderGoods> orderGoodsList = mtOrderGoodsMapper.selectByMap(params);
+            if (orderGoodsList != null && orderGoodsList.size() > 0) {
+                for (MtOrderGoods mtOrderGoods : orderGoodsList) {
+                    MtGoods mtGoods = mtGoodsMapper.selectById(mtOrderGoods.getGoodsId());
+                    // 商品已不存在
+                    if (mtGoods == null) {
+                        continue;
+                    }
+                    mtGoods.setStock(mtOrderGoods.getNum() + mtGoods.getStock());
+                    mtGoodsMapper.updateById(mtGoods);
+                    if (mtOrderGoods.getSkuId() != null && mtOrderGoods.getSkuId() > 0) {
+                        MtGoodsSku mtGoodsSku = mtGoodsSkuMapper.selectById(mtOrderGoods.getSkuId());
+                        if (mtGoodsSku != null && mtGoodsSku.getStock() != null && mtOrderGoods.getNum() != null) {
+                            mtGoodsSku.setStock(mtGoodsSku.getStock() + mtOrderGoods.getNum());
+                            mtGoodsSkuMapper.updateById(mtGoodsSku);
+                        }
+                    }
+                }
+            }
+        }
+
+        return mtOrder;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public MtOrder updateOrder(MtOrder mtOrder) {
+        mtOrder.setUpdateTime(new Date());
+        int id = mtOrderMapper.updateById(mtOrder);
+        if (id > 0) {
+            mtOrder = mtOrderMapper.selectById(mtOrder.getId());
+        }
+        return mtOrder;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @OperationServiceLog(description = "修改订单为已支付")
+    public boolean setOrderPayed(Integer orderId, BigDecimal payAmount) throws BusinessCheckException {
+        MtOrder mtOrder = mtOrderMapper.selectById(orderId);
+        if (mtOrder == null) {
+            throw exception(ORDER_NOT_FOUND);
+        }
+        if (mtOrder.getPayStatus().equals(PayStatusEnum.SUCCESS.getKey())) {
+            throw exception(ORDER_ALREADY_PAID);
+        }
+        if (mtOrder.getPayAmount().compareTo(payAmount) != 0) {
+            throw exception(ORDER_PAY_AMOUNT_ERROR);
+        }
+        OrderDto reqDto = new OrderDto();
+        reqDto.setId(orderId);
+        reqDto.setStatus(OrderStatusEnum.PAID.getKey());
+        reqDto.setPayStatus(PayStatusEnum.SUCCESS.getKey());
+        if (payAmount != null) {
+            reqDto.setPayAmount(payAmount);
+        }
+        reqDto.setPayTime(new Date());
+        reqDto.setUpdateTime(new Date());
+        updateOrder(reqDto);
+        // 处理会员升级订单
+        if (mtOrder.getType().equals(OrderTypeEnum.MEMBER.getKey())) {
+            openGiftService.openGift(mtOrder.getUserId(), Integer.parseInt(mtOrder.getParam()), false);
+        }
+
+        // 处理购物订单
+        UserOrderDto orderInfo = orderService.getOrderByOrderSn(mtOrder.getOrderSn());
+        if (orderInfo.getType().equals(OrderTypeEnum.GOODS.getKey())) {
+            try {
+                List<OrderGoodsDto> goodsList = orderInfo.getGoods();
+                if (goodsList != null && !goodsList.isEmpty()) {
+                    for (OrderGoodsDto goodsDto : goodsList) {
+                        MtGoods mtGoods = goodsService.queryGoodsById(goodsDto.getGoodsId());
+                        if (mtGoods != null) {
+                            // 购买虚拟卡券商品发放处理
+                            if (mtGoods.getType().equals(GoodsTypeEnum.COUPON.getKey()) && mtGoods.getCouponIds() != null && StringUtils.isNotEmpty(mtGoods.getCouponIds())) {
+                                String[] couponIds = mtGoods.getCouponIds().split(",");
+                                for (String couponId : couponIds) {
+                                    userCouponService.buyCouponItem(orderInfo.getId(), Integer.parseInt(couponId), orderInfo.getUserId(), orderInfo.getUserInfo().getMobile(), goodsDto.getNum());
+                                }
+                            }
+                            // 将已销售数量+1
+                            goodsService.updateInitSale(mtGoods.getId());
+                        }
+                    }
+                }
+            } catch (BusinessCheckException e) {
+                log.error("会员购买的卡券发送给会员失败......{}", e.getMessage());
+            }
+        }
+
+        // 处理消费返积分，查询返1积分所需消费金额
+        MtSetting setting = settingService.querySettingByName(mtOrder.getMerchantId(), SettingTypeEnum.POINT.getKey(), PointSettingEnum.POINT_NEED_CONSUME.getKey());
+        if (setting != null && !orderInfo.getPayType().equals(PayTypeEnum.BALANCE.getKey()) && orderInfo.getIsVisitor().equals(YesOrNoEnum.NO.getKey())) {
+            String needPayAmount = setting.getValue();
+            int needPayAmountInt = Math.round(Integer.parseInt(needPayAmount));
+            double pointNum = 0d;
+            if (needPayAmountInt > 0 && orderInfo.getPayAmount().compareTo(new BigDecimal(needPayAmountInt)) >= 0) {
+                BigDecimal point = orderInfo.getPayAmount().divide(new BigDecimal(needPayAmountInt), BigDecimal.ROUND_CEILING, RoundingMode.FLOOR);
+                pointNum = Math.ceil(point.doubleValue());
+            }
+            log.info("PaymentService paymentCallback Point orderSn = {} , pointNum ={}", orderInfo.getOrderSn(), pointNum);
+            if (pointNum > 0) {
+                MtUser userInfo = memberService.queryMemberById(orderInfo.getUserId());
+                MtUserGrade userGrade = userGradeService.queryUserGradeById(orderInfo.getMerchantId(), Integer.parseInt(userInfo.getGradeId()), orderInfo.getUserId());
+                // 是否会员积分加倍
+                if (userGrade != null && userGrade.getSpeedPoint() > 1) {
+                    pointNum = pointNum * userGrade.getSpeedPoint();
+                }
+                MtPoint reqPointDto = new MtPoint();
+                reqPointDto.setAmount((int) pointNum);
+                reqPointDto.setUserId(orderInfo.getUserId());
+                reqPointDto.setOrderSn(orderInfo.getOrderSn());
+                reqPointDto.setDescription("支付￥" + orderInfo.getPayAmount() + "返" + pointNum + "积分");
+                reqPointDto.setOperator("系统");
+                pointService.addPoint(reqPointDto);
+            }
+        }
+
+        // 计算是否要升级（购物订单、付款订单、充值订单）
+        if (orderInfo.getIsVisitor().equals(YesOrNoEnum.NO.getKey()) && orderInfo.getType().equals(OrderTypeEnum.GOODS.getKey()) || orderInfo.getType().equals(OrderTypeEnum.PAYMENT.getKey()) || orderInfo.getType().equals(OrderTypeEnum.RECHARGE.getKey())) {
+            try {
+                if (orderInfo.getIsVisitor().equals(YesOrNoEnum.NO.getKey())) {
+                    Map<String, Object> param = new HashMap<>();
+                    param.put("MERCHANT_ID", mtOrder.getMerchantId());
+                    param.put("STATUS", StatusEnum.ENABLED.getKey());
+                    MtUser mtUser = memberService.queryMemberById(orderInfo.getUserId());
+                    MtUserGrade mtUserGrade = mtUserGradeMapper.selectById(mtUser.getGradeId());
+                    if (mtUserGrade == null) {
+                        mtUserGrade = userGradeService.getInitUserGrade(orderInfo.getMerchantId());
+                    }
+                    List<MtUserGrade> userGradeList = mtUserGradeMapper.selectByMap(param);
+                    if (mtUserGrade != null && userGradeList != null && userGradeList.size() > 0) {
+                        // 会员已支付金额
+                        BigDecimal payMoney = orderService.getUserPayMoney(orderInfo.getUserId());
+                        // 会员支付订单笔数
+                        Integer payOrderCount = orderService.getUserPayOrderCount(orderInfo.getUserId());
+                        BigDecimal payOrderCountValue = new BigDecimal(payOrderCount);
+                        for (MtUserGrade grade : userGradeList) {
+                            if (grade.getCatchValue() != null && grade.getCatchType() != null) {
+                                // 累计消费金额已达到
+                                if (grade.getCatchType().equals(UserGradeCatchTypeEnum.AMOUNT.getKey())) {
+                                    if (grade.getGrade().compareTo(mtUserGrade.getGrade()) > 0 && payMoney.compareTo(grade.getCatchValue()) >= 0) {
+                                        openGiftService.openGift(mtOrder.getUserId(), grade.getId(), false);
+                                    }
+                                }
+                                // 累计消费次数已达到
+                                if (grade.getCatchType().equals(UserGradeCatchTypeEnum.FREQUENCY.getKey()) && payOrderCountValue.compareTo(grade.getCatchValue()) >= 0) {
+                                    if (grade.getGrade().compareTo(mtUserGrade.getGrade()) > 0) {
+                                        openGiftService.openGift(mtOrder.getUserId(), grade.getId(), false);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                log.error("会员升级出错啦，userId = {}，message = {}", orderInfo.getUserId(), ex.getMessage());
+            }
+        }
+
+        try {
+            // 打印订单
+            printerService.printOrder(orderInfo);
+
+            // 给商家发送通知短信
+            MtStore mtStore = storeService.queryStoreById(mtOrder.getStoreId());
+            if (mtStore != null && orderInfo.getIsVisitor().equals(YesOrNoEnum.NO.getKey())) {
+                Map<String, String> params = new HashMap<>();
+                params.put("orderSn", mtOrder.getOrderSn());
+                List<String> mobileList = new ArrayList<>();
+                mobileList.add(mtStore.getPhone());
+                sendSmsService.sendSms(mtOrder.getMerchantId(), "new-order", mobileList, params);
+            }
+        } catch (Exception e) {
+            log.error("给商家发送短信出错啦，message = {}", e.getMessage());
+        }
+
+        return true;
+    }
+
+
+    /**
      * 确定选中的优惠券ID（自动选择最优或使用指定的）
      */
     private Integer determineSelectedCouponId(Integer userId, List<MtCart> cartList, Integer userCouponId, String platform, Integer merchantId, boolean isUsePoint, String orderMode) {
@@ -359,12 +1037,12 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         // 计算一次获取优惠券列表（不使用优惠券）
         Map<String, Object> cartData = calculateCartGoods(merchantId, userId, cartList, 0, isUsePoint, platform, orderMode);
         List<CouponDto> couponList = (List<CouponDto>) cartData.get("couponList");
-        
+
         // 查找最优优惠券
         if (couponList != null && !couponList.isEmpty()) {
             Integer bestCouponId = null;
             BigDecimal maxCouponAmount = ZERO;
-            
+
             for (CouponDto coupon : couponList) {
                 if (UserCouponStatusEnum.UNUSED.getKey().equals(coupon.getStatus()) && coupon.getAmount() != null) {
                     if (coupon.getAmount().compareTo(maxCouponAmount) > 0) {
@@ -375,7 +1053,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
             }
             return bestCouponId;
         }
-        
+
         return null;
     }
 
@@ -512,18 +1190,18 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
 
         // 处理SKU信息
         MtGoods goodsInfo = processGoodsInfo(cart, mtGoodsInfo, basePath);
-        cartDto.setGoodsInfo(goodsInfo);
 
-        // 设置规格列表
-        if (cart.getSkuId() > 0) {
+        if (goodsInfo.getIsSingleSpec().equals(YesOrNoEnum.NO.getKey())) {
+            // 设置规格列表
             List<GoodsSpecValueDto> specList = goodsService.getSpecListBySkuId(cart.getSkuId());
             cartDto.setSpecList(specList);
         }
-
+        cartDto.setGoodsInfo(goodsInfo);
         // 检查库存有效性
         boolean isEffect = checkStockAvailability(goodsInfo, cart.getNum());
-        cartDto.setIsEffect(isEffect);
-
+        if (!isEffect) {
+            throw exception(GOODS_SKU_NOT_ENOUGH, mtGoodsInfo.getName());
+        }
         return cartDto;
     }
 
@@ -535,18 +1213,23 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         if (StringUtils.isNotEmpty(mtGoodsInfo.getLogo()) && !mtGoodsInfo.getLogo().contains(basePath)) {
             mtGoodsInfo.setLogo(basePath + mtGoodsInfo.getLogo());
         }
-
+        MtGoodsSku sku = null;
+        if (!mtGoodsInfo.getIsSingleSpec().equals(YesOrNoEnum.YES.getKey())) {
+            if (ObjectUtil.isNull(cart.getSkuId())) {
+                throw exception(GOODS_IS_MULTI_SPECIFICATIONS, mtGoodsInfo.getName());
+            }
+            sku = goodsService.getSkuInfoById(cart.getSkuId());
+            if (sku == null) {
+                throw exception(GOODS_SKU_NOT_EXIST, cart.getSkuId());
+            }
+        }
         // 如果有SKU，使用SKU信息
-        if (cart.getSkuId() > 0) {
+        if (sku != null) {
             MtGoods mtGoods = new MtGoods();
             BeanUtils.copyProperties(mtGoodsInfo, mtGoods);
-            MtGoodsSku mtGoodsSku = mtGoodsSkuMapper.selectById(cart.getSkuId());
-            if (mtGoodsSku != null) {
-                updateGoodsWithSkuInfo(mtGoods, mtGoodsSku, basePath);
-            }
+            updateGoodsWithSkuInfo(mtGoods, sku, basePath);
             return mtGoods;
         }
-
         return mtGoodsInfo;
     }
 
@@ -856,8 +1539,8 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
      * 按商品级别计算会员折扣金额（参考saveOrder的逻辑）
      * 只对支持会员折扣的商品（isMemberDiscount == YES）应用折扣
      *
-     * @param merchantId 商户ID
-     * @param userInfo   用户信息
+     * @param merchantId  商户ID
+     * @param userInfo    用户信息
      * @param cartDtoList 购物车商品列表
      * @return 会员折扣总金额
      */

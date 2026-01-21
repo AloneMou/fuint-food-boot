@@ -26,6 +26,8 @@ import com.fuint.repository.model.*;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.StringUtils;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.validation.annotation.Validated;
@@ -37,8 +39,8 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.fuint.openapi.enums.OrderErrorCodeConstants.GOODS_NOT_BELONG_TO_STORE;
-import static com.fuint.openapi.enums.OrderErrorCodeConstants.GOODS_NOT_EMPTY;
+import static com.fuint.openapi.enums.OrderErrorCodeConstants.*;
+import static com.fuint.openapi.enums.RedisKeyConstants.CANCEL_ORDER;
 import static com.fuint.openapi.enums.UserErrorCodeConstants.USER_NOT_FOUND;
 
 /**
@@ -91,6 +93,9 @@ public class OpenOrderController extends BaseController {
     @Resource
     private UserGradeService userGradeService;
 
+    @Resource
+    private RedissonClient redissonClient;
+
     /**
      * 订单预创建（实时算价）
      *
@@ -139,7 +144,7 @@ public class OpenOrderController extends BaseController {
                 cartList.add(cart);
             }
         }
-        
+
         // 验证商品是否属于公共商品或当前门店
         if (CollUtil.isNotEmpty(cartList)) {
             for (MtCart cart : cartList) {
@@ -170,7 +175,7 @@ public class OpenOrderController extends BaseController {
                 }
             }
         }
-        
+
         // 调用订单预创建服务
         Map<String, Object> preCreateResult = openApiOrderService.preCreateOrder(
                 merchantId,
@@ -242,108 +247,57 @@ public class OpenOrderController extends BaseController {
     @PostMapping(value = "/create")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<UserOrderDto> createOrder(@Valid @RequestBody OrderCreateReqVO reqVO) throws BusinessCheckException {
-        // 1. 验证用户是否存在
-        MtUser userInfo = memberService.queryMemberById(reqVO.getUserId());
-        if (userInfo == null) {
-            return CommonResult.error(404, "用户不存在");
-        }
-
-        // 2. 模拟预创建计算价格
-        List<MtCart> cartList = new ArrayList<>();
-        if (reqVO.getItems() != null && !reqVO.getItems().isEmpty()) {
-            for (OrderGoodsItemVO item : reqVO.getItems()) {
-                MtCart cart = new MtCart();
-                cart.setGoodsId(item.getGoodsId());
-                cart.setSkuId(item.getSkuId() != null ? item.getSkuId() : 0);
-                cart.setNum(item.getQuantity());
-                cart.setUserId(reqVO.getUserId());
-                cart.setStatus(StatusEnum.ENABLED.getKey());
-                cartList.add(cart);
-            }
-        }
-
-        Integer merchantId = reqVO.getMerchantId() != null ? reqVO.getMerchantId() : 1;
-        Integer storeId = reqVO.getStoreId() != null ? reqVO.getStoreId() : 0;
-        String orderMode = StringUtils.isNotEmpty(reqVO.getOrderMode()) ? reqVO.getOrderMode() : OrderModeEnum.ONESELF.getKey();
-        String platform = StringUtils.isNotEmpty(reqVO.getPlatform()) ? reqVO.getPlatform() : "MP-WEIXIN";
-        Integer userCouponId = reqVO.getUserCouponId() != null ? reqVO.getUserCouponId() : 0;
-        Integer usePoint = reqVO.getUsePoint() != null ? reqVO.getUsePoint() : 0;
-
-        Map<String, Object> preCreateResult = orderService.preCreateOrder(
-                merchantId, reqVO.getUserId(), cartList, userCouponId, usePoint, platform, orderMode, storeId
-        );
-
-        BigDecimal calculatedPayableAmount = (BigDecimal) preCreateResult.get("payableAmount");
-
-        // 3. 校验价格一致性
-        if (reqVO.getPreTotalAmount().compareTo(calculatedPayableAmount) != 0) {
-            return CommonResult.error(400, "商品更新,请重新下单");
-        }
-
-        // 4. 实际创建订单
-        OrderDto orderDto = new OrderDto();
-        orderDto.setUserId(reqVO.getUserId());
-        orderDto.setMerchantId(merchantId);
-        orderDto.setStoreId(storeId);
-        orderDto.setOrderMode(orderMode);
-        orderDto.setPlatform(platform);
-        orderDto.setCouponId(userCouponId);
-        orderDto.setUsePoint(usePoint);
-        orderDto.setRemark(reqVO.getRemark());
-        orderDto.setTableId(reqVO.getTableId());
-        orderDto.setType(reqVO.getType() != null ? reqVO.getType().getKey() : OrderTypeEnum.GOODS.getKey());
-        orderDto.setPayType(reqVO.getPayType() != null ? reqVO.getPayType() : PayTypeEnum.JSAPI.getKey());
-        orderDto.setIsVisitor(YesOrNoEnum.NO.getKey());
-
-        MtOrder order = orderService.saveOrder(orderDto);
-        UserOrderDto result = orderService.getOrderById(order.getId());
-
+    public CommonResult<Integer> createOrder(@Valid @RequestBody OrderCreateReqVO reqVO) throws BusinessCheckException {
+        reqVO.setPayType(PayTypeEnum.OPEN_API.getKey());
+        reqVO.setType(OrderTypeEnum.GOODS);
+        MtOrder order = openApiOrderService.saveOrder(reqVO);
         // 发送订单创建回调
         eventCallbackService.sendOrderStatusChangedCallback(order, null, OrderStatusEnum.CREATED.getKey());
-
-        return CommonResult.success(result);
+        if (reqVO.getIsPay() != null && reqVO.getIsPay()) {
+            // 已支付订单，发送支付成功回调
+            openApiOrderService.setOrderPayed(order.getId(), order.getPayAmount());
+        } else if (order.getPayAmount().compareTo(BigDecimal.ZERO) == 0) {
+            // 未支付订单，自动支付
+            openApiOrderService.setOrderPayed(order.getId(), order.getPayAmount());
+        }
+        // 返回订单信息
+        return CommonResult.success(order.getId());
     }
 
-    /**
-     * 取消订单
-     *
-     * @param reqVO 取消订单请求参数
-     * @return 操作结果
-     * @throws BusinessCheckException 业务异常
-     */
     @ApiOperation(value = "取消订单", notes = "取消订单，若已支付则自动退款")
     @PostMapping(value = "/cancel")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> cancelOrder(@Valid @RequestBody OrderCancelReqVO reqVO) throws BusinessCheckException {
-        MtOrder order = orderService.getOrderInfo(reqVO.getOrderId());
-        if (order == null) {
-            return CommonResult.error(404, "订单不存在");
+        RLock lock = redissonClient.getLock(CANCEL_ORDER + reqVO.getOrderId());
+        if (!lock.tryLock()) {
+            return CommonResult.error(ORDER_CANCEL_PROCESSING);
         }
-
-        // 验证订单是否属于用户
-        if (reqVO.getUserId() != null && !order.getUserId().equals(reqVO.getUserId())) {
-            return CommonResult.error(403, "无权操作该订单");
+        try {
+            MtOrder order = orderService.getOrderInfo(reqVO.getOrderId());
+            if (order == null) {
+                return CommonResult.error(ORDER_NOT_FOUND);
+            }
+            // 验证订单是否属于用户
+            if (reqVO.getUserId() != null && !order.getUserId().equals(reqVO.getUserId())) {
+                return CommonResult.error(ORDER_NOT_ALLOW_OPERATE);
+            }
+            String oldStatus = order.getStatus();
+            // 如果已支付，执行退款
+            if (order.getPayStatus().equals(PayStatusEnum.SUCCESS.getKey())) {
+                AccountInfo accountInfo = new AccountInfo();
+                accountInfo.setAccountName("OpenApi-System");
+                refundService.doRefund(order.getId(), order.getPayAmount().toString(), "订单取消自动退款", accountInfo);
+            }
+            orderService.cancelOrder(reqVO.getOrderId(), reqVO.getRemark());
+            // 获取更新后的订单信息
+            MtOrder updatedOrder = orderService.getOrderInfo(reqVO.getOrderId());
+            // 发送订单取消回调
+            eventCallbackService.sendOrderStatusChangedCallback(updatedOrder, oldStatus, OrderStatusEnum.CANCEL.getKey());
+            return CommonResult.success(true);
+        } finally {
+            lock.unlock();
         }
-
-        String oldStatus = order.getStatus();
-
-        // 如果已支付，执行退款
-        if (order.getPayStatus().equals(PayStatusEnum.SUCCESS.getKey())) {
-            AccountInfo accountInfo = new AccountInfo();
-            accountInfo.setAccountName("OpenApi-System");
-            refundService.doRefund(order.getId(), order.getPayAmount().toString(), "订单取消自动退款", accountInfo);
-        }
-
-        orderService.cancelOrder(reqVO.getOrderId(), reqVO.getRemark());
-
-        // 获取更新后的订单信息
-        MtOrder updatedOrder = orderService.getOrderInfo(reqVO.getOrderId());
-        // 发送订单取消回调
-        eventCallbackService.sendOrderStatusChangedCallback(updatedOrder, oldStatus, OrderStatusEnum.CANCEL.getKey());
-
-        return CommonResult.success(true);
     }
 
     /**
@@ -358,40 +312,28 @@ public class OpenOrderController extends BaseController {
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> payOrder(@Valid @RequestBody OrderPayReqVO reqVO) throws BusinessCheckException {
+        reqVO.setPayType(PayTypeEnum.OPEN_API.getKey());
         MtOrder order = orderService.getOrderInfo(reqVO.getOrderId());
         if (order == null) {
-            return CommonResult.error(404, "订单不存在");
+            return CommonResult.error(ORDER_NOT_FOUND);
         }
-
         // 验证订单是否属于用户
         if (reqVO.getUserId() != null && !order.getUserId().equals(reqVO.getUserId())) {
-            return CommonResult.error(403, "无权操作该订单");
+            return CommonResult.error(ORDER_NOT_BELONG_TO_USER, reqVO.getUserId());
         }
-
         // 设置为已支付
-        Boolean result = orderService.setOrderPayed(reqVO.getOrderId(), reqVO.getPayAmount());
-
+        boolean result = openApiOrderService.setOrderPayed(reqVO.getOrderId(), reqVO.getPayAmount());
         if (result) {
             // 获取更新后的订单信息
             MtOrder updatedOrder = orderService.getOrderInfo(reqVO.getOrderId());
-
             // 发送订单支付成功事件回调
             eventCallbackService.sendPaymentStatusChangedCallback(updatedOrder, "SUCCESS");
-
             // 发送订单状态变更回调
             eventCallbackService.sendOrderStatusChangedCallback(updatedOrder, order.getStatus(), OrderStatusEnum.PAID.getKey());
         }
-
         return CommonResult.success(result);
     }
 
-    /**
-     * 订单退款
-     *
-     * @param reqVO 退款请求参数
-     * @return 操作结果
-     * @throws BusinessCheckException 业务异常
-     */
     @ApiOperation(value = "订单退款", notes = "触发退款逻辑,退款成功修改订单支付状态为已退款")
     @PostMapping(value = "/refund")
     @ApiSignature
@@ -400,46 +342,33 @@ public class OpenOrderController extends BaseController {
         // 发送申请退款回调
         MtOrder order = orderService.getOrderInfo(reqVO.getOrderId());
         if (order == null) {
-            return CommonResult.error(404, "订单不存在");
+            return CommonResult.error(ORDER_NOT_FOUND);
         }
-
-        // 验证订单权限
+        // 验证订单是否属于用户
         if (reqVO.getUserId() != null && !order.getUserId().equals(reqVO.getUserId())) {
-            return CommonResult.error(403, "无权操作该订单");
+            return CommonResult.error(ORDER_NOT_BELONG_TO_USER, reqVO.getUserId());
         }
-
         AccountInfo accountInfo = new AccountInfo();
         accountInfo.setAccountName("OpenApi-System");
-
         eventCallbackService.sendPaymentStatusChangedCallback(order, "REFUNDING");
-
         Boolean result = refundService.doRefund(reqVO.getOrderId(), reqVO.getAmount().toString(), reqVO.getRemark(), accountInfo);
-
         if (result) {
             // 获取更新后的订单信息
             MtOrder updatedOrder = orderService.getOrderInfo(reqVO.getOrderId());
             // 发送订单退款成功事件回调
             eventCallbackService.sendPaymentStatusChangedCallback(updatedOrder, "REFUNDED");
         }
-
         return CommonResult.success(result);
     }
 
-    /**
-     * 获取订单详情
-     *
-     * @param reqVO 订单详情请求参数
-     * @return 订单详情
-     * @throws BusinessCheckException 业务异常
-     */
     @ApiOperation(value = "订单详情", notes = "包含订单与订单商品所有信息，预计等待时间，前有多少杯咖啡")
     @GetMapping(value = "/detail")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<Map<String, Object>> getOrderDetail(@Valid OrderDetailReqVO reqVO) throws BusinessCheckException {
+    public CommonResult<UserOrderDto> getOrderDetail(@Valid OrderDetailReqVO reqVO) throws BusinessCheckException {
         UserOrderDto orderDto = orderService.getOrderById(reqVO.getOrderId());
         if (orderDto == null) {
-            return CommonResult.error(404, "订单不存在");
+            return CommonResult.error(ORDER_NOT_FOUND);
         }
 
         // 验证订单权限
@@ -455,25 +384,25 @@ public class OpenOrderController extends BaseController {
 
         // 计算队列信息（优化：使用一条SQL聚合查询）
         // 假设状态为已支付（待制作/制作中）的订单在排队
-        LambdaQueryWrapper<MtOrder> queryWrapper = Wrappers.lambdaQuery();
-        queryWrapper.eq(MtOrder::getStatus, OrderStatusEnum.PAID.getKey());
-        queryWrapper.lt(MtOrder::getId, reqVO.getOrderId()); // 在当前订单之前的
-        List<MtOrder> queueOrders = orderService.list(queryWrapper);
+//        LambdaQueryWrapper<MtOrder> queryWrapper = Wrappers.lambdaQuery();
+//        queryWrapper.eq(MtOrder::getStatus, OrderStatusEnum.PAID.getKey());
+//        queryWrapper.lt(MtOrder::getId, reqVO.getOrderId()); // 在当前订单之前的
+//        List<MtOrder> queueOrders = orderService.list(queryWrapper);
+//
+//        int coffeeCount = 0;
+//        if (CollUtil.isNotEmpty(queueOrders)) {
+//            List<Integer> queueOrderIds = queueOrders.stream()
+//                    .map(MtOrder::getId)
+//                    .collect(Collectors.toList());
+//            // 使用批量查询，一次性统计所有订单的商品数量
+//            Integer count = mtOrderGoodsMapper.countGoodsByOrderIds(queueOrderIds);
+//            coffeeCount = count != null ? count : 0;
+//        }
+//
+//        result.put("queueCount", coffeeCount);
+//        result.put("estimatedWaitTime", coffeeCount * 5); // 假设每杯5分钟
 
-        int coffeeCount = 0;
-        if (CollUtil.isNotEmpty(queueOrders)) {
-            List<Integer> queueOrderIds = queueOrders.stream()
-                    .map(MtOrder::getId)
-                    .collect(Collectors.toList());
-            // 使用批量查询，一次性统计所有订单的商品数量
-            Integer count = mtOrderGoodsMapper.countGoodsByOrderIds(queueOrderIds);
-            coffeeCount = count != null ? count : 0;
-        }
-
-        result.put("queueCount", coffeeCount);
-        result.put("estimatedWaitTime", coffeeCount * 5); // 假设每杯5分钟
-
-        return CommonResult.success(result);
+        return CommonResult.success(orderDto);
     }
 
     /**
@@ -490,7 +419,7 @@ public class OpenOrderController extends BaseController {
     public CommonResult<PageResult<UserOrderDto>> getOrderList(@Valid OrderListReqVO reqVO) throws BusinessCheckException {
         // 使用 MyBatis Plus 分页查询
         PageResult<MtOrder> pageResult = mtOrderMapper.selectOrderPage(reqVO);
-        
+
         if (CollUtil.isEmpty(pageResult.getList())) {
             return CommonResult.success(PageResult.empty());
         }
@@ -605,7 +534,7 @@ public class OpenOrderController extends BaseController {
         LambdaQueryWrapper<MtOrderGoods> goodsWrapper = Wrappers.lambdaQuery();
         goodsWrapper.eq(MtOrderGoods::getOrderId, reqVO.getOrderId());
         List<MtOrderGoods> goodsList = mtOrderGoodsMapper.selectList(goodsWrapper);
-        
+
         List<Map<String, Object>> items = new ArrayList<>();
         for (MtOrderGoods orderGoods : goodsList) {
             Map<String, Object> item = new HashMap<>();
@@ -703,7 +632,7 @@ public class OpenOrderController extends BaseController {
             couponVO.setUsable((String) couponMap.get("usable"));
             couponVO.setDescription((String) couponMap.get("description"));
             couponVO.setSelected(Boolean.TRUE.equals(couponMap.get("selected")));
-            
+
             // 设置余额（储值卡）
             if (couponMap.get("balance") != null) {
                 couponVO.setBalance(getBigDecimalValue(couponMap.get("balance")));
@@ -800,7 +729,7 @@ public class OpenOrderController extends BaseController {
                 goodsVO.setGoodsName(goodsInfo.getName());
                 goodsVO.setPrice(goodsInfo.getPrice() != null ? goodsInfo.getPrice() : BigDecimal.ZERO);
                 goodsVO.setLinePrice(goodsInfo.getLinePrice() != null ? goodsInfo.getLinePrice() : BigDecimal.ZERO);
-                
+
                 // 处理商品图片
                 String logo = goodsInfo.getLogo();
                 if (StringUtils.isNotEmpty(logo) && !logo.startsWith("http")) {

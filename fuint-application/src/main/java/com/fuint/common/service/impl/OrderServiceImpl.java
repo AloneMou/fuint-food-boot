@@ -1150,8 +1150,6 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
     @OperationServiceLog(description = "取消订单")
     public MtOrder cancelOrder(Integer orderId, String remark) throws BusinessCheckException {
         MtOrder mtOrder = mtOrderMapper.selectById(orderId);
-        logger.info("orderService.cancelOrder orderId = {}, remark = {}", orderId, remark);
-
         if (mtOrder != null && mtOrder.getStatus().equals(OrderStatusEnum.CREATED.getKey()) && mtOrder.getPayStatus().equals(PayStatusEnum.WAIT.getKey())) {
             if (StringUtils.isNotEmpty(remark)) {
                 mtOrder.setRemark(remark);
@@ -1425,17 +1423,15 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         if (orderInfo.getType().equals(OrderTypeEnum.GOODS.getKey())) {
             try {
                 List<OrderGoodsDto> goodsList = orderInfo.getGoods();
-                if (goodsList != null && goodsList.size() > 0) {
+                if (goodsList != null && !goodsList.isEmpty()) {
                     for (OrderGoodsDto goodsDto : goodsList) {
                         MtGoods mtGoods = goodsService.queryGoodsById(goodsDto.getGoodsId());
                         if (mtGoods != null) {
                             // 购买虚拟卡券商品发放处理
                             if (mtGoods.getType().equals(GoodsTypeEnum.COUPON.getKey()) && mtGoods.getCouponIds() != null && StringUtils.isNotEmpty(mtGoods.getCouponIds())) {
-                                String couponIds[] = mtGoods.getCouponIds().split(",");
-                                if (couponIds.length > 0) {
-                                    for (int i = 0; i < couponIds.length; i++) {
-                                        userCouponService.buyCouponItem(orderInfo.getId(), Integer.parseInt(couponIds[i]), orderInfo.getUserId(), orderInfo.getUserInfo().getMobile(), goodsDto.getNum());
-                                    }
+                                String[] couponIds = mtGoods.getCouponIds().split(",");
+                                for (String couponId : couponIds) {
+                                    userCouponService.buyCouponItem(orderInfo.getId(), Integer.parseInt(couponId), orderInfo.getUserId(), orderInfo.getUserInfo().getMobile(), goodsDto.getNum());
                                 }
                             }
                             // 将已销售数量+1
@@ -1444,7 +1440,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                     }
                 }
             } catch (BusinessCheckException e) {
-                logger.error("会员购买的卡券发送给会员失败......" + e.getMessage());
+                logger.error("会员购买的卡券发送给会员失败......{}", e.getMessage());
             }
         }
 
@@ -1452,10 +1448,10 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         MtSetting setting = settingService.querySettingByName(mtOrder.getMerchantId(), SettingTypeEnum.POINT.getKey(), PointSettingEnum.POINT_NEED_CONSUME.getKey());
         if (setting != null && !orderInfo.getPayType().equals(PayTypeEnum.BALANCE.getKey()) && orderInfo.getIsVisitor().equals(YesOrNoEnum.NO.getKey())) {
             String needPayAmount = setting.getValue();
-            Integer needPayAmountInt = Math.round(Integer.parseInt(needPayAmount));
-            Double pointNum = 0d;
+            int needPayAmountInt = Math.round(Integer.parseInt(needPayAmount));
+            double pointNum = 0d;
             if (needPayAmountInt > 0 && orderInfo.getPayAmount().compareTo(new BigDecimal(needPayAmountInt)) >= 0) {
-                BigDecimal point = orderInfo.getPayAmount().divide(new BigDecimal(needPayAmountInt), BigDecimal.ROUND_CEILING, 3);
+                BigDecimal point = orderInfo.getPayAmount().divide(new BigDecimal(needPayAmountInt), BigDecimal.ROUND_CEILING, RoundingMode.FLOOR);
                 pointNum = Math.ceil(point.doubleValue());
             }
             logger.info("PaymentService paymentCallback Point orderSn = {} , pointNum ={}", orderInfo.getOrderSn(), pointNum);
@@ -1467,7 +1463,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                     pointNum = pointNum * userGrade.getSpeedPoint();
                 }
                 MtPoint reqPointDto = new MtPoint();
-                reqPointDto.setAmount(pointNum.intValue());
+                reqPointDto.setAmount((int) pointNum);
                 reqPointDto.setUserId(orderInfo.getUserId());
                 reqPointDto.setOrderSn(orderInfo.getOrderSn());
                 reqPointDto.setDescription("支付￥" + orderInfo.getPayAmount() + "返" + pointNum + "积分");

@@ -27,7 +27,4 @@ public class OrderGoodsItemVO {
     @NotNull(message = "购买数量不能为空")
     @ApiModelProperty(value = "购买数量", required = true, example = "2")
     private Integer quantity;
-
-    @ApiModelProperty(value = "商品单价（元）", example = "18.00")
-    private BigDecimal unitPrice;
 }

@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 
 /**
  * 支付订单请求VO
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -28,6 +28,6 @@ public class OrderPayReqVO {
     @ApiModelProperty(value = "支付金额", required = true, example = "100.00")
     private BigDecimal payAmount;
 
-    @ApiModelProperty(value = "支付方式：BALANCE-余额支付；JSAPI-微信支付；ALISCAN-支付宝支付", example = "BALANCE")
+    @ApiModelProperty(value = "支付方式：BALANCE-余额支付；JSAPI-微信支付；ALISCAN-支付宝支付", example = "BALANCE", hidden = true)
     private String payType;
 }

@@ -21,4 +21,7 @@ public interface GoodsErrorCodeConstants {
 
     ErrorCode GOODS_COUPON_TOO_MANY = new ErrorCode(100_4_004, "单个商品优惠券不得大于{}");
 
+    ErrorCode GOODS_SKU_NOT_EXIST = new ErrorCode(100_4_005, "商品SKU({})不存在");
+    //
+    ErrorCode GOODS_SKU_NOT_ENOUGH = new ErrorCode(100_4_006, "商品({})库存不足");
 }

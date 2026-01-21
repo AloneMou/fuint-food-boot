@@ -11,4 +11,9 @@ public interface RedisKeyConstants {
      * 优惠券撤销锁
      */
     String COUPON_REVOKE_LOCK = "coupon:revoke:lock";
+
+    /**
+     * 取消订单
+     */
+    String CANCEL_ORDER = "cancel:order";
 }

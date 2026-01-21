@@ -75,6 +75,13 @@ public interface GoodsService {
     MtGoodsSku getSkuInfoBySkuNo(String skuNo) throws BusinessCheckException;
 
     /**
+     * 根据ID获取商品SKU信息
+     * @param id SKU ID
+     * @return
+     * @throws BusinessCheckException
+     */
+    MtGoodsSku getSkuInfoById(Integer id);
+    /**
      * 根据ID获取商品详情
      *
      * @param id

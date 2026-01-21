@@ -2,7 +2,7 @@ package com.fuint.common.enums;
 
 /**
  * 支付类型
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -11,7 +11,9 @@ public enum PayTypeEnum {
     JSAPI("JSAPI", "微信支付"),
     MICROPAY("MICROPAY", "微信扫码支付"),
     BALANCE("BALANCE", "余额支付"),
-    ALISCAN("ALISCAN", "支付宝扫码");
+    ALISCAN("ALISCAN", "支付宝扫码"),
+    OPEN_API("OPEN_API", "开放平台"),
+    ;
 
     private String key;
 

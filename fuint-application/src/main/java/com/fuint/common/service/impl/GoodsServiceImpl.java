@@ -397,6 +397,18 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
         return null;
     }
 
+    @Override
+    public MtGoodsSku getSkuInfoById(Integer id) {
+        MtGoodsSku mtGoodsSku = mtGoodsSkuMapper.selectById(id);
+        if (mtGoodsSku == null) {
+            return null;
+        }
+        if (mtGoodsSku.getStatus().equals(StatusEnum.DISABLE.getKey())) {
+            return null;
+        }
+        return mtGoodsSku;
+    }
+
     /**
      * 根据ID获取商品详情
      *

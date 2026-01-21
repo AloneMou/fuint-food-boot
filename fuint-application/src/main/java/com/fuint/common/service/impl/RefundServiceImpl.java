@@ -18,7 +18,10 @@ import com.fuint.repository.model.*;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -26,20 +29,25 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.*;
 
+import static com.fuint.framework.exception.util.ServiceExceptionUtil.exception;
+import static com.fuint.openapi.enums.OrderErrorCodeConstants.*;
+
 /**
  * 售后接口实现类
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
+@Slf4j
 @Service
 @AllArgsConstructor
 public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> implements RefundService {
 
-    private static final Logger logger = LoggerFactory.getLogger(RefundServiceImpl.class);
 
     private MtPointMapper mtPointMapper;
 
@@ -57,38 +65,51 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
 
     /**
      * 卡券接口
-     * */
+     */
+    @Resource
     private CouponService couponService;
 
     /**
      * 积分相关接口
-     * */
+     */
+    @Resource
     private PointService pointService;
 
     /**
      * 订单服务接口
-     * */
+     */
+    @Resource
     private OrderService orderService;
 
     /**
      * 余额服务接口
-     * */
+     */
+    @Resource
     private BalanceService balanceService;
 
     /**
      * 微信服务接口
-     * */
+     */
+    @Resource
     private WeixinService weixinService;
 
     /**
      * 支付宝服务接口
-     * */
+     */
+    @Resource
     private AlipayService alipayService;
 
     /**
      * 店铺接口
      */
+    @Resource
     private StoreService storeService;
+
+    /**
+     * Redisson客户端
+     */
+    @Resource
+    private RedissonClient redissonClient;
 
     /**
      * 分页查询售后订单列表
@@ -138,19 +159,19 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
         List<RefundDto> dataList = new ArrayList<>();
         if (refundList != null && refundList.size() > 0) {
             for (MtRefund mtRefund : refundList) {
-                 RefundDto refundDto = new RefundDto();
-                 BeanUtils.copyProperties(mtRefund, refundDto);
-                 refundDto.setCreateTime(DateUtil.formatDate(mtRefund.getCreateTime(), "yyyy-MM-dd HH:mm"));
-                 refundDto.setUpdateTime(DateUtil.formatDate(mtRefund.getCreateTime(), "yyyy-MM-dd HH:mm"));
-                 if (refundDto.getStoreId() != null && refundDto.getStoreId() > 0) {
-                     MtStore mtStore = storeService.queryStoreById(refundDto.getStoreId());
-                     refundDto.setStoreInfo(mtStore);
-                 }
-                 if (refundDto.getOrderId() != null && refundDto.getOrderId() > 0) {
-                     UserOrderDto orderDto = orderService.getOrderById(refundDto.getOrderId());
-                     refundDto.setOrderInfo(orderDto);
-                 }
-                 dataList.add(refundDto);
+                RefundDto refundDto = new RefundDto();
+                BeanUtils.copyProperties(mtRefund, refundDto);
+                refundDto.setCreateTime(DateUtil.formatDate(mtRefund.getCreateTime(), "yyyy-MM-dd HH:mm"));
+                refundDto.setUpdateTime(DateUtil.formatDate(mtRefund.getCreateTime(), "yyyy-MM-dd HH:mm"));
+                if (refundDto.getStoreId() != null && refundDto.getStoreId() > 0) {
+                    MtStore mtStore = storeService.queryStoreById(refundDto.getStoreId());
+                    refundDto.setStoreInfo(mtStore);
+                }
+                if (refundDto.getOrderId() != null && refundDto.getOrderId() > 0) {
+                    UserOrderDto orderDto = orderService.getOrderById(refundDto.getOrderId());
+                    refundDto.setOrderInfo(orderDto);
+                }
+                dataList.add(refundDto);
             }
         }
         PageRequest pageRequest = PageRequest.of(paginationRequest.getCurrentPage(), paginationRequest.getPageSize());
@@ -166,17 +187,17 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
     /**
      * 获取用户售后订单列表
      *
-     * @param  paramMap 查询参数
-     * @throws BusinessCheckException
+     * @param paramMap 查询参数
      * @return
-     * */
+     * @throws BusinessCheckException
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ResponseObject getUserRefundList(Map<String, Object> paramMap) throws BusinessCheckException {
-        Integer pageNumber = paramMap.get("pageNumber") == null ? Constants.PAGE_NUMBER : Integer.parseInt(paramMap.get("pageNumber").toString());
-        Integer pageSize = paramMap.get("pageSize") == null ? Constants.PAGE_SIZE : Integer.parseInt(paramMap.get("pageSize").toString());
+        int pageNumber = paramMap.get("pageNumber") == null ? Constants.PAGE_NUMBER : Integer.parseInt(paramMap.get("pageNumber").toString());
+        int pageSize = paramMap.get("pageSize") == null ? Constants.PAGE_SIZE : Integer.parseInt(paramMap.get("pageSize").toString());
         String userId = paramMap.get("userId") == null ? "0" : paramMap.get("userId").toString();
-        String status =  paramMap.get("status") == null ? "": paramMap.get("status").toString();
+        String status = paramMap.get("status") == null ? "" : paramMap.get("status").toString();
 
         Page<MtBanner> pageHelper = PageHelper.startPage(pageNumber, pageSize);
         LambdaQueryWrapper<MtRefund> lambdaQueryWrapper = Wrappers.lambdaQuery();
@@ -194,31 +215,31 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
         List<RefundDto> dataList = new ArrayList<>();
         if (refundList != null && refundList.size() > 0) {
             for (MtRefund mtRefund : refundList) {
-                 RefundDto refundDto = new RefundDto();
-                 BeanUtils.copyProperties(mtRefund, refundDto);
-                 UserOrderDto orderDto = orderService.getOrderById(mtRefund.getOrderId());
-                 if (mtRefund.getImages() != null && StringUtils.isNotEmpty(mtRefund.getImages())) {
-                     List<String> images = Arrays.asList(mtRefund.getImages().split(",").clone());
-                     refundDto.setImageList(images);
-                 }
-                 refundDto.setOrderInfo(orderDto);
-                 refundDto.setCreateTime(DateUtil.formatDate(mtRefund.getCreateTime(), "yyyy.MM.dd HH:mm"));
-                 refundDto.setUpdateTime(DateUtil.formatDate(mtRefund.getUpdateTime(), "yyyy.MM.dd HH:mm"));
+                RefundDto refundDto = new RefundDto();
+                BeanUtils.copyProperties(mtRefund, refundDto);
+                UserOrderDto orderDto = orderService.getOrderById(mtRefund.getOrderId());
+                if (mtRefund.getImages() != null && StringUtils.isNotEmpty(mtRefund.getImages())) {
+                    List<String> images = Arrays.asList(mtRefund.getImages().split(",").clone());
+                    refundDto.setImageList(images);
+                }
+                refundDto.setOrderInfo(orderDto);
+                refundDto.setCreateTime(DateUtil.formatDate(mtRefund.getCreateTime(), "yyyy.MM.dd HH:mm"));
+                refundDto.setUpdateTime(DateUtil.formatDate(mtRefund.getUpdateTime(), "yyyy.MM.dd HH:mm"));
 
-                 if (mtRefund.getStatus().equals(RefundStatusEnum.CREATED.getKey())) {
-                     refundDto.setStatusText(RefundStatusEnum.CREATED.getValue());
-                 }
-                 if (mtRefund.getStatus().equals(RefundStatusEnum.APPROVED.getKey())) {
-                     refundDto.setStatusText(RefundStatusEnum.APPROVED.getValue());
-                 }
-                 if (mtRefund.getStatus().equals(RefundStatusEnum.REJECT.getKey())) {
-                     refundDto.setStatusText(RefundStatusEnum.REJECT.getValue());
-                 }
-                 if (mtRefund.getStatus().equals(RefundStatusEnum.CANCEL.getKey())) {
-                     refundDto.setStatusText(RefundStatusEnum.CANCEL.getValue());
-                 }
+                if (mtRefund.getStatus().equals(RefundStatusEnum.CREATED.getKey())) {
+                    refundDto.setStatusText(RefundStatusEnum.CREATED.getValue());
+                }
+                if (mtRefund.getStatus().equals(RefundStatusEnum.APPROVED.getKey())) {
+                    refundDto.setStatusText(RefundStatusEnum.APPROVED.getValue());
+                }
+                if (mtRefund.getStatus().equals(RefundStatusEnum.REJECT.getKey())) {
+                    refundDto.setStatusText(RefundStatusEnum.REJECT.getValue());
+                }
+                if (mtRefund.getStatus().equals(RefundStatusEnum.CANCEL.getKey())) {
+                    refundDto.setStatusText(RefundStatusEnum.CANCEL.getValue());
+                }
 
-                 dataList.add(refundDto);
+                dataList.add(refundDto);
             }
         }
 
@@ -236,8 +257,8 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
      * 创建售后订单
      *
      * @param refundDto 订单参数
-     * @throws BusinessCheckException
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -287,9 +308,9 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
     /**
      * 根据ID获取订单详情
      *
-     * @param  id 售后订单ID
-     * @throws BusinessCheckException
+     * @param id 售后订单ID
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     public RefundDto getRefundById(Integer id) throws BusinessCheckException {
@@ -313,9 +334,9 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
     /**
      * 根据订单ID获取售后订单信息
      *
-     * @param  orderId 订单ID
-     * @throws BusinessCheckException
+     * @param orderId 订单ID
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     public MtRefund getRefundByOrderId(Integer orderId) {
@@ -331,9 +352,9 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
     /**
      * 修改售后订单
      *
-     * @param  refundDto
-     * @throws BusinessCheckException
+     * @param refundDto
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -370,9 +391,9 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
      * 同意售后订单
      *
      * @param refundDto
-     * @throws BusinessCheckException
      * @return
-     * */
+     * @throws BusinessCheckException
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "同意售后订单")
@@ -423,7 +444,7 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
         // 如果是余额支付，返还余额
         if (orderInfo.getPayType().equals(PayTypeEnum.BALANCE.getKey())) {
             List<MtBalance> balanceList = balanceService.getBalanceListByOrderSn(orderInfo.getOrderSn());
-            if (balanceList.size() > 0) {
+            if (!balanceList.isEmpty()) {
                 BigDecimal refundAmount = new BigDecimal("0");
                 for (MtBalance mtBalance : balanceList) {
                     if (mtBalance.getAmount().compareTo(new BigDecimal("0")) < 0) {
@@ -454,7 +475,7 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
             MtPoint reqPointDto = new MtPoint();
             reqPointDto.setUserId(orderInfo.getUserId());
             reqPointDto.setAmount(orderInfo.getUsePoint());
-            reqPointDto.setDescription("售后订单" + orderInfo.getOrderSn() + "退回"+ orderInfo.getUsePoint() +"积分");
+            reqPointDto.setDescription("售后订单" + orderInfo.getOrderSn() + "退回" + orderInfo.getUsePoint() + "积分");
             reqPointDto.setOrderSn(orderInfo.getOrderSn());
             reqPointDto.setOperator("");
             pointService.addPoint(reqPointDto);
@@ -462,7 +483,7 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
 
         // 返还卡券
         List<MtConfirmLog> confirmLogList = mtConfirmLogMapper.getOrderConfirmLogList(orderInfo.getId());
-        if (confirmLogList.size() > 0) {
+        if (!confirmLogList.isEmpty()) {
             for (MtConfirmLog log : confirmLogList) {
                 MtCoupon couponInfo = couponService.queryCouponById(log.getCouponId());
                 MtUserCoupon userCouponInfo = mtUserCouponMapper.selectById(log.getUserCouponId());
@@ -494,12 +515,12 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
         params.put("USER_ID", orderInfo.getUserId());
         params.put("ORDER_SN", orderInfo.getOrderSn());
         List<MtPoint> pointList = mtPointMapper.selectByMap(params);
-        if (pointList != null && pointList.size() > 0) {
+        if (pointList != null && !pointList.isEmpty()) {
             Integer pointNum = pointList.get(0).getAmount();
             if (pointNum > 0) {
-                Integer amount = pointNum - (pointNum) * 2;
+                int amount = pointNum - (pointNum) * 2;
                 MtPoint mtPoint = new MtPoint();
-                mtPoint.setAmount(amount.intValue());
+                mtPoint.setAmount(amount);
                 mtPoint.setUserId(orderInfo.getUserId());
                 mtPoint.setOrderSn(orderInfo.getOrderSn());
                 mtPoint.setDescription("退款￥" + orderInfo.getPayAmount() + "退回" + pointNum + "积分");
@@ -512,7 +533,7 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
         Map<String, Object> eParam = new HashMap<>();
         eParam.put("ORDER_ID", orderInfo.getId());
         List<MtOrderGoods> orderGoodsList = mtOrderGoodsMapper.selectByMap(eParam);
-        if (orderGoodsList != null && orderGoodsList.size() > 0) {
+        if (orderGoodsList != null && !orderGoodsList.isEmpty()) {
             for (MtOrderGoods mtOrderGoods : orderGoodsList) {
                 MtGoods mtGoods = mtGoodsMapper.selectById(mtOrderGoods.getGoodsId());
                 mtGoods.setStock(mtOrderGoods.getNum() + mtGoods.getStock());
@@ -540,33 +561,29 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
 
     /**
      * 发起退款
-     * @param orderId 订单ID
+     *
+     * @param orderId      订单ID
      * @param refundAmount 售后金额
-     * @param remark 备注
-     * @param accountInfo 后台管理信息
-     * throws BusinessCheckException
+     * @param remark       备注
+     * @param accountInfo  后台管理信息
+     *                     throws BusinessCheckException
      * @return
-     * */
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "发起退款")
     public Boolean doRefund(Integer orderId, String refundAmount, String remark, AccountInfo accountInfo) throws BusinessCheckException {
         UserOrderDto orderInfo = orderService.getOrderById(orderId);
         if (orderInfo == null) {
-            logger.error("退款订单为空，orderId = " + orderId + orderInfo.getId());
             throw new BusinessCheckException("该订单状态异常！");
         }
-
         MtRefund refund = mtRefundMapper.findByOrderId(orderId);
         if (refund != null) {
-            logger.error("售后订单已存在，orderId = " + orderId);
-            throw new BusinessCheckException("该售后订单已存在，请查询售后订单列表！");
+            throw exception(REFUND_ORDER_EXIST);
         }
-
         if (new BigDecimal(refundAmount).compareTo(orderInfo.getPayAmount()) > 0) {
-            throw new BusinessCheckException("退款金额不能大于实际支付金额！");
+            throw exception(REFUND_AMOUNT_NOT_GREATER_THAN_PAY_AMOUNT);
         }
-
         // 创建售后订单
         RefundDto refundDto = new RefundDto();
         refundDto.setUserId(orderInfo.getUserId());
@@ -592,12 +609,10 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
             agreeDto.setStatus(RefundStatusEnum.APPROVED.getKey());
             MtRefund refundInfo = agreeRefund(agreeDto);
             if (refundInfo == null) {
-                logger.error("退款审核失败，orderId = " + orderId + ", refundId = " + mtRefund.getId());
-                throw new BusinessCheckException("退款审核失败！");
+                throw exception(CANCEL_ORDER_ERROR);
             }
         } else {
-            logger.error("退款生成售后订单失败，orderId = " + orderId);
-            throw new BusinessCheckException("生成售后订单失败！");
+            throw exception(CANCEL_ORDER_ERROR_CONTACT_ADMIN);
         }
         return true;
     }
@@ -606,9 +621,9 @@ public class RefundServiceImpl extends ServiceImpl<MtRefundMapper, MtRefund> imp
      * 获取售后订单数量
      *
      * @param beginTime 开始时间
-     * @param endTime 结束时间
+     * @param endTime   结束时间
      * @return
-     * */
+     */
     @Override
     public Long getRefundCount(Date beginTime, Date endTime) {
         return mtRefundMapper.getRefundCount(beginTime, endTime);

@@ -67,4 +67,5 @@ public class OrderPreCreateRespVO {
 
     @ApiModelProperty(value = "配送起送金额（元）", example = "10.00")
     private BigDecimal deliveryMinAmount;
+
 }

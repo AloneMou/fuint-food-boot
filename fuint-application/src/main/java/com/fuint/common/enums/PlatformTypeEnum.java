@@ -26,7 +26,17 @@ public enum PlatformTypeEnum {
     /**
      * App客户端
      */
-    APP("APP", "App客户端");
+    APP("APP", "App客户端"),
+    /**
+     * 飞书
+     */
+    FEISHU("FEISHU", "飞书"),
+
+    /**
+     * 开放平台
+     */
+    OPEN_API("OPEN_API", "开放平台")
+    ;
 
     private String code;
 
