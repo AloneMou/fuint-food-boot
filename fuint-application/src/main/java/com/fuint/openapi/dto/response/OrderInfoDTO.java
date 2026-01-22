@@ -1,5 +1,6 @@
 package com.fuint.openapi.dto.response;
 
+import com.alipay.api.domain.OrderGoodsDTO;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fuint.openapi.dto.api.BaseResponse;
 import lombok.Builder;

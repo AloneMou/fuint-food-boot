@@ -9,7 +9,7 @@ spring:
   autoconfigure:
     exclude: org.redisson.spring.cache.RedissonCacheStatisticsAutoConfiguration
   profiles:
-    active: sz
+    active: prod
   cache:
     ehcache:
       config: classpath:ehcache.xml
