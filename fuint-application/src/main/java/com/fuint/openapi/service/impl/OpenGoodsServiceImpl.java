@@ -58,6 +58,13 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
             goodsList.add(goodsVO);
 
             List<MtGoodsSpec> specList = specMap.getOrDefault(goods.getId(), Collections.emptyList());
+            List<GoodsSpecItemVO> specVOList = new ArrayList<>();
+            Map<String, List<MtGoodsSpec>> specNameMap = convertMultiMap(specList, MtGoodsSpec::getName);
+            for (String key : specNameMap.keySet()) {
+                GoodsSpecItemVO specVO = new GoodsSpecItemVO();
+                specVO.setName(key);
+                List<MtGoodsSpec> childLs = specNameMap.get(key);
+            }
 
         }
         return goodsList;
