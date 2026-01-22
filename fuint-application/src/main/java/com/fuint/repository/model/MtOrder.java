@@ -3,9 +3,11 @@ package com.fuint.repository.model;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
@@ -13,7 +15,7 @@ import lombok.Setter;
 
 /**
  * 订单表
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -71,7 +73,7 @@ public class MtOrder implements Serializable {
     @ApiModelProperty("支付金额")
     private BigDecimal payAmount;
 
-    @ApiModelProperty(value="结算状态")
+    @ApiModelProperty(value = "结算状态")
     private String settleStatus;
 
     @ApiModelProperty("使用积分数量")
@@ -122,4 +124,7 @@ public class MtOrder implements Serializable {
     @ApiModelProperty("分佣提成用户ID")
     private Integer commissionUserId;
 
+
+    @ApiModelProperty("取餐状态：0-餐品 ")
+    private Integer takeStatus;
 }

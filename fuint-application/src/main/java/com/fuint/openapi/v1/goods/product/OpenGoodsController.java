@@ -207,7 +207,7 @@ public class OpenGoodsController extends BaseController {
      * @throws BusinessCheckException 业务异常
      */
     @ApiOperation(value = "更新商品状态", notes = "更新指定商品的状态")
-    @PatchMapping(value = "/status/{id}")
+    @PutMapping(value = "/status/{id}")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> updateGoodsStatus(

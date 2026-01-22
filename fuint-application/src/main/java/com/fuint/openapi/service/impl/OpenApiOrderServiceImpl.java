@@ -1215,7 +1215,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         }
         MtGoodsSku sku = null;
         if (!mtGoodsInfo.getIsSingleSpec().equals(YesOrNoEnum.YES.getKey())) {
-            if (ObjectUtil.isNull(cart.getSkuId())) {
+            if (ObjectUtil.isNull(cart.getSkuId()) || cart.getSkuId() <= 0) {
                 throw exception(GOODS_IS_MULTI_SPECIFICATIONS, mtGoodsInfo.getName());
             }
             sku = goodsService.getSkuInfoById(cart.getSkuId());
