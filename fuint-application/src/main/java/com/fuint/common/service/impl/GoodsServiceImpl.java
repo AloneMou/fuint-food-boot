@@ -957,4 +957,7 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
     public List<MtGoodsSpec> queryGoodsSpecList(Integer goodsId) {
         return mtGoodsSpecMapper.selectByGoodsId(goodsId);
     }
+
+
+
 }

@@ -27,6 +27,13 @@ public interface MtGoodsSkuMapper extends BaseMapper<MtGoodsSku> {
         );
     }
 
+    default List<MtGoodsSku> selectSkuLsByGoodsIds(List<Integer> goodsIds) {
+        return selectList(new LambdaQueryWrapperX<MtGoodsSku>()
+                .inIfPresent(MtGoodsSku::getGoodsId, goodsIds)
+                .eq(MtGoodsSku::getStatus, StatusEnum.ENABLED.getKey())
+        );
+    }
+
     default MtGoodsSku selectLowestPriceSku(Integer goodsId) {
         return selectOne(new LambdaQueryWrapperX<MtGoodsSku>()
                 .eqIfPresent(MtGoodsSku::getGoodsId, goodsId)

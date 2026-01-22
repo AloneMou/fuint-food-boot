@@ -9,6 +9,7 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.openapi.v1.goods.product.vo.request.CGoodsListPageReqVO;
 import com.fuint.openapi.v1.goods.product.vo.request.MtGoodsCreateReqVO;
 import com.fuint.openapi.v1.goods.product.vo.request.MtGoodsUpdateReqVO;
+import com.fuint.openapi.v1.goods.product.vo.response.CGoodsListRespVO;
 import com.fuint.repository.bean.GoodsTopBean;
 import com.fuint.repository.model.MtGoods;
 import com.fuint.repository.model.MtGoodsSku;
@@ -76,11 +77,13 @@ public interface GoodsService {
 
     /**
      * 根据ID获取商品SKU信息
+     *
      * @param id SKU ID
      * @return
      * @throws BusinessCheckException
      */
     MtGoodsSku getSkuInfoById(Integer id);
+
     /**
      * 根据ID获取商品详情
      *
@@ -209,5 +212,4 @@ public interface GoodsService {
      * @return 商品规格列表
      */
     List<MtGoodsSpec> queryGoodsSpecList(Integer goodsId);
-
 }

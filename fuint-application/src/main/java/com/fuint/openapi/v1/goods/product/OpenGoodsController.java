@@ -240,34 +240,7 @@ public class OpenGoodsController extends BaseController {
         }
         // 1. 查询已上架商品
         PageResult<MtGoods> pageResult = goodsService.queryGoodsList(pageReqVO);
-        List<MtGoods> goodsList = pageResult.getList();
-        List<CGoodsListRespVO> goodsLs = new ArrayList<>();
-        for (MtGoods goods : goodsList) {
-            CGoodsListRespVO cGoods = BeanUtils.toBean(goods, CGoodsListRespVO.class);
-            cGoods.setImageUrl(goods.getLogo());
-            cGoods.setGoodsId(goods.getId());
-            if (StrUtil.equals(YesOrNoEnum.YES.getKey(), goods.getIsSingleSpec())) {
-                // 单规格商品，直接使用商品价格
-                BigDecimal originalPrice = goods.getPrice();
-                BigDecimal dynamicPrice = calculateDynamicPrice(userId, goods.getId(), originalPrice);
-                cGoods.setOriginalPrice(originalPrice);
-                cGoods.setDynamicPrice(dynamicPrice);
-                cGoods.setStock(goods.getStock());
-            } else {
-                MtGoodsSku sku = goodsService.getLowestPriceSku(goods.getId());
-                if (sku == null) {
-                    log.error("商品ID：{}，没有找到最低价格SKU", goods.getId());
-                    continue;
-                }
-                // 计算动态价格
-                BigDecimal originalPrice = sku.getPrice();
-                BigDecimal dynamicPrice = calculateDynamicPrice(userId, goods.getId(), originalPrice);
-                cGoods.setOriginalPrice(originalPrice);
-                cGoods.setDynamicPrice(dynamicPrice);
-                cGoods.setDefaultSkuId(sku.getId());
-            }
-            goodsLs.add(cGoods);
-        }
+
         PageResult<CGoodsListRespVO> respVO = new PageResult<>();
         respVO.setTotal(pageResult.getTotal());
         respVO.setTotalPages(pageResult.getTotalPages());

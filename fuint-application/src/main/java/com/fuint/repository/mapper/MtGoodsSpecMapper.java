@@ -29,5 +29,8 @@ public interface MtGoodsSpecMapper extends BaseMapperX<MtGoodsSpec> {
         delete(MtGoodsSpec::getGoodsId, goodsId);
     }
 
+    default List<MtGoodsSpec> selectSpecLsByGoodsIds(List<Integer> goodsIds) {
+        return selectList(MtGoodsSpec::getGoodsId, goodsIds);
+    }
 
 }

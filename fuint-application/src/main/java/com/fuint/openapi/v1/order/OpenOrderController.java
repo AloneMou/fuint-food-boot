@@ -17,6 +17,7 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.web.BaseController;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.openapi.service.OpenApiOrderService;
 import com.fuint.openapi.v1.order.vo.*;
 import com.fuint.repository.mapper.MtOrderGoodsMapper;
@@ -88,10 +89,8 @@ public class OpenOrderController extends BaseController {
     private MtOrderMapper mtOrderMapper;
 
     @Resource
-    private com.fuint.openapi.service.EventCallbackService eventCallbackService;
+    private EventCallbackService eventCallbackService;
 
-    @Resource
-    private UserGradeService userGradeService;
 
     @Resource
     private RedissonClient redissonClient;
@@ -247,7 +246,7 @@ public class OpenOrderController extends BaseController {
     @PostMapping(value = "/create")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<Integer> createOrder(@Valid @RequestBody OrderCreateReqVO reqVO) throws BusinessCheckException {
+    public CommonResult<UserOrderRespVO> createOrder(@Valid @RequestBody OrderCreateReqVO reqVO) throws BusinessCheckException {
         reqVO.setPayType(PayTypeEnum.OPEN_API.getKey());
         reqVO.setType(OrderTypeEnum.GOODS);
         MtOrder order = openApiOrderService.saveOrder(reqVO);
@@ -261,7 +260,7 @@ public class OpenOrderController extends BaseController {
             openApiOrderService.setOrderPayed(order.getId(), order.getPayAmount());
         }
         // 返回订单信息
-        return CommonResult.success(order.getId());
+        return CommonResult.success(openApiOrderService.getUserOrderDetail(order.getId()));
     }
 
     @ApiOperation(value = "取消订单", notes = "取消订单，若已支付则自动退款")

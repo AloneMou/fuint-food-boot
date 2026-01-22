@@ -22,14 +22,8 @@ public class GoodsSkuVO {
     @ApiModelProperty(value = "SKU编码", example = "SKU001")
     private String skuNo;
 
-//    @ApiModelProperty(value = "商品ID", example = "1")
-//    private Integer goodsId;
-
     @ApiModelProperty(value = "规格ID集合，用-分隔", example = "1-2-3")
     private String specIds;
-//
-//    @ApiModelProperty(value = "规格名称，用^分隔", example = "冰^500ml^40")
-//    private String specName;
 
     @ApiModelProperty(value = "SKU图片", example = "https://example.com/sku.jpg")
     private String logo;
@@ -46,6 +40,4 @@ public class GoodsSkuVO {
     @ApiModelProperty(value = "库存", example = "100")
     private Integer stock;
 
-//    @ApiModelProperty(value = "状态：A-正常；D-删除", example = "A")
-//    private String status;
 }

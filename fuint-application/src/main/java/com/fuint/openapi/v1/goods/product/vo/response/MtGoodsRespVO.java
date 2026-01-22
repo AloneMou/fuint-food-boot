@@ -116,4 +116,5 @@ public class MtGoodsRespVO {
 
     @ApiModelProperty(value = "商品SKU列表")
     private List<GoodsSkuVO> skuData = new ArrayList<>();
+
 }

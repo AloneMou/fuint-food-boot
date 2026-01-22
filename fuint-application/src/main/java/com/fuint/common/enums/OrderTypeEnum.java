@@ -53,4 +53,14 @@ public enum OrderTypeEnum {
         }
         return null;
     }
+
+    public static OrderTypeEnum getEnum(String key) {
+        final OrderTypeEnum[] values = OrderTypeEnum.values();
+        for (OrderTypeEnum value : values) {
+            if (key.equals(value.getKey())) {
+                return value;
+            }
+        }
+        return OrderTypeEnum.GOODS;
+    }
 }

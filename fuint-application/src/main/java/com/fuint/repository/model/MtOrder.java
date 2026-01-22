@@ -125,6 +125,6 @@ public class MtOrder implements Serializable {
     private Integer commissionUserId;
 
 
-    @ApiModelProperty("取餐状态：0-餐品 ")
+    @ApiModelProperty("取餐状态：0-已下单 1-已出餐 2-已取餐")
     private Integer takeStatus;
 }

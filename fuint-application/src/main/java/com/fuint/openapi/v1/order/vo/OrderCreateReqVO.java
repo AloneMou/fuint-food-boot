@@ -69,4 +69,6 @@ public class OrderCreateReqVO {
     @ApiModelProperty(value = "是否支付：true-是；false-否", example = "true")
     private Boolean isPay;
 
+    @ApiModelProperty(value = "员工ID", example = "1")
+    private Integer staffId;
 }

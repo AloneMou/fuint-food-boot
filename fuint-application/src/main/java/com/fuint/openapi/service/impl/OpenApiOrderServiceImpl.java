@@ -14,6 +14,7 @@ import com.fuint.framework.util.SeqUtil;
 import com.fuint.openapi.service.OpenApiOrderService;
 import com.fuint.openapi.v1.order.vo.OrderCreateReqVO;
 import com.fuint.openapi.v1.order.vo.OrderGoodsItemVO;
+import com.fuint.openapi.v1.order.vo.UserOrderRespVO;
 import com.fuint.repository.mapper.*;
 import com.fuint.repository.model.*;
 import lombok.extern.slf4j.Slf4j;
@@ -213,6 +214,9 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
 
     @Resource
     private OrderService orderService;
+
+    @Resource
+    private MtRegionMapper mtRegionMapper;
 
     @Override
     public Map<String, Object> calculateCartGoods(Integer merchantId, Integer userId, List<MtCart> cartList, Integer couponId, boolean isUsePoint, String platform, String orderMode) throws BusinessCheckException {
@@ -1024,6 +1028,266 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         return true;
     }
 
+
+    @Override
+    public UserOrderRespVO getUserOrderDetail(Integer orderId) {
+        if (orderId == null || orderId <= 0) {
+            return null;
+        }
+        MtOrder mtOrder = mtOrderMapper.selectById(orderId);
+        return getOrderDetail(mtOrder, true, true);
+    }
+
+    /**
+     * 处理订单详情
+     *
+     * @param orderInfo    订单信息
+     * @param needAddress  是否获取订单地址
+     * @param getPayStatus 是否获取支付状态
+     * @return UserOrderDto
+     */
+    private UserOrderRespVO getOrderDetail(MtOrder orderInfo, boolean needAddress, boolean getPayStatus) throws BusinessCheckException {
+        UserOrderRespVO order = new UserOrderRespVO();
+        OrderTypeEnum type = OrderTypeEnum.getEnum(orderInfo.getType());
+        OrderStatusEnum orderStatus = OrderStatusEnum.getEnum(orderInfo.getStatus());
+
+        order.setId(orderInfo.getId());
+        order.setMerchantId(orderInfo.getMerchantId());
+        order.setUserId(orderInfo.getUserId());
+        order.setCouponId(orderInfo.getCouponId());
+        order.setOrderSn(orderInfo.getOrderSn());
+        order.setRemark(orderInfo.getRemark());
+        order.setType(type);
+        order.setPayType(orderInfo.getPayType());
+        order.setOrderMode(orderInfo.getOrderMode());
+        order.setCreateTime(DateUtil.formatDate(orderInfo.getCreateTime(), "yyyy.MM.dd HH:mm"));
+        order.setUpdateTime(DateUtil.formatDate(orderInfo.getUpdateTime(), "yyyy.MM.dd HH:mm"));
+        order.setAmount(orderInfo.getAmount());
+        order.setIsVisitor(orderInfo.getIsVisitor());
+        order.setStaffId(orderInfo.getStaffId());
+        order.setVerifyCode("");
+        order.setDeliveryFee(orderInfo.getDeliveryFee());
+        // 核销码为空，说明已经核销
+        order.setIsVerify(orderInfo.getVerifyCode() == null || StringUtils.isEmpty(orderInfo.getVerifyCode()));
+        if (orderInfo.getPayAmount() != null) {
+            order.setPayAmount(orderInfo.getPayAmount());
+        } else {
+            order.setPayAmount(new BigDecimal("0"));
+        }
+        if (orderInfo.getDiscount() != null) {
+            order.setDiscount(orderInfo.getDiscount());
+        } else {
+            order.setDiscount(new BigDecimal("0"));
+        }
+        if (orderInfo.getPointAmount() != null) {
+            order.setPointAmount(orderInfo.getPointAmount());
+        } else {
+            order.setPointAmount(new BigDecimal("0"));
+        }
+
+        order.setStatus(orderStatus);
+        order.setParam(orderInfo.getParam());
+        order.setPayStatus(orderInfo.getPayStatus());
+
+        if (orderInfo.getUsePoint() != null) {
+            order.setUsePoint(orderInfo.getUsePoint());
+        } else {
+            order.setUsePoint(0);
+        }
+        if (orderInfo.getPayTime() != null) {
+            order.setPayTime(DateUtil.formatDate(orderInfo.getPayTime(), "yyyy.MM.dd HH:mm"));
+        }
+        order.setTypeName(type.getValue());
+        order.setStatusText(orderStatus.getValue());
+
+        // 订单所属店铺
+        MtStore store = storeService.queryStoreById(orderInfo.getStoreId());
+        UserOrderRespVO.OrderStoreRespVO storeInfo = new UserOrderRespVO.OrderStoreRespVO();
+        BeanUtils.copyProperties(store, storeInfo);
+        order.setStoreInfo(storeInfo);
+        // 订单所属桌码
+        if (orderInfo.getTableId() != null && orderInfo.getTableId() > 0) {
+            MtTable tableInfo = tableService.queryTableById(orderInfo.getTableId());
+            if (tableInfo != null) {
+                UserOrderRespVO.OrderTableRespVO tableRespVO = new UserOrderRespVO.OrderTableRespVO();
+                BeanUtils.copyProperties(tableInfo, tableRespVO);
+                order.setTableInfo(tableRespVO);
+            }
+        }
+
+        // 所属员工
+        if (orderInfo.getStaffId() != null && orderInfo.getStaffId() > 0) {
+            MtStaff staffInfo = staffService.queryStaffById(orderInfo.getStaffId());
+            if (staffInfo != null) {
+                UserOrderRespVO.OrderStaffRespVO staffRespVO = new UserOrderRespVO.OrderStaffRespVO();
+                BeanUtils.copyProperties(staffInfo, staffRespVO);
+                order.setStaffInfo(staffRespVO);
+            }
+        }
+
+        // 下单用户信息直接取会员个人信息
+        UserOrderRespVO.OrderUserRespVO userInfo = new UserOrderRespVO.OrderUserRespVO();
+        MtUser user = memberService.queryMemberById(orderInfo.getUserId());
+        if (user != null) {
+            userInfo.setId(user.getId());
+            userInfo.setName(user.getName());
+            userInfo.setMobile(user.getMobile());
+            userInfo.setNo(user.getUserNo());
+            order.setUserInfo(userInfo);
+        }
+        List<OrderGoodsDto> goodsList = new ArrayList<>();
+        String baseImage = settingService.getUploadBasePath();
+        // 储值卡的订单
+        if (orderInfo.getType().equals(OrderTypeEnum.PRESTORE.getKey())) {
+            MtCoupon coupon = couponService.queryCouponById(orderInfo.getCouponId());
+            String[] paramArr = orderInfo.getParam().split(",");
+            for (String s : paramArr) {
+                String[] item = s.split("_");
+                if (Integer.parseInt(item[2]) > 0) {
+                    OrderGoodsDto goodsDto = new OrderGoodsDto();
+                    goodsDto.setId(coupon.getId());
+                    goodsDto.setType(OrderTypeEnum.PRESTORE.getKey());
+                    goodsDto.setName("预存￥" + item[0] + "到账￥" + item[1]);
+                    goodsDto.setNum(Integer.parseInt(item[2]));
+                    goodsDto.setPrice(item[0]);
+                    goodsDto.setDiscount("0");
+                    if (!coupon.getImage().contains(baseImage)) {
+                        goodsDto.setImage(baseImage + coupon.getImage());
+                    }
+                    goodsList.add(goodsDto);
+                }
+            }
+        }
+
+        // 商品订单
+        if (orderInfo.getType().equals(OrderTypeEnum.GOODS.getKey())) {
+            Map<String, Object> params = new HashMap<>();
+            params.put("ORDER_ID", orderInfo.getId());
+            List<MtOrderGoods> orderGoodsList = mtOrderGoodsMapper.selectByMap(params);
+            for (MtOrderGoods orderGoods : orderGoodsList) {
+                MtGoods goodsInfo = mtGoodsMapper.selectById(orderGoods.getGoodsId());
+                if (goodsInfo != null) {
+                    OrderGoodsDto orderGoodsDto = new OrderGoodsDto();
+                    orderGoodsDto.setId(orderGoods.getId());
+                    orderGoodsDto.setName(goodsInfo.getName());
+                    if (!goodsInfo.getLogo().contains(baseImage)) {
+                        orderGoodsDto.setImage(baseImage + goodsInfo.getLogo());
+                    }
+                    orderGoodsDto.setType(OrderTypeEnum.GOODS.getKey());
+                    orderGoodsDto.setNum(orderGoods.getNum());
+                    orderGoodsDto.setSkuId(orderGoods.getSkuId());
+                    orderGoodsDto.setPrice(orderGoods.getPrice().toString());
+                    orderGoodsDto.setDiscount(orderGoods.getDiscount().toString());
+                    orderGoodsDto.setGoodsId(orderGoods.getGoodsId());
+                    if (orderGoods.getSkuId() > 0) {
+                        List<GoodsSpecValueDto> specList = goodsService.getSpecListBySkuId(orderGoods.getSkuId());
+                        orderGoodsDto.setSpecList(specList);
+                    }
+                    goodsList.add(orderGoodsDto);
+                }
+            }
+        }
+
+        // 配送地址
+        if (orderInfo.getOrderMode().equals(OrderModeEnum.EXPRESS.getKey()) && needAddress) {
+            List<MtOrderAddress> orderAddressList = mtOrderAddressMapper.getOrderAddress(orderInfo.getId());
+            MtOrderAddress orderAddress = null;
+            if (!orderAddressList.isEmpty()) {
+                orderAddress = orderAddressList.get(0);
+            }
+            if (orderAddress != null) {
+                AddressDto address = new AddressDto();
+                address.setId(orderAddress.getId());
+                address.setName(orderAddress.getName());
+                address.setMobile(orderAddress.getMobile());
+                address.setDetail(orderAddress.getDetail());
+                address.setProvinceId(orderAddress.getProvinceId());
+                address.setCityId(orderAddress.getCityId());
+                address.setRegionId(orderAddress.getRegionId());
+
+                if (orderAddress.getProvinceId() > 0) {
+                    MtRegion mtProvince = mtRegionMapper.selectById(orderAddress.getProvinceId());
+                    if (mtProvince != null) {
+                        address.setProvinceName(mtProvince.getName());
+                    }
+                }
+                if (orderAddress.getCityId() > 0) {
+                    MtRegion mtCity = mtRegionMapper.selectById(orderAddress.getCityId());
+                    if (mtCity != null) {
+                        address.setCityName(mtCity.getName());
+                    }
+                }
+                if (orderAddress.getRegionId() > 0) {
+                    MtRegion mtRegion = mtRegionMapper.selectById(orderAddress.getRegionId());
+                    if (mtRegion != null) {
+                        address.setRegionName(mtRegion.getName());
+                    }
+                }
+                order.setAddress(address);
+            }
+        }
+
+        // 物流信息
+        if (StringUtils.isNotEmpty(orderInfo.getExpressInfo())) {
+            JSONObject express = JSONObject.parseObject(orderInfo.getExpressInfo());
+            ExpressDto expressInfo = new ExpressDto();
+            expressInfo.setExpressNo(express.get("expressNo").toString());
+            expressInfo.setExpressCompany(express.get("expressCompany").toString());
+            expressInfo.setExpressTime(express.get("expressTime").toString());
+            order.setExpressInfo(expressInfo);
+        }
+
+        // 使用的卡券
+        if (order.getCouponId() != null && order.getCouponId() > 0) {
+            MtUserCoupon mtUserCoupon = userCouponService.getUserCouponDetail(order.getCouponId());
+            if (mtUserCoupon != null) {
+                MtCoupon mtCoupon = couponService.queryCouponById(mtUserCoupon.getCouponId());
+                if (mtCoupon != null) {
+                    UserCouponDto couponInfo = new UserCouponDto();
+                    couponInfo.setId(mtUserCoupon.getId());
+                    couponInfo.setCouponId(mtCoupon.getId());
+                    couponInfo.setName(mtCoupon.getName());
+                    couponInfo.setAmount(mtUserCoupon.getAmount());
+                    couponInfo.setBalance(mtUserCoupon.getBalance());
+                    couponInfo.setStatus(mtUserCoupon.getStatus());
+                    couponInfo.setType(mtCoupon.getType());
+                    order.setCouponInfo(couponInfo);
+                }
+            }
+        }
+
+        // 查询支付状态
+        if (getPayStatus && !orderInfo.getPayStatus().equals(PayStatusEnum.SUCCESS.getKey())) {
+            // 微信支付
+            if (orderInfo.getPayType().equals(PayTypeEnum.MICROPAY.getKey()) || orderInfo.getPayType().equals(PayTypeEnum.JSAPI.getKey())) {
+                try {
+                    Map<String, String> payResult = weixinService.queryPaidOrder(orderInfo.getStoreId(), "", orderInfo.getOrderSn());
+                    if (payResult != null && payResult.get("trade_state").equals("SUCCESS")) {
+                        BigDecimal payAmount = new BigDecimal(payResult.get("total_fee")).divide(new BigDecimal("100"));
+                        setOrderPayed(orderInfo.getId(), payAmount);
+                        order.setPayStatus(PayStatusEnum.SUCCESS.getKey());
+                    }
+                } catch (Exception e) {
+                    // empty
+                }
+            }
+            // 支付宝支付
+            if (orderInfo.getPayType().equals(PayTypeEnum.ALISCAN.getKey())) {
+                try {
+                    Map<String, String> payResult = alipayService.queryPaidOrder(orderInfo.getStoreId(), "", orderInfo.getOrderSn());
+                    if (payResult != null) {
+                        BigDecimal payAmount = new BigDecimal(payResult.get("payAmount"));
+                        setOrderPayed(orderInfo.getId(), payAmount);
+                        order.setPayStatus(PayStatusEnum.SUCCESS.getKey());
+                    }
+                } catch (Exception e) {
+                    // empty
+                }
+            }
+        }
+        order.setGoods(goodsList);
+        return order;
+    }
 
     /**
      * 确定选中的优惠券ID（自动选择最优或使用指定的）

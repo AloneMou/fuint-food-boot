@@ -3,6 +3,7 @@ package com.fuint.openapi.service;
 import com.fuint.common.dto.OrderDto;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.openapi.v1.order.vo.OrderCreateReqVO;
+import com.fuint.openapi.v1.order.vo.UserOrderRespVO;
 import com.fuint.repository.model.MtCart;
 import com.fuint.repository.model.MtOrder;
 
@@ -92,4 +93,11 @@ public interface OpenApiOrderService {
      */
     boolean setOrderPayed(Integer orderId, BigDecimal payAmount);
 
+    /**
+     * 获取用户订单详情
+     *
+     * @param orderId 订单ID
+     * @return 订单详情
+     */
+    UserOrderRespVO getUserOrderDetail(Integer orderId);
 }
