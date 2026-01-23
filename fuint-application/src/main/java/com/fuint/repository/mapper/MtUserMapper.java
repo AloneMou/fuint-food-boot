@@ -7,7 +7,6 @@ import com.fuint.openapi.v1.member.user.vo.MtUserPageReqVO;
 import com.fuint.repository.base.BaseMapperX;
 import com.fuint.repository.bean.MemberTopBean;
 import com.fuint.repository.model.MtUser;
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.fuint.repository.request.MemberStatisticsReqVO;
 import org.apache.ibatis.annotations.Param;
 
@@ -76,4 +75,13 @@ public interface MtUserMapper extends BaseMapperX<MtUser> {
                 .orderByDesc(MtUser::getId)
         );
     }
+
+    default List<MtUser> selectUserLsByMobiles(List<String> mobiles) {
+        return selectList(new LambdaQueryWrapperX<MtUser>()
+                .in(MtUser::getMobile, mobiles)
+        );
+    }
+
+
+
 }

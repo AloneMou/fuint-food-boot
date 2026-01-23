@@ -18,6 +18,7 @@ import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.enums.UserErrorCodeConstants;
+import com.fuint.openapi.service.OpenUserService;
 import com.fuint.openapi.v1.member.user.vo.*;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.*;
@@ -25,8 +26,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,6 +47,7 @@ import static com.fuint.framework.util.object.BeanUtils.toBean;
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
+@Slf4j
 @Validated
 @Api(tags = "OpenApi-员工管理相关接口")
 @RestController
@@ -75,6 +79,9 @@ public class OpenUserController extends BaseController {
     @Resource
     private StaffService staffService;
 
+    @Resource
+    private OpenUserService openUserService;
+
     /**
      * 单个员工数据同步
      *
@@ -87,7 +94,10 @@ public class OpenUserController extends BaseController {
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<MtUserSyncRespVO> syncUser(@Valid @RequestBody MtUserSyncReqVO syncReqVO) {
         try {
-            MtUserSyncRespVO result = syncSingleUser(syncReqVO);
+            List<String> mobileLs = convertList(Collections.singletonList(syncReqVO), MtUserSyncReqVO::getMobile);
+            List<MtUser> existLs = openUserService.getUserLsByMobiles(mobileLs);
+            Map<String, MtUser> existMap = convertMap(existLs, MtUser::getMobile);
+            MtUserSyncRespVO result = syncSingleUser(syncReqVO, existMap);
             return CommonResult.success(result);
         } catch (BusinessCheckException e) {
             return CommonResult.error(100_2_012, e.getMessage());
@@ -114,6 +124,9 @@ public class OpenUserController extends BaseController {
         if (users.size() > 100) {
             return CommonResult.error(UserErrorCodeConstants.USER_BATCH_SYNC_EXCEED_LIMIT, 100);
         }
+        List<String> mobileLs = convertList(users, MtUserSyncReqVO::getMobile);
+        List<MtUser> existLs = openUserService.getUserLsByMobiles(mobileLs);
+        Map<String, MtUser> existMap = convertMap(existLs, MtUser::getMobile);
 
         MtUserBatchSyncRespVO response = new MtUserBatchSyncRespVO();
         List<MtUserSyncRespVO> results = new ArrayList<>();
@@ -122,7 +135,7 @@ public class OpenUserController extends BaseController {
 
         for (MtUserSyncReqVO syncReqVO : users) {
             try {
-                MtUserSyncRespVO result = syncSingleUser(syncReqVO);
+                MtUserSyncRespVO result = syncSingleUser(syncReqVO, existMap);
                 results.add(result);
                 if (result.getSuccess()) {
                     successCount++;
@@ -130,6 +143,7 @@ public class OpenUserController extends BaseController {
                     failureCount++;
                 }
             } catch (Exception e) {
+                log.error("同步失败:{}", e.getMessage(), e);
                 MtUserSyncRespVO result = new MtUserSyncRespVO();
                 result.setMobile(syncReqVO.getMobile());
                 result.setSuccess(false);
@@ -150,7 +164,7 @@ public class OpenUserController extends BaseController {
     /**
      * 同步单个用户的内部方法
      */
-    private MtUserSyncRespVO syncSingleUser(MtUserSyncReqVO syncReqVO) throws BusinessCheckException {
+    private MtUserSyncRespVO syncSingleUser(MtUserSyncReqVO syncReqVO, Map<String, MtUser> existMap) throws BusinessCheckException {
         MtUserSyncRespVO result = new MtUserSyncRespVO();
         result.setMobile(syncReqVO.getMobile());
         // 校验手机号格式
@@ -160,9 +174,8 @@ public class OpenUserController extends BaseController {
             return result;
         }
         // 设置默认商户ID
-        Integer merchantId = syncReqVO.getMerchantId() != null ? syncReqVO.getMerchantId() : 1;
         // 根据手机号查询会员是否存在
-        MtUser existingUser = memberService.queryMemberByMobile(merchantId, syncReqVO.getMobile());
+        MtUser existingUser = existMap.getOrDefault(syncReqVO.getMobile(), null);
         MtUser mtUser;
         String operationType;
         if (existingUser == null) {
@@ -209,21 +222,17 @@ public class OpenUserController extends BaseController {
                 result.setMessage(e.getMessage());
             }
         } else {
-            MtUser updatedUser = memberService.updateMember(mtUser, false);
-            if (updatedUser == null) {
-                result.setSuccess(false);
-                result.setMessage("更新会员失败");
-                return result;
-            }
-            result.setUserId(updatedUser.getId());
+
             try {
-                if (YesOrNoEnum.YES.getKey().equals(updatedUser.getIsStaff())) {
+                openUserService.updateMember(mtUser);
+                result.setUserId(mtUser.getId());
+                if (YesOrNoEnum.YES.getKey().equals(mtUser.getIsStaff())) {
                     MtStaff updateObj = new MtStaff();
-                    updateObj.setUserId(updatedUser.getId());
-                    updateObj.setMobile(updatedUser.getMobile());
-                    updateObj.setRealName(updatedUser.getName());
-                    updateObj.setMerchantId(updatedUser.getMerchantId());
-                    updateObj.setStoreId(updatedUser.getStoreId());
+                    updateObj.setUserId(mtUser.getId());
+                    updateObj.setMobile(mtUser.getMobile());
+                    updateObj.setRealName(mtUser.getName());
+                    updateObj.setMerchantId(mtUser.getMerchantId());
+                    updateObj.setStoreId(mtUser.getStoreId());
                     if (syncReqVO.getStaffLevel() != null) {
                         updateObj.setCategory(syncReqVO.getStaffLevel());
                     }
@@ -231,7 +240,7 @@ public class OpenUserController extends BaseController {
                     // 员工ID
                     result.setStaffId(staff.getId());
                 } else {
-                    staffService.deleteStaff(updatedUser.getMobile(), "openapi");
+                    staffService.deleteStaff(mtUser.getMobile(), "openapi");
                 }
             } catch (ServiceException e) {
                 result.setSuccess(false);
@@ -262,25 +271,25 @@ public class OpenUserController extends BaseController {
             if (mtUser == null) {
                 return CommonResult.error(UserErrorCodeConstants.USER_NOT_FOUND);
             }
-            
+
             // 使用单个查询方法，避免批量查询的开销
             MtStaff staff = staffService.queryStaffByUserId(mtUser.getId());
-            MtUserGrade grade = StringUtils.isNotBlank(mtUser.getGradeId()) ? 
-                userGradeService.getById(Integer.parseInt(mtUser.getGradeId())) : null;
-            MtUserGroup group = mtUser.getGroupId() != null ? 
-                memberGroupService.getById(mtUser.getGroupId()) : null;
-            MtStore store = mtUser.getStoreId() != null ? 
-                storeService.getById(mtUser.getStoreId()) : null;
+            MtUserGrade grade = StringUtils.isNotBlank(mtUser.getGradeId()) ?
+                    userGradeService.getById(Integer.parseInt(mtUser.getGradeId())) : null;
+            MtUserGroup group = mtUser.getGroupId() != null ?
+                    memberGroupService.getById(mtUser.getGroupId()) : null;
+            MtStore store = mtUser.getStoreId() != null ?
+                    storeService.getById(mtUser.getStoreId()) : null;
 
-            Map<Integer, MtStaff> staffMap = staff != null ? 
-                Collections.singletonMap(mtUser.getId(), staff) : Collections.emptyMap();
-            Map<Integer, String> gradeMap = grade != null ? 
-                Collections.singletonMap(grade.getId(), grade.getName()) : Collections.emptyMap();
-            Map<Integer, String> groupMap = group != null ? 
-                Collections.singletonMap(group.getId(), group.getName()) : Collections.emptyMap();
-            Map<Integer, String> storeMap = store != null ? 
-                Collections.singletonMap(store.getId(), store.getName()) : Collections.emptyMap();
-            
+            Map<Integer, MtStaff> staffMap = staff != null ?
+                    Collections.singletonMap(mtUser.getId(), staff) : Collections.emptyMap();
+            Map<Integer, String> gradeMap = grade != null ?
+                    Collections.singletonMap(grade.getId(), grade.getName()) : Collections.emptyMap();
+            Map<Integer, String> groupMap = group != null ?
+                    Collections.singletonMap(group.getId(), group.getName()) : Collections.emptyMap();
+            Map<Integer, String> storeMap = store != null ?
+                    Collections.singletonMap(store.getId(), store.getName()) : Collections.emptyMap();
+
             return CommonResult.success(convertToRespVO(mtUser, groupMap, gradeMap, storeMap, staffMap));
         } catch (BusinessCheckException e) {
             return CommonResult.error(500, "获取员工详情失败: " + e.getMessage());
@@ -303,7 +312,7 @@ public class OpenUserController extends BaseController {
         if (CollUtil.isEmpty(userLs)) {
             return CommonResult.success(PageResult.empty());
         }
-        
+
         // 收集关联数据的ID
         Set<Integer> userIds = convertSet(filterList(userLs, user -> ObjectUtil.isNotNull(user.getId())), MtUser::getId);
         Set<Integer> storeIds = convertSet(filterList(userLs, user -> ObjectUtil.isNotNull(user.getStoreId())), MtUser::getStoreId);
@@ -320,7 +329,7 @@ public class OpenUserController extends BaseController {
         List<MtUserRespVO> respVOList = userLs.stream()
                 .map(user -> convertToRespVO(user, groupMap, gradeMap, storeMap, staffMap))
                 .collect(Collectors.toList());
-        
+
         PageResult<MtUserRespVO> pageRespVO = new PageResult<>();
         pageRespVO.setTotal(result.getTotal());
         pageRespVO.setTotalPages(result.getTotalPages());
@@ -354,7 +363,7 @@ public class OpenUserController extends BaseController {
 
     /**
      * 构建员工信息Map
-     * 
+     *
      * @param userIds 用户ID集合
      * @return 员工信息Map（key: userId, value: MtStaff）
      */
@@ -368,7 +377,7 @@ public class OpenUserController extends BaseController {
 
     /**
      * 构建等级信息Map
-     * 
+     *
      * @param gradeIds 等级ID集合
      * @return 等级信息Map（key: gradeId, value: gradeName）
      */
@@ -382,7 +391,7 @@ public class OpenUserController extends BaseController {
 
     /**
      * 构建分组信息Map
-     * 
+     *
      * @param groupIds 分组ID集合
      * @return 分组信息Map（key: groupId, value: groupName）
      */
@@ -396,7 +405,7 @@ public class OpenUserController extends BaseController {
 
     /**
      * 构建店铺信息Map
-     * 
+     *
      * @param storeIds 店铺ID集合
      * @return 店铺信息Map（key: storeId, value: storeName）
      */

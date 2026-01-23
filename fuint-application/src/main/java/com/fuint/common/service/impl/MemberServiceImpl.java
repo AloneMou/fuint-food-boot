@@ -542,6 +542,7 @@ public class MemberServiceImpl extends ServiceImpl<MtUserMapper, MtUser> impleme
         }
     }
 
+
     @Override
     public MtUser queryMemberByUnionId(Integer merchantId, String unionId) throws BusinessCheckException {
         if (unionId == null || StringUtils.isEmpty(unionId)) {

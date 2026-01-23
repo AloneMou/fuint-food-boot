@@ -1,12 +1,10 @@
 package com.fuint.openapi.v1.member.user.vo;
 
-import cn.hutool.core.lang.RegexPool;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
 import java.math.BigDecimal;
 
 /**
@@ -23,6 +21,7 @@ public class MtUserSyncReqVO {
     @ApiModelProperty(value = "手机号码（作为唯一标识）", required = true, example = "13800138000")
     private String mobile;
 
+    @NotBlank(message = "会员姓名")
     @ApiModelProperty(value = "会员姓名", example = "张三")
     private String name;
 

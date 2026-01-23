@@ -2,7 +2,6 @@ package com.fuint.openapi.v1.goods.product;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.NumberUtil;
-import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
@@ -10,13 +9,14 @@ import com.alibaba.fastjson.JSONArray;
 import com.fuint.common.dto.CouponDto;
 import com.fuint.common.dto.GoodsDto;
 import com.fuint.common.enums.StatusEnum;
-import com.fuint.common.enums.YesOrNoEnum;
-import com.fuint.common.service.*;
+import com.fuint.common.service.GoodsService;
+import com.fuint.common.service.MemberService;
+import com.fuint.common.service.UserCouponService;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.pojo.CommonResult;
-import com.fuint.framework.util.object.BeanUtils;
+import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.util.object.ObjectUtils;
 import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSkuVO;
@@ -29,8 +29,9 @@ import com.fuint.openapi.v1.goods.product.vo.request.MtGoodsUpdateReqVO;
 import com.fuint.openapi.v1.goods.product.vo.response.CGoodsListRespVO;
 import com.fuint.openapi.v1.goods.product.vo.response.MtGoodsPageRespVO;
 import com.fuint.openapi.v1.goods.product.vo.response.MtGoodsRespVO;
-import com.fuint.repository.model.*;
-import com.fuint.framework.pojo.PageResult;
+import com.fuint.repository.model.MtGoods;
+import com.fuint.repository.model.MtGoodsSku;
+import com.fuint.repository.model.MtGoodsSpec;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -47,7 +48,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.fuint.framework.exception.enums.GlobalErrorCodeConstants.BAD_REQUEST;
-import static com.fuint.framework.util.collection.CollectionUtils.convertMap;
 import static com.fuint.framework.util.string.StrUtils.splitToInt;
 import static com.fuint.openapi.enums.GoodsErrorCodeConstants.GOODS_GET_DETAIL_FAILED;
 import static com.fuint.openapi.enums.GoodsErrorCodeConstants.GOODS_NOT_FOUND;
@@ -246,7 +246,7 @@ public class OpenGoodsController extends BaseController {
         respVO.setTotalPages(pageResult.getTotalPages());
         respVO.setCurrentPage(pageResult.getCurrentPage());
         respVO.setPageSize(pageResult.getPageSize());
-        respVO.setList(goodsLs);
+//        respVO.setList(pageResult.getList());
         return CommonResult.success(respVO);
     }
 
