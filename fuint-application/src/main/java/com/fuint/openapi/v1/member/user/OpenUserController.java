@@ -29,13 +29,14 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 import static com.fuint.framework.util.collection.CollectionUtils.*;
@@ -81,6 +82,9 @@ public class OpenUserController extends BaseController {
 
     @Resource
     private OpenUserService openUserService;
+
+    @Resource(name = "userSyncExecutor")
+    private ThreadPoolExecutor userSyncExecutor;
 
     /**
      * 单个员工数据同步
@@ -130,28 +134,48 @@ public class OpenUserController extends BaseController {
 
         MtUserBatchSyncRespVO response = new MtUserBatchSyncRespVO();
         List<MtUserSyncRespVO> results = new ArrayList<>();
-        int successCount = 0;
-        int failureCount = 0;
 
+        // 使用线程池并行处理批量同步
+        List<CompletableFuture<MtUserSyncRespVO>> futures = new ArrayList<>();
         for (MtUserSyncReqVO syncReqVO : users) {
-            try {
-                MtUserSyncRespVO result = syncSingleUser(syncReqVO, existMap);
-                results.add(result);
-                if (result.getSuccess()) {
-                    successCount++;
-                } else {
-                    failureCount++;
+            CompletableFuture<MtUserSyncRespVO> future = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return syncSingleUser(syncReqVO, existMap);
+                } catch (Exception e) {
+                    log.error("同步失败，手机号: {}, 错误: {}", syncReqVO.getMobile(), e.getMessage(), e);
+                    MtUserSyncRespVO result = new MtUserSyncRespVO();
+                    result.setMobile(syncReqVO.getMobile());
+                    result.setSuccess(false);
+                    result.setMessage("同步失败: " + e.getMessage());
+                    return result;
                 }
-            } catch (Exception e) {
-                log.error("同步失败:{}", e.getMessage(), e);
-                MtUserSyncRespVO result = new MtUserSyncRespVO();
-                result.setMobile(syncReqVO.getMobile());
-                result.setSuccess(false);
-                result.setMessage("同步失败: " + e.getMessage());
-                results.add(result);
-                failureCount++;
+            }, userSyncExecutor);
+            futures.add(future);
+        }
+
+        // 等待所有任务完成并收集结果
+        try {
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            for (CompletableFuture<MtUserSyncRespVO> future : futures) {
+                results.add(future.get());
+            }
+        } catch (Exception e) {
+            log.error("批量同步任务执行异常: {}", e.getMessage(), e);
+            // 如果等待过程中出现异常，尝试获取已完成的结果
+            for (CompletableFuture<MtUserSyncRespVO> future : futures) {
+                if (future.isDone()) {
+                    try {
+                        results.add(future.get());
+                    } catch (Exception ex) {
+                        log.error("获取同步结果失败: {}", ex.getMessage());
+                    }
+                }
             }
         }
+
+        // 统计成功和失败数量
+        int successCount = (int) results.stream().filter(MtUserSyncRespVO::getSuccess).count();
+        int failureCount = results.size() - successCount;
 
         response.setResults(results);
         response.setSuccessCount(successCount);
