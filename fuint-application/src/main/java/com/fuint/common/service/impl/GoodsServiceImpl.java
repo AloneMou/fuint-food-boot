@@ -958,6 +958,8 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
         return mtGoodsSpecMapper.selectByGoodsId(goodsId);
     }
 
-
-
+    @Override
+    public List<MtGoods> getGoodsList(CGoodsListPageReqVO pageReqVO) {
+        return mtGoodsMapper.selectGoodsListByClient(pageReqVO);
+    }
 }

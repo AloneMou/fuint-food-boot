@@ -57,4 +57,43 @@ public class ThreadPoolConfig {
 
         return executor;
     }
+
+    /**
+     * 商品价格计算线程池
+     * 用于优化商品列表动态价格计算性能
+     *
+     * @return 线程池执行器
+     */
+    @Bean(name = "goodsPriceExecutor")
+    public ThreadPoolExecutor goodsPriceExecutor() {
+        int corePoolSize = 10;  // 核心线程数
+        int maximumPoolSize = 20;  // 最大线程数
+        long keepAliveTime = 60L;  // 线程空闲时间
+        TimeUnit unit = TimeUnit.SECONDS;  // 时间单位
+        int queueCapacity = 500;  // 队列容量
+
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                corePoolSize,
+                maximumPoolSize,
+                keepAliveTime,
+                unit,
+                new LinkedBlockingQueue<>(queueCapacity),
+                new ThreadFactory() {
+                    private int threadNumber = 1;
+
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread thread = new Thread(r, "goods-price-thread-" + threadNumber++);
+                        thread.setDaemon(false);
+                        return thread;
+                    }
+                },
+                new ThreadPoolExecutor.CallerRunsPolicy()  // 拒绝策略：调用者运行
+        );
+
+        log.info("商品价格计算线程池初始化完成: corePoolSize={}, maximumPoolSize={}, queueCapacity={}",
+                corePoolSize, maximumPoolSize, queueCapacity);
+
+        return executor;
+    }
 }

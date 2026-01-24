@@ -75,4 +75,41 @@ public interface MtGoodsMapper extends BaseMapperX<MtGoods> {
         );
     }
 
+
+    default List<MtGoods> selectGoodsListByClient(CGoodsListPageReqVO pageReqVO) {
+        return selectList(new LambdaQueryWrapperX<MtGoods>()
+                .likeIfPresent(MtGoods::getName, pageReqVO.getName())
+                .eqIfPresent(MtGoods::getMerchantId, pageReqVO.getMerchantId())
+                .eqIfPresent(MtGoods::getStatus, pageReqVO.getStatus())
+                .eqIfPresent(MtGoods::getCateId, pageReqVO.getCateId())
+                .eqIfPresent(MtGoods::getStatus, pageReqVO.getStatus())
+                .eqIfPresent(MtGoods::getType, pageReqVO.getType())
+                .eqIfPresent(MtGoods::getMerchantId, pageReqVO.getMerchantId())
+                .gt(StrUtil.equals(YesOrNoEnum.YES.getKey(), pageReqVO.getHasStock()),
+                        MtGoods::getStock, 0)
+                .lt(StrUtil.equals(YesOrNoEnum.YES.getKey(), pageReqVO.getHasStock()),
+                        MtGoods::getStock, 1)
+                .and(ObjectUtil.isNotNull(pageReqVO.getStoreId()), ew -> ew
+                        .eq(MtGoods::getStoreId, pageReqVO.getStoreId())
+                        .or()
+                        .eq(MtGoods::getStoreId, 0)
+                )
+                .orderByAsc(MtGoods::getSort)
+                .select(
+                        MtGoods::getId,
+                        MtGoods::getName,
+                        MtGoods::getPrice,
+                        MtGoods::getStock,
+                        MtGoods::getLogo,
+                        MtGoods::getStatus,
+                        MtGoods::getType,
+                        MtGoods::getCateId,
+                        MtGoods::getStoreId,
+                        MtGoods::getSalePoint,
+                        MtGoods::getCreateTime,
+                        MtGoods::getUpdateTime
+                )
+        );
+    }
+
 }

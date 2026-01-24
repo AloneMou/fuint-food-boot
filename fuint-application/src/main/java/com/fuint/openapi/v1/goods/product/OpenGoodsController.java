@@ -9,6 +9,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.fuint.common.dto.CouponDto;
 import com.fuint.common.dto.GoodsDto;
 import com.fuint.common.enums.StatusEnum;
+import com.fuint.common.enums.YesOrNoEnum;
 import com.fuint.common.service.GoodsService;
 import com.fuint.common.service.MemberService;
 import com.fuint.common.service.UserCouponService;
@@ -19,6 +20,7 @@ import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.util.object.ObjectUtils;
 import com.fuint.framework.web.BaseController;
+import com.fuint.openapi.service.OpenGoodsService;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSkuVO;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecChildVO;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecItemVO;
@@ -73,6 +75,9 @@ public class OpenGoodsController extends BaseController {
 
     @Resource
     private UserCouponService userCouponService;
+
+    @Resource
+    private OpenGoodsService openGoodsService;
 
     @ApiOperation(value = "创建商品", notes = "创建一个新的商品")
     @PostMapping(value = "/create")
@@ -232,22 +237,14 @@ public class OpenGoodsController extends BaseController {
     @GetMapping(value = "/calculate-page")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<PageResult<CGoodsListRespVO>> getCGoodsList(@Valid CGoodsListPageReqVO pageReqVO) throws BusinessCheckException {
+    public CommonResult<List<CGoodsListRespVO>> getCGoodsList(@Valid CGoodsListPageReqVO pageReqVO) throws BusinessCheckException {
+        pageReqVO.setHasStock(YesOrNoEnum.YES.getKey());
+        pageReqVO.setStatus(StatusEnum.ENABLED.getKey());
         Integer userId = ObjectUtils.defaultIfNull(pageReqVO.getUserId(), 0);
         memberService.checkMemberExist(userId);
-        if (pageReqVO.getPageSize() > 20) {
-            return CommonResult.error(BAD_REQUEST.getCode(), "每页条数不能大于20");
-        }
         // 1. 查询已上架商品
-        PageResult<MtGoods> pageResult = goodsService.queryGoodsList(pageReqVO);
-
-        PageResult<CGoodsListRespVO> respVO = new PageResult<>();
-        respVO.setTotal(pageResult.getTotal());
-        respVO.setTotalPages(pageResult.getTotalPages());
-        respVO.setCurrentPage(pageResult.getCurrentPage());
-        respVO.setPageSize(pageResult.getPageSize());
-//        respVO.setList(pageResult.getList());
-        return CommonResult.success(respVO);
+        List<MtGoods> pageResult = goodsService.getGoodsList(pageReqVO);
+        return CommonResult.success(openGoodsService.getGoodsList(pageResult, userId));
     }
 
 

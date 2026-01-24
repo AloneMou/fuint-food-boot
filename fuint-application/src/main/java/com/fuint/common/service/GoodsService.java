@@ -212,4 +212,12 @@ public interface GoodsService {
      * @return 商品规格列表
      */
     List<MtGoodsSpec> queryGoodsSpecList(Integer goodsId);
+
+    /**
+     * 获取商品列表
+     *
+     * @param pageReqVO 请求参数
+     * @return 商品列表
+     */
+    List<MtGoods> getGoodsList(CGoodsListPageReqVO pageReqVO);
 }

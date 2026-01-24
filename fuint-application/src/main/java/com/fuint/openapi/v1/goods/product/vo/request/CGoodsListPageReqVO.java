@@ -15,6 +15,7 @@ public class CGoodsListPageReqVO extends PageParams {
     @ApiModelProperty(value = "用户ID（用于计算个性化价格）", example = "1")
     private Integer userId;
 
+    @NotNull(message = "店铺ID不能为空")
     @ApiModelProperty(value = "店铺ID", example = "1")
     private Integer storeId;
 
@@ -31,7 +32,7 @@ public class CGoodsListPageReqVO extends PageParams {
     @ApiModelProperty(value = "商品名称(模糊查询)", example = "1")
     private String name;
 
-    @ApiModelProperty(value = "是否有库存", example = "Y")
+    @ApiModelProperty(value = "是否有库存", example = "Y", hidden = true)
     private String hasStock;
 
     @ApiModelProperty(value = "商品状态", example = "1", hidden = true)

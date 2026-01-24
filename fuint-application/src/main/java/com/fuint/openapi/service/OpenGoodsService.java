@@ -19,5 +19,5 @@ public interface OpenGoodsService {
      * @param goodsLs 商品列表
      * @return 商品列表
      */
-    List<CGoodsListRespVO> getGoodsList(List<MtGoods> goodsLs);
+    List<CGoodsListRespVO> getGoodsList(List<MtGoods> goodsLs, Integer userId);
 }
