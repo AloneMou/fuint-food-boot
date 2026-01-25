@@ -3,13 +3,13 @@ spring:
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://180.188.45.242:3306/coffee-food?useUnicode=true&characterEncoding=UTF8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=GMT%2B8
+    url: jdbc:mysql://127.0.0.1:3306/coffee-food?useUnicode=true&characterEncoding=UTF8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=GMT%2B8
     username: root
     password: xV89YihPK
   # Redis配置
   redis:
     database: 4
-    host: 180.188.45.242
+    host: 127.0.0.1
     password: 8zqtwB848EX
     pool:
       max-active: -1
@@ -119,6 +119,3 @@ system:
 website:
   url: https://cyhy.aitecc.com/food/
 
-project:
-  signature:
-    enable: false
