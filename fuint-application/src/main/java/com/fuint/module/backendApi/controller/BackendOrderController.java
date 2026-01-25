@@ -10,6 +10,8 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.util.TimeUtils;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.service.EventCallbackService;
+import com.fuint.repository.model.MtOrder;
 import com.fuint.repository.model.MtSetting;
 import com.fuint.repository.model.MtStore;
 import com.fuint.repository.model.MtUser;
@@ -70,6 +72,11 @@ public class BackendOrderController extends BaseController {
      * 配置服务接口
      */
     private SettingService settingService;
+
+    /**
+     * 事件回调服务
+     */
+    private EventCallbackService eventCallbackService;
 
     /**
      * 订单列表查询
@@ -266,6 +273,12 @@ public class BackendOrderController extends BaseController {
 
         orderService.updateOrder(dto);
 
+        // 发送订单状态变更回调
+        MtOrder updatedOrder = orderService.getOrderInfo(orderId);
+        if (updatedOrder != null) {
+            eventCallbackService.sendOrderStatusChangedCallback(updatedOrder, orderInfo.getStatus(), OrderStatusEnum.DELIVERED.getKey());
+        }
+
         // 发送小程序订阅消息
         if (orderInfo != null && userInfo != null && orderInfo.getAddress() != null) {
             Date nowTime = new Date();
@@ -335,7 +348,20 @@ public class BackendOrderController extends BaseController {
             orderDto.setOrderMode(orderMode);
         }
 
+        String oldStatus = "";
+        UserOrderDto existOrder = orderService.getOrderById(orderId);
+        if (existOrder != null) {
+            oldStatus = existOrder.getStatus();
+        }
+
         orderService.updateOrder(orderDto);
+
+        // 发送订单状态变更回调
+        MtOrder updatedOrder = orderService.getOrderInfo(orderId);
+        if (updatedOrder != null && StringUtils.isNotEmpty(status) && !status.equals(oldStatus)) {
+            eventCallbackService.sendOrderStatusChangedCallback(updatedOrder, oldStatus, status);
+        }
+
         return getSuccessResult(true);
     }
 
@@ -374,7 +400,20 @@ public class BackendOrderController extends BaseController {
             orderDto.setVerifyCode(verifyCode);
         }
 
+        String oldStatus = "";
+        UserOrderDto existOrder = orderService.getOrderById(orderId);
+        if (existOrder != null) {
+            oldStatus = existOrder.getStatus();
+        }
+
         orderService.updateOrder(orderDto);
+
+        // 发送订单状态变更回调
+        MtOrder updatedOrder = orderService.getOrderInfo(orderId);
+        if (updatedOrder != null && !updatedOrder.getStatus().equals(oldStatus)) {
+            eventCallbackService.sendOrderStatusChangedCallback(updatedOrder, oldStatus, updatedOrder.getStatus());
+        }
+
         return getSuccessResult(true);
     }
 

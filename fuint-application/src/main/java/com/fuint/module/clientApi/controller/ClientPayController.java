@@ -10,6 +10,7 @@ import com.fuint.common.util.TokenUtil;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.repository.model.*;
 import com.ijpay.alipay.AliPayApi;
 import com.ijpay.core.kit.HttpKit;
@@ -88,6 +89,11 @@ public class ClientPayController extends BaseController {
      * 商户服务接口
      */
     private MerchantService merchantService;
+
+    /**
+     * 事件回调服务
+     */
+    private EventCallbackService eventCallbackService;
 
     /**
      * 支付前查询
@@ -201,6 +207,12 @@ public class ClientPayController extends BaseController {
                             boolean flag = paymentService.paymentCallback(orderInfo);
                             logger.info("回调结果：" + flag);
                             if (flag) {
+                                // 发送支付成功回调
+                                MtOrder order = orderService.getOrderInfo(orderInfo.getId());
+                                if (order != null) {
+                                    eventCallbackService.sendPaymentStatusChangedCallback(order, "SUCCESS");
+                                    eventCallbackService.sendOrderStatusChangedCallback(order, OrderStatusEnum.CREATED.getKey(), order.getStatus());
+                                }
                                 weixinService.processRespXml(response, true);
                             } else {
                                 weixinService.processRespXml(response, false);
@@ -264,6 +276,12 @@ public class ClientPayController extends BaseController {
                 UserOrderDto orderInfo = orderService.getOrderByOrderSn(orderSn);
                 Boolean flag = paymentService.paymentCallback(orderInfo);
                 if (flag) {
+                    // 发送支付成功回调
+                    MtOrder order = orderService.getOrderInfo(orderInfo.getId());
+                    if (order != null) {
+                        eventCallbackService.sendPaymentStatusChangedCallback(order, "SUCCESS");
+                        eventCallbackService.sendOrderStatusChangedCallback(order, OrderStatusEnum.CREATED.getKey(), order.getStatus());
+                    }
                     return "success";
                 } else {
                     return "failure";

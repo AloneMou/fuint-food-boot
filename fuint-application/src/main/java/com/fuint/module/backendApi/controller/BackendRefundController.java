@@ -14,6 +14,8 @@ import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.service.EventCallbackService;
+import com.fuint.repository.model.MtOrder;
 import com.fuint.repository.model.MtUser;
 import com.fuint.repository.model.TAccount;
 import io.swagger.annotations.Api;
@@ -59,6 +61,11 @@ public class BackendRefundController extends BaseController {
      * 会员接口服务
      * */
     private MemberService memberService;
+
+    /**
+     * 事件回调服务
+     */
+    private EventCallbackService eventCallbackService;
 
     /**
      * 退款列表查询
@@ -250,6 +257,11 @@ public class BackendRefundController extends BaseController {
         }
         Boolean result = refundService.doRefund(orderId, refundAmount, remark, accountInfo);
         if (result) {
+            // 发送退款成功事件回调
+            MtOrder order = orderService.getOrderInfo(orderId);
+            if (order != null) {
+                eventCallbackService.sendPaymentStatusChangedCallback(order, "REFUNDED");
+            }
             return getSuccessResult(true);
         } else {
             return getFailureResult(201, "退款失败");

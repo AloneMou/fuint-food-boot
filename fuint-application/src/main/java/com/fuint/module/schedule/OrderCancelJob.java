@@ -6,6 +6,7 @@ import com.fuint.common.enums.PayStatusEnum;
 import com.fuint.common.enums.TakeStatusEnum;
 import com.fuint.common.service.OrderService;
 import com.fuint.framework.exception.BusinessCheckException;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.repository.model.MtOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -40,6 +41,9 @@ public class OrderCancelJob {
     private OrderService orderService;
 
     @Autowired
+    private EventCallbackService eventCallbackService;
+
+    @Autowired
     private Environment environment;
 
     /**
@@ -69,7 +73,11 @@ public class OrderCancelJob {
                     // 超时关闭订单
                     if (dealNum <= MAX_SEND_NUM && (overTime.getTime() <= nowTime.getTime())) {
                         if (mtOrder.getPayStatus().equals(PayStatusEnum.WAIT.getKey())) {
-                            orderService.cancelOrder(mtOrder.getId(), "超时未支付取消");
+                            String oldStatus = mtOrder.getStatus();
+                            MtOrder canceledOrder = orderService.cancelOrder(mtOrder.getId(), "超时未支付取消");
+                            if (canceledOrder != null) {
+                                eventCallbackService.sendOrderStatusChangedCallback(canceledOrder, oldStatus, canceledOrder.getStatus());
+                            }
                             dealNum++;
                         } else if (mtOrder.getPayStatus().equals(PayStatusEnum.SUCCESS.getKey())) {
                             OrderDto reqDto = new OrderDto();

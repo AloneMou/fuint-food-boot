@@ -431,6 +431,33 @@ public class OpenCouponController extends BaseController {
         return dto;
     }
 
+
+    /**
+     * 转换CreateReqVO到DTO
+     */
+    private ReqCouponDto convertToDto(MtCouponUpdateReqVO createReqVO) {
+        ReqCouponDto dto = new ReqCouponDto();
+        BeanUtils.copyProperties(createReqVO, dto);
+        // 处理商品列表
+        if (CollUtil.isNotEmpty(createReqVO.getGoodsList())) {
+            dto.setGoodsIds(CollUtil.join(createReqVO.getGoodsList(), ","));
+        }
+        if (CollUtil.isNotEmpty(createReqVO.getStoreIds())) {
+            dto.setStoreIds(CollUtil.join(createReqVO.getStoreIds(), ","));
+        }
+        if (CollUtil.isNotEmpty(createReqVO.getGradeIds())) {
+            dto.setGradeIds(CollUtil.join(createReqVO.getGradeIds(), ","));
+        }
+        if (createReqVO.getBeginTime() != null) {
+            dto.setBeginTime(DateUtil.format(createReqVO.getBeginTime(), DatePattern.NORM_DATETIME_PATTERN));
+        }
+        if (createReqVO.getEndTime() != null) {
+            dto.setEndTime(DateUtil.format(createReqVO.getEndTime(), DatePattern.NORM_DATETIME_PATTERN));
+        }
+        dto.setExpireType(createReqVO.getExpireType().getKey());
+        return dto;
+    }
+
     /**
      * 转换MtCoupon到RespVO
      */

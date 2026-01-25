@@ -10,6 +10,7 @@ import com.fuint.common.util.TokenUtil;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.MtCoupon;
 import com.fuint.repository.model.MtStaff;
@@ -54,6 +55,11 @@ public class ClientConfirmController extends BaseController {
      * 会员服务接口
      */
     private MemberService memberService;
+
+    /**
+     * 事件回调服务
+     */
+    private EventCallbackService eventCallbackService;
 
     /**
      * 核销卡券
@@ -125,6 +131,8 @@ public class ClientConfirmController extends BaseController {
 
         try {
             confirmCode = couponService.useCoupon(userCouponId, mtUser.getId(), storeId, 0, new BigDecimal(amount), remark);
+            // 发送优惠券使用回调
+            eventCallbackService.sendCouponEventCallback(userCoupon, "USED", null);
         } catch (BusinessCheckException e) {
             return getFailureResult(1003, e.getMessage());
         }

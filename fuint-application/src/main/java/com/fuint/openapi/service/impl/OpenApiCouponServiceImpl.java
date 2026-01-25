@@ -348,14 +348,9 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
             throw new ServiceException(BAD_REQUEST.getCode(), "优惠券名称不能为空");
         }
 
-        if (dto.getType() == null) {
-            throw new ServiceException(BAD_REQUEST.getCode(), "优惠券类型不能为空");
-        }
-
         if (dto.getExpireType() == null) {
             throw new ServiceException(BAD_REQUEST.getCode(), "有效期类型不能为空");
         }
-
         // 固定有效期验证
         if (CouponExpireTypeEnum.FIX.getKey().equals(dto.getExpireType())) {
             if (StringUtils.isEmpty(dto.getBeginTime()) || StringUtils.isEmpty(dto.getEndTime())) {

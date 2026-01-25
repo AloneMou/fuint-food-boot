@@ -12,6 +12,7 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.repository.model.MtOrder;
 import com.fuint.repository.model.MtStaff;
 import com.fuint.repository.model.MtUser;
@@ -48,6 +49,11 @@ public class MerchantOrderController extends BaseController {
      * 店铺员工服务接口
      * */
     private StaffService staffService;
+
+    /**
+     * 事件回调服务
+     */
+    private EventCallbackService eventCallbackService;
 
     /**
      * 获取订单列表
@@ -131,7 +137,14 @@ public class MerchantOrderController extends BaseController {
             return getFailureResult(201, "没有操作权限");
         }
 
+        String oldStatus = orderDto.getStatus();
         MtOrder orderInfo = orderService.cancelOrder(orderDto.getId(), "店员取消");
+        
+        // 发送订单取消回调
+        if (orderInfo != null) {
+            eventCallbackService.sendOrderStatusChangedCallback(orderInfo, oldStatus, orderInfo.getStatus());
+        }
+        
         return getSuccessResult(orderInfo);
     }
 }

@@ -39,7 +39,7 @@ CREATE TABLE `mt_goods_comment_image` (
   `ID` int NOT NULL AUTO_INCREMENT COMMENT '自增ID',
   `COMMENT_ID` int NOT NULL DEFAULT '0' COMMENT '评价ID',
   `IMAGE_URL` varchar(500) NOT NULL DEFAULT '' COMMENT '图片地址',
-  `SORT` int DE   FAULT '0' COMMENT '排序',
+  `SORT` int DEFAULT '0' COMMENT '排序',
   `CREATE_TIME` datetime DEFAULT NULL COMMENT '创建时间',
   `STATUS` char(1) DEFAULT 'A' COMMENT '状态 A-正常 D-删除',
   PRIMARY KEY (`ID`),

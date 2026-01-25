@@ -13,6 +13,7 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.repository.model.MtOrder;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -46,6 +47,11 @@ public class ClientOrderController extends BaseController {
      * 桌码服务接口
      */
     private TableService tableService;
+
+    /**
+     * 事件回调服务
+     */
+    private EventCallbackService eventCallbackService;
 
     /**
      * 获取我的订单列表
@@ -122,7 +128,13 @@ public class ClientOrderController extends BaseController {
             return getFailureResult(2000, "订单信息有误");
         }
 
+        String oldStatus = order.getStatus();
         MtOrder orderInfo = orderService.cancelOrder(order.getId(), "会员取消");
+
+        // 发送订单取消回调
+        if (orderInfo != null) {
+            eventCallbackService.sendOrderStatusChangedCallback(orderInfo, oldStatus, OrderStatusEnum.CANCEL.getKey());
+        }
 
         return getSuccessResult(orderInfo);
     }
@@ -155,7 +167,15 @@ public class ClientOrderController extends BaseController {
         reqDto.setId(Integer.parseInt(orderId));
         reqDto.setStatus(OrderStatusEnum.RECEIVED.getKey());
         reqDto.setTakeStatus(TakeStatusEnum.TAKE_SUCCESS.getKey());
+        
+        String oldStatus = order.getStatus();
         MtOrder orderInfo = orderService.updateOrder(reqDto);
+
+        // 发送订单确认收货回调
+        if (orderInfo != null) {
+            eventCallbackService.sendOrderStatusChangedCallback(orderInfo, oldStatus, OrderStatusEnum.RECEIVED.getKey());
+        }
+
         return getSuccessResult(orderInfo);
     }
 
