@@ -68,6 +68,8 @@ public interface MtOrderMapper extends BaseMapperX<MtOrder> {
                 .eqIfPresent(MtOrder::getOrderMode, pageReqVO.getOrderMode() != null ? pageReqVO.getOrderMode().getKey() : null)
                 .eqIfPresent(MtOrder::getType, pageReqVO.getOrderType() != null ? pageReqVO.getOrderType().getKey() : null)
                 .eqIfPresent(MtOrder::getPayType, pageReqVO.getPayType() != null ? pageReqVO.getPayType().getKey() : null)
+                .eqIfPresent(MtOrder::getOrderMode, pageReqVO.getOrderMode() != null ? pageReqVO.getOrderMode().getKey() : null)
+                .eqIfPresent(MtOrder::getType, pageReqVO.getOrderType() != null ? pageReqVO.getOrderType().getKey() : null)
                 .geIfPresent(MtOrder::getCreateTime, pageReqVO.getStartTime())
                 .leIfPresent(MtOrder::getCreateTime, pageReqVO.getEndTime())
                 .apply(StringUtils.isNotEmpty(pageReqVO.getGoodsName()),
