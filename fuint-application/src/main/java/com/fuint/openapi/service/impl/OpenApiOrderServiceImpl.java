@@ -451,6 +451,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         mtOrder.setUpdateTime(new Date());
         mtOrder.setDeliveryFee(BigDecimal.ZERO);
         mtOrder.setSettleStatus(SettleStatusEnum.WAIT.getKey());
+        mtOrder.setTakeStatus(TakeStatusEnum.WAIT_CONFIRM.getKey());
         if (mtOrder.getId() == null || mtOrder.getId() <= 0) {
             mtOrder.setCreateTime(new Date());
         }
