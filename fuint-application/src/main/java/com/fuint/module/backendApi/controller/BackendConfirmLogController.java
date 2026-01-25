@@ -15,6 +15,8 @@ import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.service.EventCallbackService;
+import com.fuint.repository.model.MtUserCoupon;
 import com.fuint.repository.model.MtUser;
 import com.fuint.repository.model.TAccount;
 import io.swagger.annotations.Api;
@@ -61,6 +63,8 @@ public class BackendConfirmLogController extends BaseController {
      * 后台账户服务接口
      */
     private AccountService tAccountService;
+
+    private EventCallbackService eventCallbackService;
 
     /**
      * 获取会员卡券核销记录列表
@@ -158,7 +162,23 @@ public class BackendConfirmLogController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
+        // 获取卡券信息，用于回调
+        MtUserCoupon userCoupon = null;
+        try {
+            if (StringUtils.isNotEmpty(userCouponId) && !"0".equals(userCouponId)) {
+                userCoupon = couponService.queryUserCouponById(Integer.parseInt(userCouponId));
+            }
+        } catch (Exception e) {
+            // 忽略异常
+        }
+
         couponService.rollbackUserCoupon(id, Integer.parseInt(userCouponId), accountInfo.getAccountName());
+        
+        // 发送优惠券撤销回调
+        if (userCoupon != null) {
+            eventCallbackService.sendCouponEventCallback(userCoupon, "REVOKED", null);
+        }
+        
         return getSuccessResult(true);
     }
 }
