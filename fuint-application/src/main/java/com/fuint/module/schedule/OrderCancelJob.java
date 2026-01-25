@@ -86,6 +86,11 @@ public class OrderCancelJob {
                             reqDto.setTakeStatus(TakeStatusEnum.WAIT_CONFIRM.getKey());
                             orderService.updateOrder(reqDto);
                             orderService.setOrderPayed(mtOrder.getId(), null);
+                            // 发送支付状态变更回调
+                            MtOrder updatedOrder = orderService.getOrderInfo(mtOrder.getId());
+                            if (updatedOrder != null) {
+                                eventCallbackService.sendPaymentStatusChangedCallback(updatedOrder, PayStatusEnum.SUCCESS.getKey());
+                            }
                         }
                     }
                 }

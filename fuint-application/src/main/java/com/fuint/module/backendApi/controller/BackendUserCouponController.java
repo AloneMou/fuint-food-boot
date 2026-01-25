@@ -172,6 +172,7 @@ public class BackendUserCouponController extends BaseController {
     @RequestMapping(value = "/doConfirm", method = RequestMethod.GET)
     @CrossOrigin
     @PreAuthorize("@pms.hasPermission('coupon:userCoupon:index')")
+    @Transactional(rollbackFor = Exception.class)
     public ResponseObject doConfirm(HttpServletRequest request) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
         String userCouponId = request.getParameter("userCouponId");
@@ -212,6 +213,7 @@ public class BackendUserCouponController extends BaseController {
     @RequestMapping(value = "/delete/{id}", method = RequestMethod.GET)
     @CrossOrigin
     @PreAuthorize("@pms.hasPermission('coupon:userCoupon:delete')")
+    @Transactional(rollbackFor = Exception.class)
     public ResponseObject delete(HttpServletRequest request, @PathVariable("id") Integer id) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
 
@@ -220,16 +222,20 @@ public class BackendUserCouponController extends BaseController {
             return getFailureResult(1001, "请先登录");
         }
 
+        if (id == null || id <= 0) {
+             throw new BusinessCheckException("参数错误");
+        }
+
+        MtUserCoupon userCoupon = mtUserCouponMapper.selectById(id);
+        if (userCoupon == null) {
+             throw new BusinessCheckException("卡券不存在");
+        }
+
         // 删除会员的卡券
         couponService.deleteUserCoupon(id, accountInfo.getAccountName());
 
-        // 发券记录，部分作废
-        MtUserCoupon userCoupon = mtUserCouponMapper.selectById(id);
-        
         // 发送优惠券撤销回调
-        if (userCoupon != null) {
-            eventCallbackService.sendCouponEventCallback(userCoupon, "REVOKED", null);
-        }
+        eventCallbackService.sendCouponEventCallback(userCoupon, "REVOKED", null);
 
         PaginationRequest paginationRequest = new PaginationRequest();
         paginationRequest.setCurrentPage(Constants.PAGE_NUMBER);
