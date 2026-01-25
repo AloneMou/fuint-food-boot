@@ -20,7 +20,6 @@ public enum OrderStatusEnum {
     REFUND("H", "已退款");
 
     private String key;
-
     private String value;
 
     OrderStatusEnum(String key, String value) {

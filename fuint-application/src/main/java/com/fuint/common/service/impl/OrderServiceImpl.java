@@ -1301,6 +1301,9 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         if (null != orderDto.getOperator()) {
             mtOrder.setOperator(orderDto.getOperator());
         }
+        if (StringUtils.isNotBlank(orderDto.getTakeStatus())) {
+            mtOrder.setTakeStatus(orderDto.getTakeStatus());
+        }
 
         if (null != orderDto.getStatus()) {
             if (orderDto.getStatus().equals(OrderStatusEnum.CANCEL.getKey()) || orderDto.getStatus().equals(OrderStatusEnum.CREATED.getKey())) {

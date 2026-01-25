@@ -401,52 +401,52 @@ public class OpenOrderController extends BaseController {
         return CommonResult.success(result);
     }
 
-
-    @ApiOperation(value = "订单维度评价", notes = "支持订单维度NPS打分评价（0-10分）")
-    @PostMapping(value = "/evaluate")
-    @ApiSignature
-    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<Boolean> evaluateOrder(@Valid @RequestBody OrderEvaluateReqVO reqVO) {
-        MtUserAction action = new MtUserAction();
-        action.setUserId(0); // 暂时未知，或者从订单获取
-
-        MtOrder order = orderService.getById(reqVO.getOrderId());
-        if (order != null) {
-            action.setUserId(order.getUserId());
-            action.setMerchantId(order.getMerchantId());
-            action.setStoreId(order.getStoreId());
-        }
-
-        action.setAction("NPS_EVALUATION");
-        action.setDescription(reqVO.getComment());
-        Map<String, Object> params = new HashMap<>();
-        params.put("orderId", reqVO.getOrderId());
-        params.put("score", reqVO.getScore());
-        action.setParam(JSON.toJSONString(params));
-        action.setCreateTime(new Date());
-        action.setUpdateTime(new Date());
-        action.setStatus(StatusEnum.ENABLED.getKey());
-
-        mtUserActionMapper.insert(action);
-
-        return CommonResult.success(true);
-    }
-
-    /**
-     * 订单评价拉取
-     *
-     * @param reqVO 查询参数
-     * @return 评价列表
-     */
-    @ApiOperation(value = "订单评价拉取", notes = "支持分页拉取，时间范围筛选，商品SKU范围筛选，使用MyBatis Plus优化")
-    @GetMapping(value = "/evaluations")
-    @ApiSignature
-    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<PageResult<MtUserAction>> getEvaluations(@Valid EvaluationPageReqVO reqVO) {
-        // 使用 MyBatis Plus 分页查询
-        PageResult<MtUserAction> pageResult = mtUserActionMapper.selectUserActionPage(reqVO);
-        return CommonResult.success(pageResult);
-    }
+//
+//    @ApiOperation(value = "订单维度评价", notes = "支持订单维度NPS打分评价（0-10分）")
+//    @PostMapping(value = "/evaluate")
+//    @ApiSignature
+//    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+//    public CommonResult<Boolean> evaluateOrder(@Valid @RequestBody OrderEvaluateReqVO reqVO) {
+//        MtUserAction action = new MtUserAction();
+//        action.setUserId(0); // 暂时未知，或者从订单获取
+//
+//        MtOrder order = orderService.getById(reqVO.getOrderId());
+//        if (order != null) {
+//            action.setUserId(order.getUserId());
+//            action.setMerchantId(order.getMerchantId());
+//            action.setStoreId(order.getStoreId());
+//        }
+//
+//        action.setAction("NPS_EVALUATION");
+//        action.setDescription(reqVO.getComment());
+//        Map<String, Object> params = new HashMap<>();
+//        params.put("orderId", reqVO.getOrderId());
+//        params.put("score", reqVO.getScore());
+//        action.setParam(JSON.toJSONString(params));
+//        action.setCreateTime(new Date());
+//        action.setUpdateTime(new Date());
+//        action.setStatus(StatusEnum.ENABLED.getKey());
+//
+//        mtUserActionMapper.insert(action);
+//
+//        return CommonResult.success(true);
+//    }
+//
+//    /**
+//     * 订单评价拉取
+//     *
+//     * @param reqVO 查询参数
+//     * @return 评价列表
+//     */
+//    @ApiOperation(value = "订单评价拉取", notes = "支持分页拉取，时间范围筛选，商品SKU范围筛选，使用MyBatis Plus优化")
+//    @GetMapping(value = "/evaluations")
+//    @ApiSignature
+//    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+//    public CommonResult<PageResult<MtUserAction>> getEvaluations(@Valid EvaluationPageReqVO reqVO) {
+//        // 使用 MyBatis Plus 分页查询
+//        PageResult<MtUserAction> pageResult = mtUserActionMapper.selectUserActionPage(reqVO);
+//        return CommonResult.success(pageResult);
+//    }
 
     /**
      * 标记订单可取餐
@@ -473,8 +473,8 @@ public class OpenOrderController extends BaseController {
             // 标记已取餐
             OrderDto orderDto = new OrderDto();
             orderDto.setId(reqVO.getOrderId());
-            orderDto.setStatus(OrderStatusEnum.DELIVERED.getKey());
-            orderDto.setVerifyCode(order.getVerifyCode());
+            orderDto.setStatus(OrderStatusEnum.RECEIVED.getKey());
+            orderDto.setTakeStatus(reqVO.getTakeStatus().getKey());
             orderService.updateOrder(orderDto);
         }
         order.setTakeStatus(reqVO.getTakeStatus().getKey());

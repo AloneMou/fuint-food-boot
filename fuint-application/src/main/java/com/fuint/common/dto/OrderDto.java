@@ -10,7 +10,7 @@ import java.util.Date;
 
 /**
  * 订单实体类
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -110,11 +110,14 @@ public class OrderDto implements Serializable {
 
     @ApiModelProperty("订单状态")
     private String status;
-    
+
+    @ApiModelProperty("取餐状态")
+    private String takeStatus;
+
     @ApiModelProperty("支付状态")
     private String payStatus;
 
-    @ApiModelProperty(value="结算状态")
+    @ApiModelProperty(value = "结算状态")
     private String settleStatus;
 
     @ApiModelProperty("最后操作人")

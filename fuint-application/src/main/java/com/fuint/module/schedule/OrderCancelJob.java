@@ -3,6 +3,7 @@ package com.fuint.module.schedule;
 import com.fuint.common.dto.OrderDto;
 import com.fuint.common.enums.OrderStatusEnum;
 import com.fuint.common.enums.PayStatusEnum;
+import com.fuint.common.enums.TakeStatusEnum;
 import com.fuint.common.service.OrderService;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.repository.model.MtOrder;
@@ -22,7 +23,7 @@ import java.util.Map;
 
 /**
  * 订单超时处理定时任务
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -48,14 +49,14 @@ public class OrderCancelJob {
 
     /**
      * 订单超时分钟
-     * */
+     */
     private int OVER_TIME = 1440;
 
     @Scheduled(cron = "${orderCancel.job.time}")
     @Transactional(rollbackFor = Exception.class)
     public void dealOrder() throws BusinessCheckException {
         String theSwitch = environment.getProperty("orderCancel.job.switch");
-         if (theSwitch != null && theSwitch.equals("1")) {
+        if (theSwitch != null && theSwitch.equals("1")) {
             logger.info("OrderCancelJobStart!!!");
             Map<String, Object> param = new HashMap<>();
             param.put("status", OrderStatusEnum.CREATED.getKey());
@@ -63,21 +64,22 @@ public class OrderCancelJob {
             if (dataList.size() > 0) {
                 int dealNum = 0;
                 for (MtOrder mtOrder : dataList) {
-                     Date overTime = new Date(mtOrder.getCreateTime().getTime() + (60000 * OVER_TIME));
-                     Date nowTime = new Date();
-                     // 超时关闭订单
-                     if (dealNum <= MAX_SEND_NUM && (overTime.getTime() <= nowTime.getTime())) {
-                         if (mtOrder.getPayStatus().equals(PayStatusEnum.WAIT.getKey())) {
-                             orderService.cancelOrder(mtOrder.getId(), "超时未支付取消");
-                             dealNum++;
-                         } else if (mtOrder.getPayStatus().equals(PayStatusEnum.SUCCESS.getKey())) {
-                             OrderDto reqDto = new OrderDto();
-                             reqDto.setId(mtOrder.getId());
-                             reqDto.setStatus(OrderStatusEnum.PAID.getKey());
-                             orderService.updateOrder(reqDto);
-                             orderService.setOrderPayed(mtOrder.getId(), null);
-                         }
-                     }
+                    Date overTime = new Date(mtOrder.getCreateTime().getTime() + (60000 * OVER_TIME));
+                    Date nowTime = new Date();
+                    // 超时关闭订单
+                    if (dealNum <= MAX_SEND_NUM && (overTime.getTime() <= nowTime.getTime())) {
+                        if (mtOrder.getPayStatus().equals(PayStatusEnum.WAIT.getKey())) {
+                            orderService.cancelOrder(mtOrder.getId(), "超时未支付取消");
+                            dealNum++;
+                        } else if (mtOrder.getPayStatus().equals(PayStatusEnum.SUCCESS.getKey())) {
+                            OrderDto reqDto = new OrderDto();
+                            reqDto.setId(mtOrder.getId());
+                            reqDto.setStatus(OrderStatusEnum.PAID.getKey());
+                            reqDto.setTakeStatus(TakeStatusEnum.WAIT_CONFIRM.getKey());
+                            orderService.updateOrder(reqDto);
+                            orderService.setOrderPayed(mtOrder.getId(), null);
+                        }
+                    }
                 }
             }
             logger.info("OrderCancelJobEnd!!!");

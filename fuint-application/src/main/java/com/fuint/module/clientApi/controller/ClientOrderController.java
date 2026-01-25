@@ -4,6 +4,7 @@ import com.fuint.common.dto.OrderDto;
 import com.fuint.common.dto.UserInfo;
 import com.fuint.common.dto.UserOrderDto;
 import com.fuint.common.enums.OrderStatusEnum;
+import com.fuint.common.enums.TakeStatusEnum;
 import com.fuint.common.param.OrderListParam;
 import com.fuint.common.service.OrderService;
 import com.fuint.common.service.TableService;
@@ -18,6 +19,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
+
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
@@ -25,11 +27,11 @@ import java.util.Map;
 
 /**
  * 订单类controller
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
-@Api(tags="会员端-订单相关接口")
+@Api(tags = "会员端-订单相关接口")
 @RestController
 @AllArgsConstructor
 @RequestMapping(value = "/clientApi/order")
@@ -37,7 +39,7 @@ public class ClientOrderController extends BaseController {
 
     /**
      * 订单服务接口
-     * */
+     */
     private OrderService orderService;
 
     /**
@@ -152,8 +154,8 @@ public class ClientOrderController extends BaseController {
         OrderDto reqDto = new OrderDto();
         reqDto.setId(Integer.parseInt(orderId));
         reqDto.setStatus(OrderStatusEnum.RECEIVED.getKey());
+        reqDto.setTakeStatus(TakeStatusEnum.TAKE_SUCCESS.getKey());
         MtOrder orderInfo = orderService.updateOrder(reqDto);
-
         return getSuccessResult(orderInfo);
     }
 
