@@ -20,6 +20,8 @@ public enum TakeStatusEnum {
     MAKING("MAKING", "制作中"),
     //制作完成
     MAKE_SUCCESS("MAKE_SUCCESS", "制作完成"),
+    //已取餐
+    TAKE_SUCCESS("TAKE_SUCCESS", "已取餐"),
     ;
 
     private final String key;

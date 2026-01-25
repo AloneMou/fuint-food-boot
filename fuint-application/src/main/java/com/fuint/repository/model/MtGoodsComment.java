@@ -48,7 +48,7 @@ public class MtGoodsComment implements Serializable {
     @ApiModelProperty("用户ID")
     private Integer userId;
 
-    @ApiModelProperty("评价类型: 1-商品评价 2-订单NPS评价")
+    @ApiModelProperty("评价类型: 1-商品评价 2-订单NPS评价 3-价格评价")
     private Integer commentType;
 
     @ApiModelProperty("评分(1-5星或0-10分)")

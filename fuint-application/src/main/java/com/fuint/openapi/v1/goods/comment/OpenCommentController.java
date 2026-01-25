@@ -76,14 +76,95 @@ public class OpenCommentController extends BaseController {
     }
 
     /**
-     * 提交评价
+     * 提交商品评价
      *
      * @param createReqVO 创建请求
      * @return 评价ID
      */
-    @ApiOperation(value = "提交评价", notes = "用户提交评价，支持商品评价(1-5分)和订单NPS评价(0-10分)")
+    @ApiOperation(value = "提交商品评价", notes = "用户提交针对具体商品的评价(1-5星)，支持文字及图片")
+    @PostMapping(value = "/create-goods")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    public CommonResult<Integer> createGoodsComment(@Valid @RequestBody GoodsCommentCreateReqVO createReqVO) {
+        try {
+            Integer commentId = goodsCommentService.createGoodsComment(createReqVO);
+            return CommonResult.success(commentId);
+        } catch (BusinessCheckException e) {
+            log.warn("创建商品评价失败：{}", e.getMessage());
+            return CommonResult.error(500, e.getMessage());
+        }
+    }
+
+    /**
+     * 提交订单NPS评价
+     *
+     * @param createReqVO 创建请求
+     * @return 评价ID
+     */
+    @ApiOperation(value = "提交订单NPS评价", notes = "用户提交针对整个订单的NPS打分(0-10分)")
+    @PostMapping(value = "/create-order")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    public CommonResult<Integer> createOrderComment(@Valid @RequestBody OrderCommentCreateReqVO createReqVO) {
+        try {
+            Integer commentId = goodsCommentService.createOrderComment(createReqVO);
+            return CommonResult.success(commentId);
+        } catch (BusinessCheckException e) {
+            log.warn("创建订单NPS评价失败：{}", e.getMessage());
+            return CommonResult.error(500, e.getMessage());
+        }
+    }
+
+    /**
+     * 提交价格合理性评价
+     *
+     * @param createReqVO 创建请求
+     * @return 评价ID
+     */
+    @ApiOperation(value = "提交价格评价", notes = "用户提交针对商品价格合理性的独立评价(1-5星)")
+    @PostMapping(value = "/create-price")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    public CommonResult<Integer> createPriceComment(@Valid @RequestBody PriceCommentCreateReqVO createReqVO) {
+        try {
+            Integer commentId = goodsCommentService.createPriceComment(createReqVO);
+            return CommonResult.success(commentId);
+        } catch (BusinessCheckException e) {
+            log.warn("创建价格评价失败：{}", e.getMessage());
+            return CommonResult.error(500, e.getMessage());
+        }
+    }
+
+    /**
+     * 批量提交评价
+     *
+     * @param batchCreateReqVO 批量创建请求
+     * @return 操作结果
+     */
+    @ApiOperation(value = "批量提交评价", notes = "一次性提交订单下多个商品的评价，可选包含订单NPS及价格评价")
+    @PostMapping(value = "/create-batch")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    public CommonResult<Boolean> createBatchComment(@Valid @RequestBody CommentBatchCreateReqVO batchCreateReqVO) {
+        try {
+            Boolean result = goodsCommentService.createBatchComment(batchCreateReqVO);
+            return CommonResult.success(result);
+        } catch (BusinessCheckException e) {
+            log.warn("批量提交评价失败：{}", e.getMessage());
+            return CommonResult.error(500, e.getMessage());
+        }
+    }
+
+    /**
+     * 提交评价（旧接口，已弃用，请使用具体类型的创建接口）
+     *
+     * @param createReqVO 创建请求
+     * @return 评价ID
+     */
+    @ApiOperation(value = "提交评价(已弃用)", notes = "旧版本的通用评价接口，建议改用 create-goods, create-order 或 create-price")
     @PostMapping(value = "/create")
     @ApiSignature
+    @Deprecated
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Integer> createComment(@Valid @RequestBody CommentCreateReqVO createReqVO) {
         try {
@@ -206,6 +287,22 @@ public class OpenCommentController extends BaseController {
         return CommonResult.success(statisticsVO);
     }
 
+    /**
+     * 获取商户价格评价统计信息
+     *
+     * @param merchantId 商户ID
+     * @return 统计信息
+     */
+    @ApiOperation(value = "获取商户价格统计", notes = "获取商户的价格合理性评价统计信息")
+    @GetMapping(value = "/statistics/price/merchant/{merchantId}")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    public CommonResult<CommentStatisticsVO> getMerchantPriceStatistics(
+            @ApiParam(value = "商户ID", required = true, example = "1")
+            @PathVariable("merchantId") Integer merchantId) {
+        CommentStatisticsVO statisticsVO = goodsCommentService.getMerchantPriceStatistics(merchantId);
+        return CommonResult.success(statisticsVO);
+    }
     /**
      * 查询用户的评价列表
      *

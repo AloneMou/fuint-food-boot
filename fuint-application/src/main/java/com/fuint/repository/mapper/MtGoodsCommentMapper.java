@@ -33,7 +33,7 @@ public interface MtGoodsCommentMapper extends BaseMapperX<MtGoodsComment> {
                 .eqIfPresent(MtGoodsComment::getOrderId, pageReqVO.getOrderId())
                 .eqIfPresent(MtGoodsComment::getUserId, pageReqVO.getUserId())
                 .eqIfPresent(MtGoodsComment::getCommentType, pageReqVO.getCommentType())
-                .eqIfPresent(MtGoodsComment::getScore, pageReqVO.getScore())
+//                .eqIfPresent(MtGoodsComment::getScore, pageReqVO.getScore())
                 .eqIfPresent(MtGoodsComment::getIsShow, pageReqVO.getIsShow())
                 .eqIfPresent(MtGoodsComment::getStatus, pageReqVO.getStatus())
                 .geIfPresent(MtGoodsComment::getCreateTime, pageReqVO.getStartTime())
@@ -71,6 +71,22 @@ public interface MtGoodsCommentMapper extends BaseMapperX<MtGoodsComment> {
         return selectOne(new LambdaQueryWrapperX<MtGoodsComment>()
                 .eq(MtGoodsComment::getOrderId, orderId)
                 .eq(MtGoodsComment::getCommentType, 2)
+                .eq(MtGoodsComment::getUserId, userId)
+                .ne(MtGoodsComment::getStatus, "D")
+        );
+    }
+
+    /**
+     * 查询订单是否已进行价格评价
+     *
+     * @param orderId 订单ID
+     * @param userId  用户ID
+     * @return 评价记录
+     */
+    default MtGoodsComment selectByOrderAndPrice(Integer orderId, Integer userId) {
+        return selectOne(new LambdaQueryWrapperX<MtGoodsComment>()
+                .eq(MtGoodsComment::getOrderId, orderId)
+                .eq(MtGoodsComment::getCommentType, 3)
                 .eq(MtGoodsComment::getUserId, userId)
                 .ne(MtGoodsComment::getStatus, "D")
         );

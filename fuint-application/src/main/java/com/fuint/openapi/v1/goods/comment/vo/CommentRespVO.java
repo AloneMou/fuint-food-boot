@@ -55,7 +55,7 @@ public class CommentRespVO {
     @ApiModelProperty(value = "用户头像")
     private String userAvatar;
 
-    @ApiModelProperty(value = "评价类型: 1-商品评价 2-订单NPS评价")
+    @ApiModelProperty(value = "评价类型: 1-商品评价 2-订单NPS评价", allowableValues = "1,2")
     private Integer commentType;
 
     @ApiModelProperty(value = "评分(1-5星或0-10分)")
@@ -74,14 +74,14 @@ public class CommentRespVO {
     @ApiModelProperty(value = "商家回复时间")
     private Date replyTime;
 
-    @ApiModelProperty(value = "是否匿名评价 Y-是 N-否")
+    @ApiModelProperty(value = "是否匿名评价 Y-是 N-否", allowableValues = "Y,N")
     private String isAnonymous;
 
-    @ApiModelProperty(value = "是否显示 Y-显示 N-隐藏")
+    @ApiModelProperty(value = "是否显示 Y-显示 N-隐藏",allowableValues = "Y,N")
     private String isShow;
 
-    @ApiModelProperty(value = "点赞数")
-    private Integer likeCount;
+//    @ApiModelProperty(value = "点赞数")
+//    private Integer likeCount;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @ApiModelProperty(value = "创建时间")

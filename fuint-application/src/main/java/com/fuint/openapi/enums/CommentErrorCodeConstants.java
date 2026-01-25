@@ -45,4 +45,10 @@ public interface CommentErrorCodeConstants {
     // 订单不属于该用户
     ErrorCode COMMENT_ORDER_NOT_BELONG_TO_USER = new ErrorCode(100_8_012, "订单不属于该用户");
 
+    // 价格评价已存在
+    ErrorCode COMMENT_PRICE_ALREADY_EXISTS = new ErrorCode(100_8_013, "该订单已进行过价格评价");
+
+    // NPS评价已存在
+    ErrorCode COMMENT_NPS_ALREADY_EXISTS = new ErrorCode(100_8_014, "该订单已进行过NPS评价");
+
 }

@@ -456,7 +456,7 @@ public class OpenOrderController extends BaseController {
      * @throws BusinessCheckException 业务异常
      */
     @ApiOperation(value = "标记订单可取餐", notes = "标记订单商品可取餐，并发送可取餐状态通知回调")
-    @PostMapping(value = "/ready")
+    @PostMapping(value = "/update-take")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> markOrderReady(@Valid @RequestBody OrderReadyReqVO reqVO) throws BusinessCheckException {
@@ -465,46 +465,52 @@ public class OpenOrderController extends BaseController {
         if (reqVO.getMerchantId() != null && !order.getMerchantId().equals(reqVO.getMerchantId())) {
             return CommonResult.error(ORDER_NOT_BELONG_TO_MERCHANT, reqVO.getMerchantId());
         }
-
-        // 更新订单状态为已发货（可取餐）
-        OrderDto orderDto = new OrderDto();
-        orderDto.setId(reqVO.getOrderId());
-        orderDto.setStatus(OrderStatusEnum.DELIVERED.getKey());
-        orderService.updateOrder(orderDto);
-
+        TakeStatusEnum takeStatus = TakeStatusEnum.getEnum(order.getTakeStatus());
+        if (reqVO.getTakeStatus().equals(takeStatus)) {
+            return CommonResult.success(true);
+        }
+        if (reqVO.getTakeStatus().equals(TakeStatusEnum.TAKE_SUCCESS)) {
+            // 标记已取餐
+            OrderDto orderDto = new OrderDto();
+            orderDto.setId(reqVO.getOrderId());
+            orderDto.setStatus(OrderStatusEnum.DELIVERED.getKey());
+            orderDto.setVerifyCode(order.getVerifyCode());
+            orderService.updateOrder(orderDto);
+        }
+        order.setTakeStatus(reqVO.getTakeStatus().getKey());
+        orderService.updateOrder(order);
         // 获取更新后的订单信息
         MtOrder updatedOrder = orderService.getOrderInfo(reqVO.getOrderId());
-
-        // 获取订单商品列表（优化：使用 MyBatis Plus 查询）
-        LambdaQueryWrapper<MtOrderGoods> goodsWrapper = Wrappers.lambdaQuery();
-        goodsWrapper.eq(MtOrderGoods::getOrderId, reqVO.getOrderId());
-        List<MtOrderGoods> goodsList = mtOrderGoodsMapper.selectList(goodsWrapper);
-
-        List<Map<String, Object>> items = new ArrayList<>();
-        for (MtOrderGoods orderGoods : goodsList) {
-            Map<String, Object> item = new HashMap<>();
-            item.put("skuId", orderGoods.getSkuId());
-            item.put("quantity", orderGoods.getNum());
-
-            // 通过goodsId查询商品信息获取商品名称
-            try {
-                MtGoods goodsInfo = goodsService.queryGoodsById(orderGoods.getGoodsId());
-                if (goodsInfo != null) {
-                    item.put("goodsName", goodsInfo.getName());
-                } else {
-                    item.put("goodsName", "");
-                }
-            } catch (Exception e) {
-                log.warn("获取商品信息失败: goodsId={}, error={}", orderGoods.getGoodsId(), e.getMessage());
-                item.put("goodsName", "");
-            }
-
-            items.add(item);
-        }
-
-        // 发送可取餐状态通知回调
-        eventCallbackService.sendOrderReadyCallback(updatedOrder, items);
-
+//
+//        // 获取订单商品列表（优化：使用 MyBatis Plus 查询）
+//        LambdaQueryWrapper<MtOrderGoods> goodsWrapper = Wrappers.lambdaQuery();
+//        goodsWrapper.eq(MtOrderGoods::getOrderId, reqVO.getOrderId());
+//        List<MtOrderGoods> goodsList = mtOrderGoodsMapper.selectList(goodsWrapper);
+//
+//        List<Map<String, Object>> items = new ArrayList<>();
+//        for (MtOrderGoods orderGoods : goodsList) {
+//            Map<String, Object> item = new HashMap<>();
+//            item.put("skuId", orderGoods.getSkuId());
+//            item.put("quantity", orderGoods.getNum());
+//
+//            // 通过goodsId查询商品信息获取商品名称
+//            try {
+//                MtGoods goodsInfo = goodsService.queryGoodsById(orderGoods.getGoodsId());
+//                if (goodsInfo != null) {
+//                    item.put("goodsName", goodsInfo.getName());
+//                } else {
+//                    item.put("goodsName", "");
+//                }
+//            } catch (Exception e) {
+//                log.warn("获取商品信息失败: goodsId={}, error={}", orderGoods.getGoodsId(), e.getMessage());
+//                item.put("goodsName", "");
+//            }
+//
+//            items.add(item);
+//        }
+//
+//        // 发送可取餐状态通知回调
+//        eventCallbackService.sendOrderReadyCallback(updatedOrder, items);
         return CommonResult.success(true);
     }
 

@@ -28,7 +28,48 @@ Content-Type: {{contentType}}
 GET {{baseUrl}}/detail/1
 Content-Type: {{contentType}}
 
-### 3. 提交评价
+### 3. 提交商品评价 (新接口)
+POST {{baseUrl}}/create-goods
+Content-Type: {{contentType}}
+
+{
+  "orderId": 1,
+  "goodsId": 1,
+  "skuId": 0,
+  "userId": 1,
+  "score": 5,
+  "content": "这款奶茶口味很正，珍珠也很Q弹！",
+  "images": [
+    "/static/uploadImages/comment/1.jpg"
+  ],
+  "isAnonymous": "N"
+}
+
+### 3.1 提交订单NPS评价 (新接口)
+POST {{baseUrl}}/create-order
+Content-Type: {{contentType}}
+
+{
+  "orderId": 1,
+  "userId": 1,
+  "score": 10,
+  "content": "配送非常快，包装也很严实，没洒漏。",
+  "isAnonymous": "N"
+}
+
+### 3.2 提交价格合理性评价 (新接口)
+POST {{baseUrl}}/create-price
+Content-Type: {{contentType}}
+
+{
+  "orderId": 1,
+  "userId": 1,
+  "score": 5,
+  "content": "价格非常实惠，性价比极高！",
+  "isAnonymous": "N"
+}
+
+### 3.3 提交评价 (旧接口 - 已弃用)
 POST {{baseUrl}}/create
 Content-Type: {{contentType}}
 
@@ -39,27 +80,8 @@ Content-Type: {{contentType}}
   "userId": 1,
   "score": 5,
   "content": "商品质量很好，非常满意！",
-  "images": [
-    "/static/uploadImages/comment/1.jpg",
-    "/static/uploadImages/comment/2.jpg"
-  ],
   "isAnonymous": "N",
-  "merchantId": 1,
-  "storeId": 1
-}
-
-### 3.1 提交订单NPS评价
-POST {{baseUrl}}/create
-Content-Type: {{contentType}}
-
-{
-  "orderId": 2,
-  "userId": 1,
-  "commentType": 2,
-  "score": 10,
-  "content": "配送速度很快，服务态度很好！",
-  "merchantId": 1,
-  "storeId": 1
+  "commentType": 1
 }
 
 ### 4. 修改评价
@@ -122,4 +144,8 @@ Content-Type: {{contentType}}
 
 ### 13. 获取商户NPS统计
 GET {{baseUrl}}/statistics/nps/merchant/1
+Content-Type: {{contentType}}
+
+### 14. 获取商户价格统计
+GET {{baseUrl}}/statistics/price/merchant/1
 Content-Type: {{contentType}}

@@ -87,99 +87,230 @@ public class GoodsCommentServiceImpl extends ServiceImpl<MtGoodsCommentMapper, M
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Integer createComment(CommentCreateReqVO createReqVO) throws BusinessCheckException {
-        // 0. 设置评价类型默认值
-        if (createReqVO.getCommentType() == null) {
-            createReqVO.setCommentType(1); // 默认商品评价
+    public Integer createGoodsComment(GoodsCommentCreateReqVO createReqVO) throws BusinessCheckException {
+        // 1. 验证订单及基础信息
+        MtOrder order = validateOrderForComment(createReqVO.getOrderId(), createReqVO.getUserId());
+
+        // 2. 验证商品信息
+        if (createReqVO.getGoodsId() == null) {
+            throw new BusinessCheckException("商品ID不能为空");
+        }
+        MtGoods goods = goodsService.queryGoodsById(createReqVO.getGoodsId());
+        if (goods == null) {
+            throw new BusinessCheckException("商品不存在");
         }
 
-        // 1. 验证订单是否存在
-        MtOrder order = orderService.getOrderInfo(createReqVO.getOrderId());
-        if (order == null) {
-            throw new BusinessCheckException("订单不存在");
+        // 3. 验证是否已评价
+        MtGoodsComment existComment = mtGoodsCommentMapper.selectByOrderAndGoods(
+                createReqVO.getOrderId(), createReqVO.getGoodsId(), createReqVO.getUserId());
+        if (existComment != null) {
+            throw new BusinessCheckException("该商品已评价，不能重复评价");
         }
-        
-        // 2. 验证订单是否属于该用户
-        if (!order.getUserId().equals(createReqVO.getUserId())) {
-            throw new BusinessCheckException("订单不属于该用户");
-        }
-        
-        // 3. 验证订单是否已完成
-        if (!OrderStatusEnum.RECEIVED.getKey().equals(order.getStatus()) 
-                && !OrderStatusEnum.DELIVERED.getKey().equals(order.getStatus())) {
-            throw new BusinessCheckException("订单未完成，不能评价");
-        }
-        
-        if (createReqVO.getCommentType() == 1) {
-            // 商品评价逻辑
-            if (createReqVO.getGoodsId() == null) {
-                throw new BusinessCheckException("商品ID不能为空");
-            }
-            // 4. 验证商品是否存在
-            MtGoods goods = goodsService.queryGoodsById(createReqVO.getGoodsId());
-            if (goods == null) {
-                throw new BusinessCheckException("商品不存在");
-            }
 
-            // 5. 验证是否已评价
-            MtGoodsComment existComment = mtGoodsCommentMapper.selectByOrderAndGoods(
-                    createReqVO.getOrderId(), createReqVO.getGoodsId(), createReqVO.getUserId());
-            if (existComment != null) {
-                throw new BusinessCheckException("该商品已评价，不能重复评价");
-            }
-
-            if (createReqVO.getScore() < 1 || createReqVO.getScore() > 5) {
-                throw new BusinessCheckException("商品评价评分必须在1-5之间");
-            }
-        } else if (createReqVO.getCommentType() == 2) {
-            // NPS评价逻辑
-            // 5. 验证是否已进行NPS评价
-            MtGoodsComment existNps = mtGoodsCommentMapper.selectByOrderAndNps(
-                    createReqVO.getOrderId(), createReqVO.getUserId());
-            if (existNps != null) {
-                throw new BusinessCheckException("该订单已进行NPS评价，不能重复评价");
-            }
-
-            if (createReqVO.getScore() < 0 || createReqVO.getScore() > 10) {
-                throw new BusinessCheckException("NPS评价评分必须在0-10之间");
-            }
-        } else {
-            throw new BusinessCheckException("无效的评价类型");
-        }
-        
-        // 6. 验证图片数量
-        if (CollUtil.isNotEmpty(createReqVO.getImages()) && createReqVO.getImages().size() > 9) {
-            throw new BusinessCheckException("评价图片数量不能超过9张");
-        }
-        
-        // 7. 创建评价记录
+        // 4. 创建评价记录
         MtGoodsComment comment = new MtGoodsComment();
-        comment.setMerchantId(createReqVO.getMerchantId() != null ? createReqVO.getMerchantId() : order.getMerchantId());
-        comment.setStoreId(createReqVO.getStoreId() != null ? createReqVO.getStoreId() : order.getStoreId());
+        comment.setMerchantId(order.getMerchantId());
+        comment.setStoreId(order.getStoreId());
         comment.setOrderId(createReqVO.getOrderId());
-        comment.setGoodsId(createReqVO.getGoodsId() != null ? createReqVO.getGoodsId() : 0);
+        comment.setGoodsId(createReqVO.getGoodsId());
         comment.setSkuId(createReqVO.getSkuId() != null ? createReqVO.getSkuId() : 0);
         comment.setUserId(createReqVO.getUserId());
-        comment.setCommentType(createReqVO.getCommentType());
+        comment.setCommentType(1); // 商品评价
         comment.setScore(createReqVO.getScore());
         comment.setContent(createReqVO.getContent() != null ? createReqVO.getContent() : "");
         comment.setIsAnonymous(StringUtils.isNotEmpty(createReqVO.getIsAnonymous()) ? createReqVO.getIsAnonymous() : "N");
+        
+        return saveBaseComment(comment, createReqVO.getImages());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Integer createOrderComment(OrderCommentCreateReqVO createReqVO) throws BusinessCheckException {
+        // 1. 验证订单及基础信息
+        MtOrder order = validateOrderForComment(createReqVO.getOrderId(), createReqVO.getUserId());
+
+        // 2. 验证是否已进行NPS评价
+        MtGoodsComment existNps = mtGoodsCommentMapper.selectByOrderAndNps(
+                createReqVO.getOrderId(), createReqVO.getUserId());
+        if (existNps != null) {
+            throw new BusinessCheckException("该订单已进行过NPS评价");
+        }
+
+        // 3. 创建评价记录
+        MtGoodsComment comment = new MtGoodsComment();
+        comment.setMerchantId(order.getMerchantId());
+        comment.setStoreId(order.getStoreId());
+        comment.setOrderId(createReqVO.getOrderId());
+        comment.setGoodsId(0);
+        comment.setSkuId(0);
+        comment.setUserId(createReqVO.getUserId());
+        comment.setCommentType(2); // 订单NPS评价
+        comment.setScore(createReqVO.getScore());
+        comment.setContent(createReqVO.getContent() != null ? createReqVO.getContent() : "");
+        comment.setIsAnonymous(StringUtils.isNotEmpty(createReqVO.getIsAnonymous()) ? createReqVO.getIsAnonymous() : "N");
+
+        return saveBaseComment(comment, null);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Integer createPriceComment(PriceCommentCreateReqVO createReqVO) throws BusinessCheckException {
+        // 1. 验证订单及基础信息
+        MtOrder order = validateOrderForComment(createReqVO.getOrderId(), createReqVO.getUserId());
+
+        // 2. 验证是否已进行价格评价
+        MtGoodsComment existPrice = mtGoodsCommentMapper.selectOne(new com.fuint.common.mybatis.query.LambdaQueryWrapperX<MtGoodsComment>()
+                .eq(MtGoodsComment::getOrderId, createReqVO.getOrderId())
+                .eq(MtGoodsComment::getUserId, createReqVO.getUserId())
+                .eq(MtGoodsComment::getCommentType, 3)
+                .ne(MtGoodsComment::getStatus, "D"));
+        if (existPrice != null) {
+            throw new BusinessCheckException("该订单已进行过价格评价");
+        }
+
+        // 3. 创建评价记录
+        MtGoodsComment comment = new MtGoodsComment();
+        comment.setMerchantId(order.getMerchantId());
+        comment.setStoreId(order.getStoreId());
+        comment.setOrderId(createReqVO.getOrderId());
+        comment.setGoodsId(0);
+        comment.setSkuId(0);
+        comment.setUserId(createReqVO.getUserId());
+        comment.setCommentType(3); // 价格评价
+        comment.setScore(createReqVO.getScore());
+        comment.setContent(createReqVO.getContent() != null ? createReqVO.getContent() : "");
+        comment.setIsAnonymous(StringUtils.isNotEmpty(createReqVO.getIsAnonymous()) ? createReqVO.getIsAnonymous() : "N");
+
+        return saveBaseComment(comment, null);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean createBatchComment(CommentBatchCreateReqVO batchCreateReqVO) throws BusinessCheckException {
+        // 1. 验证订单及基础信息
+        validateOrderForComment(batchCreateReqVO.getOrderId(), batchCreateReqVO.getUserId());
+
+        // 2. 批量创建商品评价
+        if (CollUtil.isNotEmpty(batchCreateReqVO.getGoodsComments())) {
+            for (GoodsItemCommentVO itemVO : batchCreateReqVO.getGoodsComments()) {
+                GoodsCommentCreateReqVO goodsVO = new GoodsCommentCreateReqVO();
+                goodsVO.setOrderId(batchCreateReqVO.getOrderId());
+                goodsVO.setUserId(batchCreateReqVO.getUserId());
+                goodsVO.setGoodsId(itemVO.getGoodsId());
+                goodsVO.setSkuId(itemVO.getSkuId());
+                goodsVO.setScore(itemVO.getScore());
+                goodsVO.setContent(itemVO.getContent());
+                goodsVO.setImages(itemVO.getImages());
+                goodsVO.setIsAnonymous(itemVO.getIsAnonymous());
+
+                this.createGoodsComment(goodsVO);
+            }
+        }
+
+        // 3. 创建订单评价 (NPS)
+        if (batchCreateReqVO.getOrderComment() != null) {
+            OrderItemCommentVO npsVO = batchCreateReqVO.getOrderComment();
+            OrderCommentCreateReqVO orderVO = new OrderCommentCreateReqVO();
+            orderVO.setOrderId(batchCreateReqVO.getOrderId());
+            orderVO.setUserId(batchCreateReqVO.getUserId());
+            orderVO.setScore(npsVO.getScore());
+            orderVO.setContent(npsVO.getContent());
+            orderVO.setIsAnonymous(npsVO.getIsAnonymous());
+
+            this.createOrderComment(orderVO);
+        }
+
+        // 4. 创建价格评价
+        if (batchCreateReqVO.getPriceComment() != null) {
+            PriceItemCommentVO priceVO = batchCreateReqVO.getPriceComment();
+            PriceCommentCreateReqVO priceReqVO = new PriceCommentCreateReqVO();
+            priceReqVO.setOrderId(batchCreateReqVO.getOrderId());
+            priceReqVO.setUserId(batchCreateReqVO.getUserId());
+            priceReqVO.setScore(priceVO.getScore());
+            priceReqVO.setContent(priceVO.getContent());
+            priceReqVO.setIsAnonymous(priceVO.getIsAnonymous());
+
+            this.createPriceComment(priceReqVO);
+        }
+
+        return true;
+    }
+
+    /**
+     * 验证评价订单基础信息
+     */
+    private MtOrder validateOrderForComment(Integer orderId, Integer userId) throws BusinessCheckException {
+        MtOrder order = orderService.getOrderInfo(orderId);
+        if (order == null) {
+            throw new BusinessCheckException("订单不存在");
+        }
+        if (!order.getUserId().equals(userId)) {
+            throw new BusinessCheckException("订单不属于该用户");
+        }
+        if (!OrderStatusEnum.RECEIVED.getKey().equals(order.getStatus())
+                && !OrderStatusEnum.DELIVERED.getKey().equals(order.getStatus())) {
+            throw new BusinessCheckException("订单未完成，不能评价");
+        }
+        return order;
+    }
+
+    /**
+     * 保存基础评价信息
+     */
+    private Integer saveBaseComment(MtGoodsComment comment, List<String> images) throws BusinessCheckException {
         comment.setIsShow("Y");
         comment.setLikeCount(0);
         comment.setCreateTime(new Date());
         comment.setUpdateTime(new Date());
         comment.setOperator("openapi");
         comment.setStatus(StatusEnum.ENABLED.getKey());
-        
+
         mtGoodsCommentMapper.insert(comment);
-        
-        // 8. 保存评价图片
-        if (CollUtil.isNotEmpty(createReqVO.getImages())) {
-            saveCommentImages(comment.getId(), createReqVO.getImages());
+
+        if (CollUtil.isNotEmpty(images)) {
+            if (images.size() > 9) {
+                throw new BusinessCheckException("评价图片数量不能超过9张");
+            }
+            saveCommentImages(comment.getId(), images);
         }
-        
-        log.info("创建评价成功，评价ID：{}", comment.getId());
+
+        log.info("创建评价成功，评价类型：{}，评价ID：{}", comment.getCommentType(), comment.getId());
         return comment.getId();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Integer createComment(CommentCreateReqVO createReqVO) throws BusinessCheckException {
+        // 路由到具体方法
+        if (createReqVO.getCommentType() == null || createReqVO.getCommentType() == 1) {
+            GoodsCommentCreateReqVO goodsVO = new GoodsCommentCreateReqVO();
+            goodsVO.setOrderId(createReqVO.getOrderId());
+            goodsVO.setGoodsId(createReqVO.getGoodsId());
+            goodsVO.setSkuId(createReqVO.getSkuId());
+            goodsVO.setUserId(createReqVO.getUserId());
+            goodsVO.setScore(createReqVO.getScore());
+            goodsVO.setContent(createReqVO.getContent());
+            goodsVO.setImages(createReqVO.getImages());
+            goodsVO.setIsAnonymous(createReqVO.getIsAnonymous());
+            return createGoodsComment(goodsVO);
+        } else if (createReqVO.getCommentType() == 2) {
+            OrderCommentCreateReqVO orderVO = new OrderCommentCreateReqVO();
+            orderVO.setOrderId(createReqVO.getOrderId());
+            orderVO.setUserId(createReqVO.getUserId());
+            orderVO.setScore(createReqVO.getScore());
+            orderVO.setContent(createReqVO.getContent());
+            orderVO.setIsAnonymous(createReqVO.getIsAnonymous());
+            return createOrderComment(orderVO);
+        } else if (createReqVO.getCommentType() == 3) {
+            PriceCommentCreateReqVO priceVO = new PriceCommentCreateReqVO();
+            priceVO.setOrderId(createReqVO.getOrderId());
+            priceVO.setUserId(createReqVO.getUserId());
+            priceVO.setScore(createReqVO.getScore());
+            priceVO.setContent(createReqVO.getContent());
+            priceVO.setIsAnonymous(createReqVO.getIsAnonymous());
+            return createPriceComment(priceVO);
+        }
+        throw new BusinessCheckException("无效的评价类型");
     }
 
     @Override
@@ -371,6 +502,37 @@ public class GoodsCommentServiceImpl extends ServiceImpl<MtGoodsCommentMapper, M
 
     @Override
     public CommentStatisticsVO getMerchantNpsStatistics(Integer merchantId) {
+        return getInternalNpsStatistics(merchantId, 2);
+    }
+
+    @Override
+    public CommentStatisticsVO getMerchantPriceStatistics(Integer merchantId) {
+        // 价格评价统计，使用 1-5 星评分
+        CommentStatisticsVO statisticsVO = new CommentStatisticsVO();
+        
+        // 获取总评价数
+        Integer totalCount = mtGoodsCommentMapper.selectCount(new com.fuint.common.mybatis.query.LambdaQueryWrapperX<MtGoodsComment>()
+                .eq(MtGoodsComment::getMerchantId, merchantId)
+                .eq(MtGoodsComment::getCommentType, 3)
+                .ne(MtGoodsComment::getStatus, "D")
+                .eq(MtGoodsComment::getIsShow, "Y"));
+        statisticsVO.setTotalCount(totalCount != null ? totalCount : 0);
+        
+        // 获取平均评分
+        com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<MtGoodsComment> queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
+        queryWrapper.select("AVG(SCORE) as avgScore")
+                .eq("MERCHANT_ID", merchantId)
+                .eq("COMMENT_TYPE", 3)
+                .ne("STATUS", "D")
+                .eq("IS_SHOW", "Y");
+        java.util.Map<String, Object> map = mtGoodsCommentMapper.selectMaps(queryWrapper).get(0);
+        BigDecimal avgScore = map != null && map.get("avgScore") != null ? new BigDecimal(map.get("avgScore").toString()) : BigDecimal.ZERO;
+        statisticsVO.setAvgScore(avgScore.setScale(1, RoundingMode.HALF_UP));
+        
+        return statisticsVO;
+    }
+
+    private CommentStatisticsVO getInternalNpsStatistics(Integer merchantId, Integer type) {
         CommentStatisticsVO statisticsVO = new CommentStatisticsVO();
         
         // 获取NPS统计
@@ -488,7 +650,7 @@ public class GoodsCommentServiceImpl extends ServiceImpl<MtGoodsCommentMapper, M
         respVO.setReplyTime(comment.getReplyTime());
         respVO.setIsAnonymous(comment.getIsAnonymous());
         respVO.setIsShow(comment.getIsShow());
-        respVO.setLikeCount(comment.getLikeCount());
+//        respVO.setLikeCount(comment.getLikeCount());
         respVO.setCreateTime(comment.getCreateTime());
         respVO.setUpdateTime(comment.getUpdateTime());
         respVO.setStatus(comment.getStatus());
