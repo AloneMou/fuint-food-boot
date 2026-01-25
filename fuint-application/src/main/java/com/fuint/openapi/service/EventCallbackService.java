@@ -145,6 +145,12 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
         }
     }
 
+    public static class CommentEvent extends BaseCallbackEvent {
+        public CommentEvent(Object source, Integer merchantId, Map<String, Object> data) {
+            super(source, merchantId, "COMMENT_EVENT", data);
+        }
+    }
+
     // ==========================================
     // 公共触发方法 (保持兼容性，改为发布事件)
     // ==========================================
@@ -222,6 +228,14 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
         }
         
         applicationEventPublisher.publishEvent(new CouponEvent(this, userCoupon.getMerchantId(), data));
+    }
+
+    /**
+     * 发送评价事件回调
+     */
+    public void sendCommentEventCallback(Integer merchantId, Map<String, Object> data) {
+        if (merchantId == null || data == null) return;
+        applicationEventPublisher.publishEvent(new CommentEvent(this, merchantId, data));
     }
 
     // ==========================================

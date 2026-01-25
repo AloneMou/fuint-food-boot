@@ -4,11 +4,14 @@ import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.fuint.common.service.GoodsCommentService;
+import com.fuint.common.service.OrderService;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.web.BaseController;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.openapi.v1.goods.comment.vo.*;
+import com.fuint.repository.model.MtOrder;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -19,7 +22,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.fuint.openapi.enums.CommentErrorCodeConstants.*;
 
@@ -39,6 +44,12 @@ public class OpenCommentController extends BaseController {
 
     @Resource
     private GoodsCommentService goodsCommentService;
+
+    @Resource
+    private OrderService orderService;
+
+    @Resource
+    private EventCallbackService eventCallbackService;
 
     /**
      * 分页查询评价列表
@@ -88,6 +99,22 @@ public class OpenCommentController extends BaseController {
     public CommonResult<Integer> createGoodsComment(@Valid @RequestBody GoodsCommentCreateReqVO createReqVO) {
         try {
             Integer commentId = goodsCommentService.createGoodsComment(createReqVO);
+            
+            // 触发评价事件回调
+            if (commentId != null) {
+                MtOrder order = orderService.getOrderInfo(createReqVO.getOrderId());
+                if (order != null) {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("commentId", commentId);
+                    data.put("orderId", createReqVO.getOrderId());
+                    data.put("goodsId", createReqVO.getGoodsId());
+                    data.put("userId", createReqVO.getUserId());
+                    data.put("score", createReqVO.getScore());
+                    data.put("type", "GOODS");
+                    eventCallbackService.sendCommentEventCallback(order.getMerchantId(), data);
+                }
+            }
+            
             return CommonResult.success(commentId);
         } catch (BusinessCheckException e) {
             log.warn("创建商品评价失败：{}", e.getMessage());
@@ -108,6 +135,21 @@ public class OpenCommentController extends BaseController {
     public CommonResult<Integer> createOrderComment(@Valid @RequestBody OrderCommentCreateReqVO createReqVO) {
         try {
             Integer commentId = goodsCommentService.createOrderComment(createReqVO);
+            
+            // 触发评价事件回调
+            if (commentId != null) {
+                MtOrder order = orderService.getOrderInfo(createReqVO.getOrderId());
+                if (order != null) {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("commentId", commentId);
+                    data.put("orderId", createReqVO.getOrderId());
+                    data.put("userId", createReqVO.getUserId());
+                    data.put("score", createReqVO.getScore());
+                    data.put("type", "ORDER_NPS");
+                    eventCallbackService.sendCommentEventCallback(order.getMerchantId(), data);
+                }
+            }
+            
             return CommonResult.success(commentId);
         } catch (BusinessCheckException e) {
             log.warn("创建订单NPS评价失败：{}", e.getMessage());
@@ -128,6 +170,21 @@ public class OpenCommentController extends BaseController {
     public CommonResult<Integer> createPriceComment(@Valid @RequestBody PriceCommentCreateReqVO createReqVO) {
         try {
             Integer commentId = goodsCommentService.createPriceComment(createReqVO);
+            
+            // 触发评价事件回调
+            if (commentId != null) {
+                MtOrder order = orderService.getOrderInfo(createReqVO.getOrderId());
+                if (order != null) {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("commentId", commentId);
+                    data.put("orderId", createReqVO.getOrderId());
+                    data.put("userId", createReqVO.getUserId());
+                    data.put("score", createReqVO.getScore());
+                    data.put("type", "PRICE");
+                    eventCallbackService.sendCommentEventCallback(order.getMerchantId(), data);
+                }
+            }
+            
             return CommonResult.success(commentId);
         } catch (BusinessCheckException e) {
             log.warn("创建价格评价失败：{}", e.getMessage());
@@ -147,6 +204,19 @@ public class OpenCommentController extends BaseController {
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> createBatchComment(@Valid @RequestBody CommentBatchCreateReqVO batchCreateReqVO) {
         Boolean result = goodsCommentService.createBatchComment(batchCreateReqVO);
+        
+        // 触发评价事件回调
+        if (Boolean.TRUE.equals(result)) {
+            MtOrder order = orderService.getOrderInfo(batchCreateReqVO.getOrderId());
+            if (order != null) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("orderId", batchCreateReqVO.getOrderId());
+                data.put("userId", batchCreateReqVO.getUserId());
+                data.put("type", "BATCH");
+                eventCallbackService.sendCommentEventCallback(order.getMerchantId(), data);
+            }
+        }
+        
         return CommonResult.success(result);
     }
 

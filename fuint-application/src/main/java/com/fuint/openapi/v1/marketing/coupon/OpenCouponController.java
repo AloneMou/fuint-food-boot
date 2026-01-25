@@ -12,8 +12,10 @@ import com.fuint.common.Constants;
 import com.fuint.common.dto.ReqCouponDto;
 import com.fuint.common.enums.CouponExpireTypeEnum;
 import com.fuint.common.enums.StatusEnum;
+import com.fuint.common.enums.UserCouponStatusEnum;
 import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.util.string.StrUtils;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.openapi.service.OpenApiCouponGroupService;
 import com.fuint.openapi.service.OpenApiCouponService;
 import com.fuint.common.service.*;
@@ -27,6 +29,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fuint.repository.mapper.MtCouponGoodsMapper;
 import com.fuint.repository.mapper.MtGoodsMapper;
+import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.*;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -79,6 +82,12 @@ public class OpenCouponController extends BaseController {
 
     @Resource
     private UserGradeService userGradeService;
+
+    @Resource
+    private EventCallbackService eventCallbackService;
+
+    @Resource
+    private MtUserCouponMapper mtUserCouponMapper;
 
     @PostMapping("/create")
     @ApiOperation(value = "创建优惠券", notes = "创建优惠券，支持配置多商品、数量、固定金额、费率、最大优惠额")
@@ -338,6 +347,16 @@ public class OpenCouponController extends BaseController {
             String operator = StringUtils.isNotEmpty(sendReqVO.getOperator()) ? sendReqVO.getOperator() : "system";
             openApiCouponService.batchSendCoupon(sendReqVO.getCouponId(), userIdList, sendReqVO.getNum(), uuid, operator);
 
+            // 发送领取优惠券回调
+            LambdaQueryWrapper<MtUserCoupon> queryWrapper = Wrappers.lambdaQuery();
+            queryWrapper.eq(MtUserCoupon::getUuid, uuid);
+            List<MtUserCoupon> userCoupons = mtUserCouponMapper.selectList(queryWrapper);
+            if (CollUtil.isNotEmpty(userCoupons)) {
+                for (MtUserCoupon userCoupon : userCoupons) {
+                    eventCallbackService.sendCouponEventCallback(userCoupon, "RECEIVED", null);
+                }
+            }
+
             Map<String, Object> result = new HashMap<>();
             result.put("uuid", uuid);
             result.put("userCount", userIdList.size());
@@ -369,6 +388,18 @@ public class OpenCouponController extends BaseController {
         }
         String operator = StringUtils.isNotEmpty(revokeReqVO.getOperator()) ? revokeReqVO.getOperator() : "system";
         openApiCouponService.revokeCoupon(revokeReqVO.getCouponId(), revokeReqVO.getUuid(), operator);
+
+        // 发送撤销优惠券回调
+        LambdaQueryWrapper<MtUserCoupon> queryWrapper = Wrappers.lambdaQuery();
+        queryWrapper.eq(MtUserCoupon::getUuid, revokeReqVO.getUuid());
+        queryWrapper.eq(MtUserCoupon::getStatus, UserCouponStatusEnum.DISABLE.getKey());
+        List<MtUserCoupon> userCoupons = mtUserCouponMapper.selectList(queryWrapper);
+        if (CollUtil.isNotEmpty(userCoupons)) {
+            for (MtUserCoupon userCoupon : userCoupons) {
+                eventCallbackService.sendCouponEventCallback(userCoupon, "REVOKED", null);
+            }
+        }
+
         return CommonResult.success(true);
 
     }
