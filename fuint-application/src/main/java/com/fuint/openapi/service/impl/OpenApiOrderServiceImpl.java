@@ -1363,6 +1363,15 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         return mtOrderMapper.selectToMakeCount(merchantId, storeId, orderTime, orderId);
     }
 
+    @Override
+    public MtOrder getOrderById(Integer orderId) {
+        MtOrder order = mtOrderMapper.selectById(orderId);
+        if (order == null) {
+            throw exception(ORDER_NOT_FOUND);
+        }
+        return order;
+    }
+
     /**
      * 处理订单详情
      *

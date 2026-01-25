@@ -380,13 +380,6 @@ public class OpenOrderController extends BaseController {
         return CommonResult.success(order);
     }
 
-    /**
-     * 订单列表
-     *
-     * @param reqVO 查询参数
-     * @return 订单列表
-     * @throws BusinessCheckException 业务异常
-     */
     @ApiOperation(value = "订单列表", notes = "支持多条件分页查询，使用MyBatis Plus优化性能")
     @GetMapping(value = "/page")
     @ApiSignature
@@ -404,16 +397,11 @@ public class OpenOrderController extends BaseController {
         result.setTotalPages(pageResult.getTotalPages());
         result.setCurrentPage(pageResult.getCurrentPage());
         result.setPageSize(pageResult.getPageSize());
-        result.setList(BeanUtils.toBean(userOrderList,UserOrderSimpleRespVO.class));
+        result.setList(BeanUtils.toBean(userOrderList, UserOrderSimpleRespVO.class));
         return CommonResult.success(result);
     }
 
-    /**
-     * 订单评价
-     *
-     * @param reqVO 评价请求参数
-     * @return 操作结果
-     */
+
     @ApiOperation(value = "订单维度评价", notes = "支持订单维度NPS打分评价（0-10分）")
     @PostMapping(value = "/evaluate")
     @ApiSignature
@@ -472,14 +460,10 @@ public class OpenOrderController extends BaseController {
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> markOrderReady(@Valid @RequestBody OrderReadyReqVO reqVO) throws BusinessCheckException {
-        MtOrder order = orderService.getOrderInfo(reqVO.getOrderId());
-        if (order == null) {
-            return CommonResult.error(404, "订单不存在");
-        }
-
+        MtOrder order = openApiOrderService.getOrderById(reqVO.getOrderId());
         // 验证商户权限
         if (reqVO.getMerchantId() != null && !order.getMerchantId().equals(reqVO.getMerchantId())) {
-            return CommonResult.error(403, "无权操作该订单");
+            return CommonResult.error(ORDER_NOT_BELONG_TO_MERCHANT, reqVO.getMerchantId());
         }
 
         // 更新订单状态为已发货（可取餐）

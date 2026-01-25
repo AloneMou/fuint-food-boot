@@ -120,4 +120,12 @@ public interface OpenApiOrderService {
      * @return 待处理订单数
      */
     Integer getToMakeCount(Integer merchantId, Integer storeId, Date orderTime, Integer orderId);
+
+    /**
+     * 获取订单信息
+     *
+     * @param orderId 订单Id
+     * @return 订单信息
+     */
+    MtOrder getOrderById(Integer orderId);
 }
