@@ -5,12 +5,15 @@ import com.fuint.common.dto.PointDto;
 import com.fuint.common.dto.UserInfo;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.service.PointService;
+import com.fuint.common.service.MemberService;
+import com.fuint.repository.model.MtUser;
 import com.fuint.common.util.TokenUtil;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.service.EventCallbackService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
@@ -36,6 +39,16 @@ public class ClientPointsController extends BaseController {
      * 积分服务接口
      */
     private PointService pointService;
+
+    /**
+     * 会员服务接口
+     */
+    private MemberService memberService;
+
+    /**
+     * 事件回调服务
+     */
+    private EventCallbackService eventCallbackService;
 
     /**
      * 查询我的积分明细
@@ -101,6 +114,17 @@ public class ClientPointsController extends BaseController {
         try {
             boolean result = pointService.doGift(mtUser.getId(), mobile, amount, remark);
             if (result) {
+                // 触发积分变动回调 (转赠)
+                MtUser sender = memberService.queryMemberById(mtUser.getId());
+                if (sender != null) {
+                    Map<String, Object> callbackData = new HashMap<>();
+                    callbackData.put("action", "GIVE");
+                    callbackData.put("userId", mtUser.getId());
+                    callbackData.put("mobile", mobile);
+                    callbackData.put("amount", amount);
+                    callbackData.put("description", remark);
+                    eventCallbackService.sendPointEventCallback(sender.getMerchantId(), callbackData);
+                }
                 return getSuccessResult(true);
             } else {
                 return getFailureResult(3008, "转赠积分失败");

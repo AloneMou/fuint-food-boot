@@ -151,6 +151,24 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
         }
     }
 
+    public static class MemberEvent extends BaseCallbackEvent {
+        public MemberEvent(Object source, Integer merchantId, Map<String, Object> data) {
+            super(source, merchantId, "MEMBER_EVENT", data);
+        }
+    }
+
+    public static class BalanceEvent extends BaseCallbackEvent {
+        public BalanceEvent(Object source, Integer merchantId, Map<String, Object> data) {
+            super(source, merchantId, "BALANCE_EVENT", data);
+        }
+    }
+
+    public static class PointEvent extends BaseCallbackEvent {
+        public PointEvent(Object source, Integer merchantId, Map<String, Object> data) {
+            super(source, merchantId, "POINT_EVENT", data);
+        }
+    }
+
     // ==========================================
     // 公共触发方法 (保持兼容性，改为发布事件)
     // ==========================================
@@ -236,6 +254,30 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
     public void sendCommentEventCallback(Integer merchantId, Map<String, Object> data) {
         if (merchantId == null || data == null) return;
         applicationEventPublisher.publishEvent(new CommentEvent(this, merchantId, data));
+    }
+
+    /**
+     * 发送会员事件回调
+     */
+    public void sendMemberEventCallback(Integer merchantId, Map<String, Object> data) {
+        if (merchantId == null || data == null) return;
+        applicationEventPublisher.publishEvent(new MemberEvent(this, merchantId, data));
+    }
+
+    /**
+     * 发送余额变动事件回调
+     */
+    public void sendBalanceEventCallback(Integer merchantId, Map<String, Object> data) {
+        if (merchantId == null || data == null) return;
+        applicationEventPublisher.publishEvent(new BalanceEvent(this, merchantId, data));
+    }
+
+    /**
+     * 发送积分变动事件回调
+     */
+    public void sendPointEventCallback(Integer merchantId, Map<String, Object> data) {
+        if (merchantId == null || data == null) return;
+        applicationEventPublisher.publishEvent(new PointEvent(this, merchantId, data));
     }
 
     // ==========================================

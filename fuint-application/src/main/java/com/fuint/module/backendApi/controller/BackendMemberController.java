@@ -15,6 +15,7 @@ import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.repository.model.*;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -70,6 +71,11 @@ public class BackendMemberController extends BaseController {
      * 微信相关接口
      * */
     private WeixinService weixinService;
+
+    /**
+     * 事件回调服务
+     */
+    private EventCallbackService eventCallbackService;
 
     /**
      * 查询会员列表
@@ -214,6 +220,13 @@ public class BackendMemberController extends BaseController {
         userInfo.setStatus(status);
         memberService.updateMember(userInfo, false);
 
+        // 触发会员状态变更回调
+        Map<String, Object> callbackData = new HashMap<>();
+        callbackData.put("action", "UPDATE_STATUS");
+        callbackData.put("userId", userId);
+        callbackData.put("status", status);
+        eventCallbackService.sendMemberEventCallback(userInfo.getMerchantId(), callbackData);
+
         return getSuccessResult(true);
     }
 
@@ -235,7 +248,17 @@ public class BackendMemberController extends BaseController {
         }
 
         String operator = accountInfo.getAccountName();
+        MtUser userInfo = memberService.queryMemberById(id);
         memberService.deleteMember(id, operator);
+
+        if (userInfo != null) {
+            // 触发会员删除回调
+            Map<String, Object> callbackData = new HashMap<>();
+            callbackData.put("action", "DELETE");
+            callbackData.put("userId", id);
+            callbackData.put("mobile", userInfo.getMobile());
+            eventCallbackService.sendMemberEventCallback(userInfo.getMerchantId(), callbackData);
+        }
 
         return getSuccessResult(true);
     }
@@ -316,6 +339,16 @@ public class BackendMemberController extends BaseController {
         } else {
             memberService.updateMember(memberInfo, false);
         }
+
+        // 触发会员保存/更新回调
+        Map<String, Object> callbackData = new HashMap<>();
+        callbackData.put("action", StringUtils.isEmpty(id) ? "ADD" : "UPDATE");
+        callbackData.put("userId", memberInfo.getId());
+        callbackData.put("mobile", memberInfo.getMobile());
+        callbackData.put("name", memberInfo.getName());
+        callbackData.put("gradeId", memberInfo.getGradeId());
+        eventCallbackService.sendMemberEventCallback(memberInfo.getMerchantId(), callbackData);
+
         return getSuccessResult(true);
     }
 

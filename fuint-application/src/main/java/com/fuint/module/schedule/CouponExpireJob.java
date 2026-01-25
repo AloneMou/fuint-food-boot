@@ -8,6 +8,7 @@ import com.fuint.common.service.UserCouponService;
 import com.fuint.common.service.WeixinService;
 import com.fuint.common.util.DateUtil;
 import com.fuint.framework.exception.BusinessCheckException;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.MtCoupon;
 import com.fuint.repository.model.MtUser;
@@ -65,6 +66,9 @@ public class CouponExpireJob {
     private MtUserCouponMapper mtUserCouponMapper;
 
     @Autowired
+    private EventCallbackService eventCallbackService;
+
+    @Autowired
     private Environment environment;
 
     /**
@@ -92,6 +96,10 @@ public class CouponExpireJob {
                         mtUserCoupon.setStatus(UserCouponStatusEnum.EXPIRE.getKey());
                         mtUserCoupon.setUpdateTime(new Date());
                         mtUserCouponMapper.updateById(mtUserCoupon);
+                        
+                        // 发送优惠券过期回调
+                        eventCallbackService.sendCouponEventCallback(mtUserCoupon, "EXPIRED", null);
+                        
                         dealNum++;
                     }
                 }

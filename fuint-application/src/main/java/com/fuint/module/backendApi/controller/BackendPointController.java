@@ -17,6 +17,7 @@ import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.repository.model.MtPoint;
 import com.fuint.repository.model.MtSetting;
 import com.fuint.repository.model.MtUser;
@@ -59,6 +60,11 @@ public class BackendPointController extends BaseController {
      * 会员服务接口
      * */
     private MemberService memberService;
+
+    /**
+     * 事件回调服务
+     */
+    private EventCallbackService eventCallbackService;
 
     /**
      * 积分明细列表查询
@@ -277,6 +283,14 @@ public class BackendPointController extends BaseController {
         mtPoint.setOrderSn("");
 
         pointService.addPoint(mtPoint);
+
+        // 触发积分变动回调
+        Map<String, Object> callbackData = new HashMap<>();
+        callbackData.put("userId", userId);
+        callbackData.put("amount", mtPoint.getAmount());
+        callbackData.put("description", remark);
+        callbackData.put("operator", accountInfo.getAccountName());
+        eventCallbackService.sendPointEventCallback(accountInfo.getMerchantId(), callbackData);
 
         return getSuccessResult(true);
     }

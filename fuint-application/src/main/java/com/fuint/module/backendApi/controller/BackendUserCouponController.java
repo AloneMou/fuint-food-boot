@@ -16,6 +16,7 @@ import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.repository.mapper.MtSendLogMapper;
 import com.fuint.repository.mapper.MtUserCouponMapper;
 import com.fuint.repository.model.*;
@@ -75,6 +76,11 @@ public class BackendUserCouponController extends BaseController {
      * 卡券发放记录接口
      * */
     private SendLogService sendLogService;
+
+    /**
+     * 事件回调服务
+     */
+    private EventCallbackService eventCallbackService;
 
     /**
      * 查询会员卡券列表
@@ -189,6 +195,10 @@ public class BackendUserCouponController extends BaseController {
         }
 
         couponService.useCoupon(Integer.parseInt(userCouponId), accountInfo.getId(), storeId, 0, confirmAmount, "后台核销");
+        
+        // 发送优惠券使用回调
+        eventCallbackService.sendCouponEventCallback(mtUserCoupon, "USED", null);
+        
         return getSuccessResult(true);
     }
 
@@ -215,6 +225,12 @@ public class BackendUserCouponController extends BaseController {
 
         // 发券记录，部分作废
         MtUserCoupon userCoupon = mtUserCouponMapper.selectById(id);
+        
+        // 发送优惠券撤销回调
+        if (userCoupon != null) {
+            eventCallbackService.sendCouponEventCallback(userCoupon, "REVOKED", null);
+        }
+
         PaginationRequest paginationRequest = new PaginationRequest();
         paginationRequest.setCurrentPage(Constants.PAGE_NUMBER);
         paginationRequest.setPageSize(Constants.MAX_ROWS);

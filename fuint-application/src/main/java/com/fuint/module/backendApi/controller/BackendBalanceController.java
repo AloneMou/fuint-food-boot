@@ -17,6 +17,7 @@ import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.repository.model.MtBalance;
 import com.fuint.repository.model.MtSetting;
 import com.fuint.repository.model.MtUser;
@@ -56,6 +57,11 @@ public class BackendBalanceController extends BaseController {
      * 会员服务接口
      * */
     private MemberService memberService;
+
+    /**
+     * 事件回调服务
+     */
+    private EventCallbackService eventCallbackService;
 
     /**
      * 余额明细列表查询
@@ -167,6 +173,15 @@ public class BackendBalanceController extends BaseController {
         mtBalance.setOrderSn("");
 
         balanceService.addBalance(mtBalance, true);
+
+        // 触发余额变动回调
+        Map<String, Object> callbackData = new HashMap<>();
+        callbackData.put("userId", userId);
+        callbackData.put("amount", mtBalance.getAmount());
+        callbackData.put("description", remark);
+        callbackData.put("operator", operator);
+        eventCallbackService.sendBalanceEventCallback(accountInfo.getMerchantId(), callbackData);
+
         return getSuccessResult(true);
     }
 
@@ -193,6 +208,16 @@ public class BackendBalanceController extends BaseController {
         }
 
         balanceService.distribute(accountInfo, object, userIds, amount, remark);
+
+        // 触发余额发放（批量变动）回调
+        Map<String, Object> callbackData = new HashMap<>();
+        callbackData.put("action", "DISTRIBUTE");
+        callbackData.put("amount", amount);
+        callbackData.put("object", object);
+        callbackData.put("userIds", userIds);
+        callbackData.put("description", remark);
+        eventCallbackService.sendBalanceEventCallback(accountInfo.getMerchantId(), callbackData);
+
         return getSuccessResult(true);
     }
 
