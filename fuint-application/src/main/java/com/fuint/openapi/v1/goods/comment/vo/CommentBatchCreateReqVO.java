@@ -30,7 +30,7 @@ public class CommentBatchCreateReqVO {
     @ApiModelProperty(value = "订单评价(NPS)")
     private OrderItemCommentVO orderComment;
 
-    @Valid
-    @ApiModelProperty(value = "价格评价")
-    private PriceItemCommentVO priceComment;
+//    @Valid
+//    @ApiModelProperty(value = "价格评价")
+//    private PriceItemCommentVO priceComment;
 }

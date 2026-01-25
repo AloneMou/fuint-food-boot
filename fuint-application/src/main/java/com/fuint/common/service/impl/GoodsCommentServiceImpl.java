@@ -219,19 +219,19 @@ public class GoodsCommentServiceImpl extends ServiceImpl<MtGoodsCommentMapper, M
 
             this.createOrderComment(orderVO);
         }
-
-        // 4. 创建价格评价
-        if (batchCreateReqVO.getPriceComment() != null) {
-            PriceItemCommentVO priceVO = batchCreateReqVO.getPriceComment();
-            PriceCommentCreateReqVO priceReqVO = new PriceCommentCreateReqVO();
-            priceReqVO.setOrderId(batchCreateReqVO.getOrderId());
-            priceReqVO.setUserId(batchCreateReqVO.getUserId());
-            priceReqVO.setScore(priceVO.getScore());
-            priceReqVO.setContent(priceVO.getContent());
-            priceReqVO.setIsAnonymous(priceVO.getIsAnonymous());
-
-            this.createPriceComment(priceReqVO);
-        }
+//
+//        // 4. 创建价格评价
+//        if (batchCreateReqVO.getPriceComment() != null) {
+//            PriceItemCommentVO priceVO = batchCreateReqVO.getPriceComment();
+//            PriceCommentCreateReqVO priceReqVO = new PriceCommentCreateReqVO();
+//            priceReqVO.setOrderId(batchCreateReqVO.getOrderId());
+//            priceReqVO.setUserId(batchCreateReqVO.getUserId());
+//            priceReqVO.setScore(priceVO.getScore());
+//            priceReqVO.setContent(priceVO.getContent());
+//            priceReqVO.setIsAnonymous(priceVO.getIsAnonymous());
+//
+//            this.createPriceComment(priceReqVO);
+//        }
 
         return true;
     }

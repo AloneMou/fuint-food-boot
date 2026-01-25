@@ -146,13 +146,8 @@ public class OpenCommentController extends BaseController {
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> createBatchComment(@Valid @RequestBody CommentBatchCreateReqVO batchCreateReqVO) {
-        try {
-            Boolean result = goodsCommentService.createBatchComment(batchCreateReqVO);
-            return CommonResult.success(result);
-        } catch (BusinessCheckException e) {
-            log.warn("批量提交评价失败：{}", e.getMessage());
-            return CommonResult.error(500, e.getMessage());
-        }
+        Boolean result = goodsCommentService.createBatchComment(batchCreateReqVO);
+        return CommonResult.success(result);
     }
 
     /**
@@ -176,12 +171,6 @@ public class OpenCommentController extends BaseController {
         }
     }
 
-    /**
-     * 修改评价
-     *
-     * @param updateReqVO 更新请求
-     * @return 操作结果
-     */
     @ApiOperation(value = "修改评价", notes = "用户修改自己的评价")
     @PutMapping(value = "/update")
     @ApiSignature
@@ -196,12 +185,6 @@ public class OpenCommentController extends BaseController {
         }
     }
 
-    /**
-     * 删除评价
-     *
-     * @param deleteReqVO 删除请求
-     * @return 操作结果
-     */
     @ApiOperation(value = "删除评价", notes = "用户删除自己的评价")
     @DeleteMapping(value = "/delete")
     @ApiSignature
@@ -216,12 +199,6 @@ public class OpenCommentController extends BaseController {
         }
     }
 
-    /**
-     * 商家回复评价
-     *
-     * @param replyReqVO 回复请求
-     * @return 操作结果
-     */
     @ApiOperation(value = "商家回复评价", notes = "商家回复用户的评价")
     @PostMapping(value = "/reply")
     @ApiSignature
@@ -236,12 +213,6 @@ public class OpenCommentController extends BaseController {
         }
     }
 
-    /**
-     * 获取商品评价统计信息
-     *
-     * @param goodsId 商品ID
-     * @return 统计信息
-     */
     @ApiOperation(value = "获取商品评价统计", notes = "获取商品的评价统计信息，包括平均分、各星级数量等")
     @GetMapping(value = "/statistics/{goodsId}")
     @ApiSignature
@@ -253,12 +224,6 @@ public class OpenCommentController extends BaseController {
         return CommonResult.success(statisticsVO);
     }
 
-    /**
-     * 获取店铺NPS统计信息
-     *
-     * @param storeId 店铺ID
-     * @return 统计信息
-     */
     @ApiOperation(value = "获取店铺NPS统计", notes = "获取店铺的NPS评价统计信息")
     @GetMapping(value = "/statistics/nps/store/{storeId}")
     @ApiSignature
@@ -270,12 +235,6 @@ public class OpenCommentController extends BaseController {
         return CommonResult.success(statisticsVO);
     }
 
-    /**
-     * 获取商户NPS统计信息
-     *
-     * @param merchantId 商户ID
-     * @return 统计信息
-     */
     @ApiOperation(value = "获取商户NPS统计", notes = "获取商户的NPS评价统计信息")
     @GetMapping(value = "/statistics/nps/merchant/{merchantId}")
     @ApiSignature
@@ -287,12 +246,7 @@ public class OpenCommentController extends BaseController {
         return CommonResult.success(statisticsVO);
     }
 
-    /**
-     * 获取商户价格评价统计信息
-     *
-     * @param merchantId 商户ID
-     * @return 统计信息
-     */
+
     @ApiOperation(value = "获取商户价格统计", notes = "获取商户的价格合理性评价统计信息")
     @GetMapping(value = "/statistics/price/merchant/{merchantId}")
     @ApiSignature
@@ -303,12 +257,7 @@ public class OpenCommentController extends BaseController {
         CommentStatisticsVO statisticsVO = goodsCommentService.getMerchantPriceStatistics(merchantId);
         return CommonResult.success(statisticsVO);
     }
-    /**
-     * 查询用户的评价列表
-     *
-     * @param userId 用户ID
-     * @return 评价列表
-     */
+
     @ApiOperation(value = "查询用户评价列表", notes = "查询指定用户的所有评价")
     @GetMapping(value = "/user/{userId}")
     @ApiSignature
@@ -320,12 +269,6 @@ public class OpenCommentController extends BaseController {
         return CommonResult.success(commentList);
     }
 
-    /**
-     * 查询商品的评价列表
-     *
-     * @param goodsId 商品ID
-     * @return 评价列表
-     */
     @ApiOperation(value = "查询商品评价列表", notes = "查询指定商品的所有评价")
     @GetMapping(value = "/goods/{goodsId}")
     @ApiSignature
@@ -337,14 +280,7 @@ public class OpenCommentController extends BaseController {
         return CommonResult.success(commentList);
     }
 
-    /**
-     * 检查是否已评价
-     *
-     * @param orderId 订单ID
-     * @param goodsId 商品ID
-     * @param userId  用户ID
-     * @return 是否已评价
-     */
+
     @ApiOperation(value = "检查是否已评价", notes = "检查指定订单的商品是否已被用户评价")
     @GetMapping(value = "/check")
     @ApiSignature
@@ -360,12 +296,6 @@ public class OpenCommentController extends BaseController {
         return CommonResult.success(exists);
     }
 
-    /**
-     * 点赞评价
-     *
-     * @param id 评价ID
-     * @return 操作结果
-     */
     @ApiOperation(value = "点赞评价", notes = "为评价点赞")
     @PostMapping(value = "/like/{id}")
     @ApiSignature
