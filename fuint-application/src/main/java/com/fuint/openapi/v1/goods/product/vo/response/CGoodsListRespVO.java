@@ -1,6 +1,7 @@
 package com.fuint.openapi.v1.goods.product.vo.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fuint.framework.pojo.SortablePageParam;
 import com.fuint.openapi.v1.goods.product.vo.model.CGoodsSkuVO;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSkuRespVO;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSkuVO;
@@ -24,7 +25,6 @@ import java.util.List;
 @Data
 @ApiModel(value = "C端商品列表响应VO")
 public class CGoodsListRespVO {
-
 
     @ApiModelProperty(value = "商品ID", example = "1")
     private Integer id;
@@ -123,4 +123,5 @@ public class CGoodsListRespVO {
 
     @ApiModelProperty(value = "动态价格（元）", example = "18.00")
     private BigDecimal dynamicPrice;
+
 }

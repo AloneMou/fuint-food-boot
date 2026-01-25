@@ -1,37 +1,32 @@
 package com.fuint.common.enums;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * 订单模式
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
+@Getter
+@AllArgsConstructor
 public enum OrderModeEnum {
     EXPRESS("express", "配送"),
-    ONESELF("oneself", "自取");
+    ONESELF("oneself", "自取"),
+    // 动态价格
+    DYNAMIC("dynamic", "动态价格");
 
-    private String key;
-
-    private String value;
-
-    OrderModeEnum(String key, String value) {
-        this.key = key;
-        this.value = value;
+    private final String key;
+    private final String value;
+    public static OrderModeEnum getEnum(String key) {
+        for (OrderModeEnum item : OrderModeEnum.values()) {
+            if (item.getKey().equals(key)) {
+                return item;
+            }
+        }
+        return null;
     }
 
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
 }

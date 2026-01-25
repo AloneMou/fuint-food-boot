@@ -8,6 +8,7 @@ import com.fuint.repository.model.MtCart;
 import com.fuint.repository.model.MtOrder;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -100,4 +101,23 @@ public interface OpenApiOrderService {
      * @return 订单详情
      */
     UserOrderRespVO getUserOrderDetail(Integer orderId);
+
+    /**
+     * 批量转换订单列表
+     *
+     * @param orderList 订单列表
+     * @return 转换后的订单列表
+     */
+    List<UserOrderRespVO> convertOrderList(List<MtOrder> orderList);
+
+    /**
+     * 获取待处理订单数
+     *
+     * @param merchantId 商户ID
+     * @param storeId    店铺ID
+     * @param orderTime  订单时间
+     * @param orderId    订单ID
+     * @return 待处理订单数
+     */
+    Integer getToMakeCount(Integer merchantId, Integer storeId, Date orderTime, Integer orderId);
 }

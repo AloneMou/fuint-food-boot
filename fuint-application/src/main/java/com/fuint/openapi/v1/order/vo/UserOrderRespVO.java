@@ -1,11 +1,11 @@
 package com.fuint.openapi.v1.order.vo;
 
+import cn.hutool.core.date.DatePattern;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fuint.common.dto.*;
-import com.fuint.common.enums.OrderStatusEnum;
-import com.fuint.common.enums.OrderTypeEnum;
+import com.fuint.common.enums.*;
 import com.fuint.repository.model.MtRefund;
 import com.fuint.repository.model.MtStaff;
 import com.fuint.repository.model.MtStore;
@@ -29,23 +29,32 @@ public class UserOrderRespVO {
     @ApiModelProperty("自增ID")
     private Integer id;
 
+    @ApiModelProperty(value = "取餐状态", allowableValues = "WAIT_CONFIRM,CONFIRM_SUCCESS,MAKING,MAKE_SUCCESS")
+    private TakeStatusEnum takeStatus;
+
+    @ApiModelProperty("前面还有多少杯")
+    private Integer queueCount;
+
+    @ApiModelProperty("预计取餐时间/分钟")
+    private Integer estimatedWaitTime;
+
     @ApiModelProperty("商户ID")
     private Integer merchantId;
 
     @ApiModelProperty("订单号")
     private String orderSn;
 
-    @ApiModelProperty("订单类型")
+    @ApiModelProperty(value = "订单类型", allowableValues = "GOODS,PAYMENT,RECHARGE,PRESTORE,MEMBER")
     private OrderTypeEnum type;
 
     @ApiModelProperty("订单类型名称")
     private String typeName;
 
-    @ApiModelProperty("支付类型")
-    private String payType;
+    @ApiModelProperty(value = "支付类型", allowableValues = "CASH,JSAPI,MICROPAY,BALANCE,ALISCAN,OPEN_API")
+    private PayTypeEnum payType;
 
-    @ApiModelProperty("订单模式")
-    private String orderMode;
+    @ApiModelProperty(value = "订单模式", allowableValues = "EXPRESS,ONESELF")
+    private OrderModeEnum orderMode;
 
     @ApiModelProperty("是否核销")
     private Boolean isVerify;
@@ -89,23 +98,26 @@ public class UserOrderRespVO {
     @ApiModelProperty("备注信息")
     private String remark;
 
+    @JsonFormat(pattern = DatePattern.NORM_DATETIME_PATTERN, timezone = "GMT+8")
     @ApiModelProperty("创建时间")
-    private String createTime;
+    private Date createTime;
 
+    @JsonFormat(pattern = DatePattern.NORM_DATETIME_PATTERN, timezone = "GMT+8")
     @ApiModelProperty("更新时间")
-    private String updateTime;
+    private Date updateTime;
 
+    @JsonFormat(pattern = DatePattern.NORM_DATETIME_PATTERN, timezone = "GMT+8")
     @ApiModelProperty("支付时间")
-    private String payTime;
+    private Date payTime;
 
-    @ApiModelProperty("订单状态")
+    @ApiModelProperty(value = "订单状态", allowableValues = "CREATED,PAID,CANCEL,DELIVERY,DELIVERED,RECEIVED,DELETED,REFUND")
     private OrderStatusEnum status;
 
-    @ApiModelProperty("支付状态")
-    private String payStatus;
+    @ApiModelProperty(value = "支付状态", allowableValues = "WAIT,SUCCESS")
+    private PayStatusEnum payStatus;
 
-    @ApiModelProperty(value = "结算状态")
-    private String settleStatus;
+    @ApiModelProperty(value = "结算状态", allowableValues = "WAIT,COMPLETE")
+    private SettleStatusEnum settleStatus;
 
     @ApiModelProperty("状态说明")
     private String statusText;
@@ -120,10 +132,10 @@ public class UserOrderRespVO {
     private OrderUserRespVO userInfo;
 
     @ApiModelProperty("配送地址")
-    private AddressDto address;
+    private AddressRespVO address;
 
     @ApiModelProperty("物流信息")
-    private ExpressDto expressInfo;
+    private ExpressRespVO expressInfo;
 
     @ApiModelProperty("所属店铺信息")
     private OrderStoreRespVO storeInfo;
@@ -293,5 +305,61 @@ public class UserOrderRespVO {
 
         @ApiModelProperty("会员手机")
         private String mobile;
+    }
+
+
+    @Data
+    public static class ExpressRespVO {
+
+        @ApiModelProperty("物流公司")
+        private String expressCompany;
+
+        @ApiModelProperty("物流单号")
+        private String expressNo;
+
+        @JsonFormat(pattern = DatePattern.NORM_DATETIME_PATTERN, timezone = "GMT+8")
+        @ApiModelProperty("发货时间")
+        private Date expressTime;
+
+    }
+
+    @Data
+    public static class AddressRespVO {
+
+        @ApiModelProperty("账户主键ID")
+        private Integer id;
+
+        @ApiModelProperty("会员ID")
+        private Integer userId;
+
+        @ApiModelProperty("会员名称")
+        private String name;
+
+        @ApiModelProperty("会员手机号")
+        private String mobile;
+
+        @ApiModelProperty("省份ID")
+        private Integer provinceId;
+
+        @ApiModelProperty("省份名称")
+        private String provinceName;
+
+        @ApiModelProperty("城市ID")
+        private Integer cityId;
+
+        @ApiModelProperty("城市名称")
+        private String cityName;
+
+        @ApiModelProperty("区ID")
+        private Integer regionId;
+
+        @ApiModelProperty("区名称")
+        private String regionName;
+
+        @ApiModelProperty("详细地址")
+        private String detail;
+
+        @ApiModelProperty("是否默认地址")
+        private String isDefault;
     }
 }

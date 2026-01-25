@@ -116,9 +116,8 @@ public class MessageServiceImpl extends ServiceImpl<MtMessageMapper, MtMessage> 
     public MtMessage getOne(Integer userId) {
         List<MtMessage> messageList = messageRepository.findNewMessage(userId, MessageEnum.POP_MSG.getKey());
 
-        if (messageList.size() > 0) {
-            MtMessage messageInfo = messageList.get(0);
-            return messageInfo;
+        if (!messageList.isEmpty()) {
+            return messageList.get(0);
         }
 
         return null;
@@ -131,13 +130,11 @@ public class MessageServiceImpl extends ServiceImpl<MtMessageMapper, MtMessage> 
      */
     @Override
     public List<MtMessage> getNeedSendList() {
-        List<MtMessage> messageList = messageRepository.findNeedSendMessage(MessageEnum.SUB_MSG.getKey());
-        return messageList;
+        return messageRepository.findNeedSendMessage(MessageEnum.SUB_MSG.getKey());
     }
 
     @Override
     public List<MtMessage> getNeedSendListTypes() throws BusinessCheckException {
-        List<MtMessage> messageList = messageRepository.findNeedSendMessageList(Arrays.asList(MessageEnum.SUB_MSG.getKey(), MessageEnum.TEMP_MSG.getKey()));
-        return messageList;
+        return messageRepository.findNeedSendMessageList(Arrays.asList(MessageEnum.SUB_MSG.getKey(), MessageEnum.TEMP_MSG.getKey()));
     }
 }

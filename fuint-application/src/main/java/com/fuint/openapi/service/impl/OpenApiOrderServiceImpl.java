@@ -1,6 +1,9 @@
 package com.fuint.openapi.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import cn.hutool.db.sql.Order;
 import com.alibaba.fastjson.JSONObject;
 import com.fuint.common.dto.*;
 import com.fuint.common.enums.*;
@@ -11,6 +14,7 @@ import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.exception.ServiceException;
 import com.fuint.framework.util.SeqUtil;
+import com.fuint.framework.util.spring.SpringUtils;
 import com.fuint.openapi.service.OpenApiOrderService;
 import com.fuint.openapi.v1.order.vo.OrderCreateReqVO;
 import com.fuint.openapi.v1.order.vo.OrderGoodsItemVO;
@@ -29,6 +33,7 @@ import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.fuint.framework.exception.util.ServiceExceptionUtil.exception;
@@ -218,46 +223,53 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
     @Resource
     private MtRegionMapper mtRegionMapper;
 
+    @Resource
+    private MtStoreMapper mtStoreMapper;
+
+    @Resource
+    private MtUserMapper mtUserMapper;
+
+    @Resource
+    private MtTableMapper mtTableMapper;
+
+    @Resource
+    private MtStaffMapper mtStaffMapper;
+
+    @Resource
+    private MtGoodsSpecMapper mtGoodsSpecMapper;
+
+
     @Override
     public Map<String, Object> calculateCartGoods(Integer merchantId, Integer userId, List<MtCart> cartList, Integer couponId, boolean isUsePoint, String platform, String orderMode) throws BusinessCheckException {
         MtUser userInfo = memberService.queryMemberById(userId);
         // 检查是否可以使用积分抵扣
         isUsePoint = checkCanUsePoint(merchantId, isUsePoint);
-
         // 处理购物车商品列表
-        CartCalculationResult cartResult = processCartItems(cartList);
-
+        CartCalculationResult cartResult = processCartItems(cartList, orderMode);
         List<ResCartDto> cartDtoList = cartResult.getCartDtoList();
         BigDecimal totalPrice = cartResult.getTotalPrice();
         BigDecimal totalCanUsePointAmount = cartResult.getTotalCanUsePointAmount();
         int totalNum = cartResult.getTotalNum();
 
         Map<String, Object> result = new HashMap<>();
-
         // 获取可用卡券列表
         List<CouponDto> couponList = getAvailableCoupons(userId, totalPrice, platform, cartList);
-
         // 计算使用的卡券金额
         CouponUsageResult couponResult = calculateCouponAmount(couponId, totalPrice);
         MtCoupon useCouponInfo = couponResult.getUseCouponInfo();
         BigDecimal couponAmount = couponResult.getCouponAmount();
-
         // 计算支付金额（减去卡券抵扣）
         BigDecimal payPrice = totalPrice.subtract(couponAmount);
-
         // 计算积分使用
         PointUsageResult pointResult = calculatePointUsage(userInfo, merchantId, isUsePoint, payPrice, totalCanUsePointAmount);
         int usePoint = pointResult.getUsePoint();
         BigDecimal usePointAmount = pointResult.getUsePointAmount();
         int myPoint = pointResult.getMyPoint();
-
         // 支付金额 = 商品总额 - 积分抵扣金额
         payPrice = payPrice.subtract(usePointAmount);
         payPrice = payPrice.max(ZERO);
-
         // 计算配送费用
         BigDecimal deliveryFee = calculateDeliveryFee(merchantId, orderMode);
-
         // 计算会员折扣（整体应用，与OrderServiceImpl.calculateCartGoods保持一致）
         BigDecimal payDiscount = calculateMemberDiscount(merchantId, userInfo);
         payPrice = payPrice.multiply(payDiscount).add(deliveryFee);
@@ -1030,12 +1042,325 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
 
 
     @Override
+    public List<UserOrderRespVO> convertOrderList(List<MtOrder> orderList) {
+        if (orderList == null || orderList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 1. 收集ID
+        Set<Integer> orderIds = orderList.stream().map(MtOrder::getId).collect(Collectors.toSet());
+        Set<Integer> storeIds = orderList.stream().map(MtOrder::getStoreId).collect(Collectors.toSet());
+        Set<Integer> userIds = orderList.stream().map(MtOrder::getUserId).collect(Collectors.toSet());
+        Set<Integer> tableIds = orderList.stream().map(MtOrder::getTableId).filter(id -> id != null && id > 0).collect(Collectors.toSet());
+        Set<Integer> staffIds = orderList.stream().map(MtOrder::getStaffId).filter(id -> id != null && id > 0).collect(Collectors.toSet());
+        Set<Integer> couponIds = orderList.stream().map(MtOrder::getCouponId).filter(id -> id != null && id > 0).collect(Collectors.toSet());
+
+        // 2. 批量查询基础信息
+        Map<Integer, MtStore> storeMap = new HashMap<>();
+        if (!storeIds.isEmpty()) {
+            List<MtStore> stores = mtStoreMapper.selectBatchIds(storeIds);
+            storeMap = stores.stream().collect(Collectors.toMap(MtStore::getId, Function.identity()));
+        }
+
+        Map<Integer, MtUser> userMap = new HashMap<>();
+        if (!userIds.isEmpty()) {
+            List<MtUser> users = mtUserMapper.selectBatchIds(userIds);
+            userMap = users.stream().collect(Collectors.toMap(MtUser::getId, Function.identity()));
+        }
+
+        Map<Integer, MtTable> tableMap = new HashMap<>();
+        if (!tableIds.isEmpty()) {
+            List<MtTable> tables = mtTableMapper.selectBatchIds(tableIds);
+            tableMap = tables.stream().collect(Collectors.toMap(MtTable::getId, Function.identity()));
+        }
+
+        Map<Integer, MtStaff> staffMap = new HashMap<>();
+        if (!staffIds.isEmpty()) {
+            List<MtStaff> staffs = mtStaffMapper.selectBatchIds(staffIds);
+            staffMap = staffs.stream().collect(Collectors.toMap(MtStaff::getId, Function.identity()));
+        }
+
+        // 3. 批量查询订单商品
+        Map<Integer, List<MtOrderGoods>> orderGoodsMap = new HashMap<>();
+        Map<Integer, MtGoods> goodsMap = new HashMap<>();
+        Map<Integer, List<GoodsSpecValueDto>> skuSpecMap = new HashMap<>();
+
+        if (!orderIds.isEmpty()) {
+            QueryWrapper<MtOrderGoods> goodsQuery = new QueryWrapper<>();
+            goodsQuery.in("order_id", orderIds);
+            List<MtOrderGoods> allOrderGoods = mtOrderGoodsMapper.selectList(goodsQuery);
+            orderGoodsMap = allOrderGoods.stream().collect(Collectors.groupingBy(MtOrderGoods::getOrderId));
+
+            Set<Integer> goodsIds = allOrderGoods.stream().map(MtOrderGoods::getGoodsId).collect(Collectors.toSet());
+            Set<Integer> skuIds = allOrderGoods.stream().map(MtOrderGoods::getSkuId).filter(id -> id != null && id > 0).collect(Collectors.toSet());
+
+            if (!goodsIds.isEmpty()) {
+                List<MtGoods> goodsList = mtGoodsMapper.selectBatchIds(goodsIds);
+                goodsMap = goodsList.stream().collect(Collectors.toMap(MtGoods::getId, Function.identity()));
+            }
+
+            if (!skuIds.isEmpty()) {
+                List<MtGoodsSku> skuList = mtGoodsSkuMapper.selectBatchIds(skuIds);
+
+                Set<Integer> allSpecIds = new HashSet<>();
+                for (MtGoodsSku sku : skuList) {
+                    if (StrUtil.isNotEmpty(sku.getSpecIds())) {
+                        String[] ids = sku.getSpecIds().split("-");
+                        for (String id : ids) {
+                            allSpecIds.add(Integer.parseInt(id));
+                        }
+                    }
+                }
+
+                if (!allSpecIds.isEmpty()) {
+                    List<MtGoodsSpec> specs = mtGoodsSpecMapper.selectBatchIds(allSpecIds);
+                    Map<Integer, MtGoodsSpec> specMap = specs.stream().collect(Collectors.toMap(MtGoodsSpec::getId, Function.identity()));
+
+                    for (MtGoodsSku sku : skuList) {
+                        List<GoodsSpecValueDto> specDtos = new ArrayList<>();
+                        if (StrUtil.isNotEmpty(sku.getSpecIds())) {
+                            String[] ids = sku.getSpecIds().split("-");
+                            for (String id : ids) {
+                                MtGoodsSpec spec = specMap.get(Integer.parseInt(id));
+                                if (spec != null) {
+                                    GoodsSpecValueDto dto = new GoodsSpecValueDto();
+                                    dto.setSpecValueId(spec.getId());
+                                    dto.setSpecName(spec.getName());
+                                    dto.setSpecValue(spec.getValue());
+                                    specDtos.add(dto);
+                                }
+                            }
+                        }
+                        skuSpecMap.put(sku.getId(), specDtos);
+                    }
+                }
+            }
+        }
+
+        // 4. 批量查询优惠券
+        Map<Integer, MtUserCoupon> userCouponMap = new HashMap<>();
+        Map<Integer, MtCoupon> couponInfoMap = new HashMap<>();
+        if (!couponIds.isEmpty()) {
+            List<MtUserCoupon> userCoupons = mtUserCouponMapper.selectBatchIds(couponIds);
+            userCouponMap = userCoupons.stream().collect(Collectors.toMap(MtUserCoupon::getId, Function.identity()));
+
+            Set<Integer> realCouponIds = userCoupons.stream().map(MtUserCoupon::getCouponId).collect(Collectors.toSet());
+            if (!realCouponIds.isEmpty()) {
+                List<MtCoupon> coupons = couponService.queryCouponListByIds(new ArrayList<>(realCouponIds));
+                couponInfoMap = coupons.stream().collect(Collectors.toMap(MtCoupon::getId, Function.identity()));
+            }
+        }
+
+        // 5. 批量查询订单地址
+        Map<Integer, MtOrderAddress> addressMap = new HashMap<>();
+        Map<Integer, String> regionNameMap = new HashMap<>();
+        List<Integer> expressOrderIds = orderList.stream()
+                .filter(o -> OrderModeEnum.EXPRESS.getKey().equals(o.getOrderMode()))
+                .map(MtOrder::getId)
+                .collect(Collectors.toList());
+
+        if (!expressOrderIds.isEmpty()) {
+            QueryWrapper<MtOrderAddress> addressQuery = new QueryWrapper<>();
+            addressQuery.in("order_id", expressOrderIds);
+            List<MtOrderAddress> addresses = mtOrderAddressMapper.selectList(addressQuery);
+            addressMap = addresses.stream().collect(Collectors.toMap(MtOrderAddress::getOrderId, Function.identity(), (k1, k2) -> k1));
+
+            Set<Integer> regionIds = new HashSet<>();
+            addresses.forEach(a -> {
+                if (a.getProvinceId() != null) regionIds.add(a.getProvinceId());
+                if (a.getCityId() != null) regionIds.add(a.getCityId());
+                if (a.getRegionId() != null) regionIds.add(a.getRegionId());
+            });
+
+            if (!regionIds.isEmpty()) {
+                List<MtRegion> regions = mtRegionMapper.selectBatchIds(regionIds);
+                regionNameMap = regions.stream().collect(Collectors.toMap(MtRegion::getId, MtRegion::getName));
+            }
+        }
+
+        // 6. 组装结果
+        List<UserOrderRespVO> resultList = new ArrayList<>();
+        String basePath = settingService.getUploadBasePath();
+
+        for (MtOrder mtOrder : orderList) {
+            UserOrderRespVO vo = new UserOrderRespVO();
+            BeanUtils.copyProperties(mtOrder, vo);
+
+            vo.setType(OrderTypeEnum.getEnum(mtOrder.getType()));
+            vo.setPayType(PayTypeEnum.getEnum(mtOrder.getPayType()));
+            vo.setOrderMode(OrderModeEnum.getEnum(mtOrder.getOrderMode()));
+            vo.setStatus(OrderStatusEnum.getEnum(mtOrder.getStatus()));
+            vo.setPayStatus(PayStatusEnum.getEnum(mtOrder.getPayStatus()));
+            vo.setTakeStatus(TakeStatusEnum.getEnum(mtOrder.getTakeStatus()));
+            vo.setSettleStatus(SettleStatusEnum.getEnum(mtOrder.getSettleStatus()));
+
+            vo.setPayAmount(ObjectUtil.defaultIfNull(mtOrder.getPayAmount(), BigDecimal.ZERO));
+            vo.setDiscount(ObjectUtil.defaultIfNull(mtOrder.getDiscount(), BigDecimal.ZERO));
+            vo.setPointAmount(ObjectUtil.defaultIfNull(mtOrder.getPointAmount(), BigDecimal.ZERO));
+            vo.setUsePoint(ObjectUtil.defaultIfNull(mtOrder.getUsePoint(), 0));
+            vo.setTypeName(vo.getType().getValue());
+            vo.setStatusText(vo.getStatus().getValue());
+            vo.setIsVerify(StrUtil.isEmpty(mtOrder.getVerifyCode()));
+
+            if (storeMap.containsKey(mtOrder.getStoreId())) {
+                MtStore store = storeMap.get(mtOrder.getStoreId());
+                UserOrderRespVO.OrderStoreRespVO storeVO = new UserOrderRespVO.OrderStoreRespVO();
+                BeanUtils.copyProperties(store, storeVO);
+                vo.setStoreInfo(storeVO);
+            }
+
+            if (userMap.containsKey(mtOrder.getUserId())) {
+                MtUser user = userMap.get(mtOrder.getUserId());
+                UserOrderRespVO.OrderUserRespVO userVO = new UserOrderRespVO.OrderUserRespVO();
+                userVO.setId(user.getId());
+                userVO.setName(user.getName());
+                userVO.setMobile(user.getMobile());
+                userVO.setNo(user.getUserNo());
+                vo.setUserInfo(userVO);
+            }
+
+            if (tableMap.containsKey(mtOrder.getTableId())) {
+                MtTable table = tableMap.get(mtOrder.getTableId());
+                UserOrderRespVO.OrderTableRespVO tableVO = new UserOrderRespVO.OrderTableRespVO();
+                BeanUtils.copyProperties(table, tableVO);
+                vo.setTableInfo(tableVO);
+            }
+
+            if (staffMap.containsKey(mtOrder.getStaffId())) {
+                MtStaff staff = staffMap.get(mtOrder.getStaffId());
+                UserOrderRespVO.OrderStaffRespVO staffVO = new UserOrderRespVO.OrderStaffRespVO();
+                BeanUtils.copyProperties(staff, staffVO);
+                vo.setStaffInfo(staffVO);
+            }
+
+            List<MtOrderGoods> orderGoodsList = orderGoodsMap.getOrDefault(mtOrder.getId(), new ArrayList<>());
+            List<OrderGoodsDto> goodsDtos = new ArrayList<>();
+
+            if (mtOrder.getType().equals(OrderTypeEnum.PRESTORE.getKey())) {
+                if (mtOrder.getCouponId() != null && userCouponMap.containsKey(mtOrder.getCouponId())) {
+                    MtUserCoupon uc = userCouponMap.get(mtOrder.getCouponId());
+                    if (couponInfoMap.containsKey(uc.getCouponId())) {
+                        MtCoupon coupon = couponInfoMap.get(uc.getCouponId());
+                        if (StrUtil.isNotEmpty(mtOrder.getParam())) {
+                            String[] paramArr = mtOrder.getParam().split(",");
+                            for (String s : paramArr) {
+                                String[] item = s.split("_");
+                                if (Integer.parseInt(item[2]) > 0) {
+                                    OrderGoodsDto goodsDto = new OrderGoodsDto();
+                                    goodsDto.setId(coupon.getId());
+                                    goodsDto.setType(OrderTypeEnum.PRESTORE.getKey());
+                                    goodsDto.setName("预存￥" + item[0] + "到账￥" + item[1]);
+                                    goodsDto.setNum(Integer.parseInt(item[2]));
+                                    goodsDto.setPrice(item[0]);
+                                    goodsDto.setDiscount("0");
+                                    if (!coupon.getImage().contains(basePath)) {
+                                        goodsDto.setImage(basePath + coupon.getImage());
+                                    }
+                                    goodsDtos.add(goodsDto);
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if (mtOrder.getType().equals(OrderTypeEnum.GOODS.getKey())) {
+                for (MtOrderGoods orderGoods : orderGoodsList) {
+                    MtGoods goodsInfo = goodsMap.get(orderGoods.getGoodsId());
+                    if (goodsInfo != null) {
+                        OrderGoodsDto orderGoodsDto = new OrderGoodsDto();
+                        orderGoodsDto.setId(orderGoods.getId());
+                        orderGoodsDto.setName(goodsInfo.getName());
+                        if (StrUtil.isNotEmpty(goodsInfo.getLogo()) && !goodsInfo.getLogo().contains(basePath)) {
+                            orderGoodsDto.setImage(basePath + goodsInfo.getLogo());
+                        } else {
+                            orderGoodsDto.setImage(goodsInfo.getLogo());
+                        }
+                        orderGoodsDto.setType(OrderTypeEnum.GOODS.getKey());
+                        orderGoodsDto.setNum(orderGoods.getNum());
+                        orderGoodsDto.setSkuId(orderGoods.getSkuId());
+                        orderGoodsDto.setPrice(orderGoods.getPrice().toString());
+                        orderGoodsDto.setDiscount(orderGoods.getDiscount().toString());
+                        orderGoodsDto.setGoodsId(orderGoods.getGoodsId());
+
+                        if (orderGoods.getSkuId() > 0 && skuSpecMap.containsKey(orderGoods.getSkuId())) {
+                            orderGoodsDto.setSpecList(skuSpecMap.get(orderGoods.getSkuId()));
+                        }
+                        goodsDtos.add(orderGoodsDto);
+                    }
+                }
+            }
+            vo.setGoods(goodsDtos);
+
+            if (mtOrder.getCouponId() != null && mtOrder.getCouponId() > 0 && userCouponMap.containsKey(mtOrder.getCouponId())) {
+                MtUserCoupon uc = userCouponMap.get(mtOrder.getCouponId());
+                if (couponInfoMap.containsKey(uc.getCouponId())) {
+                    MtCoupon c = couponInfoMap.get(uc.getCouponId());
+                    UserCouponDto couponDto = new UserCouponDto();
+                    couponDto.setId(uc.getId());
+                    couponDto.setCouponId(c.getId());
+                    couponDto.setName(c.getName());
+                    couponDto.setAmount(uc.getAmount());
+                    couponDto.setBalance(uc.getBalance());
+                    couponDto.setStatus(uc.getStatus());
+                    couponDto.setType(c.getType());
+                    vo.setCouponInfo(couponDto);
+                }
+            }
+
+            if (addressMap.containsKey(mtOrder.getId())) {
+                MtOrderAddress addr = addressMap.get(mtOrder.getId());
+                UserOrderRespVO.AddressRespVO addressVO = new UserOrderRespVO.AddressRespVO();
+                addressVO.setId(addr.getId());
+                addressVO.setName(addr.getName());
+                addressVO.setMobile(addr.getMobile());
+                addressVO.setDetail(addr.getDetail());
+                addressVO.setProvinceId(addr.getProvinceId());
+                addressVO.setCityId(addr.getCityId());
+                addressVO.setRegionId(addr.getRegionId());
+
+                if (addr.getProvinceId() != null) addressVO.setProvinceName(regionNameMap.get(addr.getProvinceId()));
+                if (addr.getCityId() != null) addressVO.setCityName(regionNameMap.get(addr.getCityId()));
+                if (addr.getRegionId() != null) addressVO.setRegionName(regionNameMap.get(addr.getRegionId()));
+
+                vo.setAddress(addressVO);
+            }
+
+            if (StrUtil.isNotEmpty(mtOrder.getExpressInfo())) {
+                try {
+                    JSONObject express = JSONObject.parseObject(mtOrder.getExpressInfo());
+                    UserOrderRespVO.ExpressRespVO expressInfo = new UserOrderRespVO.ExpressRespVO();
+                    expressInfo.setExpressNo(express.getString("expressNo"));
+                    expressInfo.setExpressCompany(express.getString("expressCompany"));
+                    expressInfo.setExpressTime(express.getDate("expressTime"));
+                    vo.setExpressInfo(expressInfo);
+                } catch (Exception e) {
+                    // ignore
+                }
+            }
+
+            resultList.add(vo);
+        }
+
+        return resultList;
+    }
+
+    @Override
     public UserOrderRespVO getUserOrderDetail(Integer orderId) {
         if (orderId == null || orderId <= 0) {
             return null;
         }
         MtOrder mtOrder = mtOrderMapper.selectById(orderId);
-        return getOrderDetail(mtOrder, true, true);
+        UserOrderRespVO order = getOrderDetail(mtOrder, true, true);
+        if (!order.getTakeStatus().equals(TakeStatusEnum.MAKE_SUCCESS)) {
+            Integer makeCount = getToMakeCount(mtOrder.getMerchantId(), mtOrder.getStoreId(), mtOrder.getPayTime(), mtOrder.getId());
+            order.setQueueCount(makeCount);
+            order.setEstimatedWaitTime(makeCount * 5);
+        }
+        return order;
+    }
+
+    @Override
+    public Integer getToMakeCount(Integer merchantId, Integer storeId, Date orderTime, Integer orderId) {
+        return mtOrderMapper.selectToMakeCount(merchantId, storeId, orderTime, orderId);
     }
 
     /**
@@ -1048,9 +1373,14 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
      */
     private UserOrderRespVO getOrderDetail(MtOrder orderInfo, boolean needAddress, boolean getPayStatus) throws BusinessCheckException {
         UserOrderRespVO order = new UserOrderRespVO();
+        BeanUtils.copyProperties(orderInfo, order);
         OrderTypeEnum type = OrderTypeEnum.getEnum(orderInfo.getType());
         OrderStatusEnum orderStatus = OrderStatusEnum.getEnum(orderInfo.getStatus());
-
+        SettleStatusEnum settleStatus = SettleStatusEnum.getEnum(orderInfo.getSettleStatus());
+        TakeStatusEnum takeStatus = TakeStatusEnum.getEnum(orderInfo.getTakeStatus());
+        // 订单信息
+        order.setTakeStatus(takeStatus);
+        order.setSettleStatus(settleStatus);
         order.setId(orderInfo.getId());
         order.setMerchantId(orderInfo.getMerchantId());
         order.setUserId(orderInfo.getUserId());
@@ -1058,14 +1388,11 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         order.setOrderSn(orderInfo.getOrderSn());
         order.setRemark(orderInfo.getRemark());
         order.setType(type);
-        order.setPayType(orderInfo.getPayType());
-        order.setOrderMode(orderInfo.getOrderMode());
-        order.setCreateTime(DateUtil.formatDate(orderInfo.getCreateTime(), "yyyy.MM.dd HH:mm"));
-        order.setUpdateTime(DateUtil.formatDate(orderInfo.getUpdateTime(), "yyyy.MM.dd HH:mm"));
+        order.setPayType(PayTypeEnum.getEnum(orderInfo.getPayType()));
+        order.setOrderMode(OrderModeEnum.getEnum(orderInfo.getOrderMode()));
         order.setAmount(orderInfo.getAmount());
         order.setIsVisitor(orderInfo.getIsVisitor());
         order.setStaffId(orderInfo.getStaffId());
-        order.setVerifyCode("");
         order.setDeliveryFee(orderInfo.getDeliveryFee());
         // 核销码为空，说明已经核销
         order.setIsVerify(orderInfo.getVerifyCode() == null || StringUtils.isEmpty(orderInfo.getVerifyCode()));
@@ -1087,15 +1414,12 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
 
         order.setStatus(orderStatus);
         order.setParam(orderInfo.getParam());
-        order.setPayStatus(orderInfo.getPayStatus());
+        order.setPayStatus(PayStatusEnum.getEnum(orderInfo.getPayStatus()));
 
         if (orderInfo.getUsePoint() != null) {
             order.setUsePoint(orderInfo.getUsePoint());
         } else {
             order.setUsePoint(0);
-        }
-        if (orderInfo.getPayTime() != null) {
-            order.setPayTime(DateUtil.formatDate(orderInfo.getPayTime(), "yyyy.MM.dd HH:mm"));
         }
         order.setTypeName(type.getValue());
         order.setStatusText(orderStatus.getValue());
@@ -1196,7 +1520,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
                 orderAddress = orderAddressList.get(0);
             }
             if (orderAddress != null) {
-                AddressDto address = new AddressDto();
+                UserOrderRespVO.AddressRespVO address = new UserOrderRespVO.AddressRespVO();
                 address.setId(orderAddress.getId());
                 address.setName(orderAddress.getName());
                 address.setMobile(orderAddress.getMobile());
@@ -1230,10 +1554,10 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         // 物流信息
         if (StringUtils.isNotEmpty(orderInfo.getExpressInfo())) {
             JSONObject express = JSONObject.parseObject(orderInfo.getExpressInfo());
-            ExpressDto expressInfo = new ExpressDto();
+            UserOrderRespVO.ExpressRespVO expressInfo = new UserOrderRespVO.ExpressRespVO();
             expressInfo.setExpressNo(express.get("expressNo").toString());
             expressInfo.setExpressCompany(express.get("expressCompany").toString());
-            expressInfo.setExpressTime(express.get("expressTime").toString());
+            expressInfo.setExpressTime(express.getDate("expressTime"));
             order.setExpressInfo(expressInfo);
         }
 
@@ -1264,8 +1588,8 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
                     Map<String, String> payResult = weixinService.queryPaidOrder(orderInfo.getStoreId(), "", orderInfo.getOrderSn());
                     if (payResult != null && payResult.get("trade_state").equals("SUCCESS")) {
                         BigDecimal payAmount = new BigDecimal(payResult.get("total_fee")).divide(new BigDecimal("100"));
-                        setOrderPayed(orderInfo.getId(), payAmount);
-                        order.setPayStatus(PayStatusEnum.SUCCESS.getKey());
+                        SpringUtils.getBean(OpenApiOrderService.class).setOrderPayed(orderInfo.getId(), payAmount);
+                        order.setPayStatus(PayStatusEnum.SUCCESS);
                     }
                 } catch (Exception e) {
                     // empty
@@ -1277,8 +1601,8 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
                     Map<String, String> payResult = alipayService.queryPaidOrder(orderInfo.getStoreId(), "", orderInfo.getOrderSn());
                     if (payResult != null) {
                         BigDecimal payAmount = new BigDecimal(payResult.get("payAmount"));
-                        setOrderPayed(orderInfo.getId(), payAmount);
-                        order.setPayStatus(PayStatusEnum.SUCCESS.getKey());
+                        SpringUtils.getBean(OpenApiOrderService.class).setOrderPayed(orderInfo.getId(), payAmount);
+                        order.setPayStatus(PayStatusEnum.SUCCESS);
                     }
                 } catch (Exception e) {
                     // empty
@@ -1407,7 +1731,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
     /**
      * 处理购物车商品列表
      */
-    private CartCalculationResult processCartItems(List<MtCart> cartList) {
+    private CartCalculationResult processCartItems(List<MtCart> cartList, String orderModel) {
         List<ResCartDto> cartDtoList = new ArrayList<>();
         String basePath = settingService.getUploadBasePath();
         int totalNum = 0;
@@ -1425,7 +1749,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
             }
 
             totalNum += cart.getNum();
-            ResCartDto cartDto = buildCartDto(cart, mtGoodsInfo, basePath);
+            ResCartDto cartDto = buildCartDto(cart, mtGoodsInfo, basePath, orderModel);
             cartDtoList.add(cartDto);
 
             // 计算总价
@@ -1444,7 +1768,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
     /**
      * 构建购物车DTO
      */
-    private ResCartDto buildCartDto(MtCart cart, MtGoods mtGoodsInfo, String basePath) {
+    private ResCartDto buildCartDto(MtCart cart, MtGoods mtGoodsInfo, String basePath, String orderModel) {
         ResCartDto cartDto = new ResCartDto();
         cartDto.setId(cart.getId());
         cartDto.setGoodsId(cart.getGoodsId());
@@ -1463,7 +1787,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         cartDto.setGoodsInfo(goodsInfo);
         // 检查库存有效性
         boolean isEffect = checkStockAvailability(goodsInfo, cart.getNum());
-        if (!isEffect) {
+        if (!isEffect && !StrUtil.equals(OrderModeEnum.DYNAMIC.getKey(), orderModel)) {
             throw exception(GOODS_SKU_NOT_ENOUGH, mtGoodsInfo.getName());
         }
         return cartDto;

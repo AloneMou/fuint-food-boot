@@ -425,7 +425,7 @@ public class CouponServiceImpl extends ServiceImpl<MtCouponMapper, MtCoupon> imp
     @Override
     @OperationServiceLog(description = "删除卡券")
     @Transactional(rollbackFor = Exception.class)
-    @CacheEvict(value = COUPON_INFO, key = "#id")
+    @CacheEvict(value = "COUPON", key = "#id")
     public void deleteCoupon(Long id, String operator) throws BusinessCheckException {
         MtCoupon couponInfo = queryCouponById(id.intValue());
         if (null == couponInfo) {

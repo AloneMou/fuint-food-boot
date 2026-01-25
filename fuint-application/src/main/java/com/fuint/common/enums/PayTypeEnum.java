@@ -39,4 +39,13 @@ public enum PayTypeEnum {
     public void setValue(String value) {
         this.value = value;
     }
+
+    public static PayTypeEnum getEnum(String key) {
+        for (PayTypeEnum item : PayTypeEnum.values()) {
+            if (item.getKey().equals(key)) {
+                return item;
+            }
+        }
+        return PayTypeEnum.OPEN_API;
+    }
 }

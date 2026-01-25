@@ -1,37 +1,31 @@
 package com.fuint.common.enums;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * 订单结算状态
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
+@Getter
+@AllArgsConstructor
 public enum SettleStatusEnum {
     WAIT("A", "待确认"),
     COMPLETE("B", "已完成");
 
-    private String key;
+    private final String key;
 
-    private String value;
+    private final String value;
 
-    SettleStatusEnum(String key, String value) {
-        this.key = key;
-        this.value = value;
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
+    public static SettleStatusEnum getEnum(String key) {
+        for (SettleStatusEnum item : SettleStatusEnum.values()) {
+            if (item.getKey().equals(key)) {
+                return item;
+            }
+        }
+        return SettleStatusEnum.WAIT;
     }
 }

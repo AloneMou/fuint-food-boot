@@ -16,6 +16,7 @@ import com.fuint.common.service.*;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.pojo.PageResult;
+import com.fuint.framework.util.object.BeanUtils;
 import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.openapi.service.OpenApiOrderService;
@@ -364,44 +365,19 @@ public class OpenOrderController extends BaseController {
     @GetMapping(value = "/detail")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<UserOrderDto> getOrderDetail(@Valid OrderDetailReqVO reqVO) throws BusinessCheckException {
-        UserOrderDto orderDto = orderService.getOrderById(reqVO.getOrderId());
-        if (orderDto == null) {
+    public CommonResult<UserOrderRespVO> getOrderDetail(@Valid OrderDetailReqVO reqVO) throws BusinessCheckException {
+        UserOrderRespVO order = openApiOrderService.getUserOrderDetail(reqVO.getOrderId());
+        if (order == null) {
             return CommonResult.error(ORDER_NOT_FOUND);
         }
-
         // 验证订单权限
-        if (reqVO.getUserId() != null && !orderDto.getUserId().equals(reqVO.getUserId())) {
-            return CommonResult.error(403, "无权访问该订单");
+        if (reqVO.getUserId() != null && !order.getUserId().equals(reqVO.getUserId())) {
+            return CommonResult.error(ORDER_NOT_BELONG_TO_USER, reqVO.getUserId());
         }
-        if (reqVO.getMerchantId() != null && !orderDto.getMerchantId().equals(reqVO.getMerchantId())) {
-            return CommonResult.error(403, "无权访问该订单");
+        if (reqVO.getMerchantId() != null && !order.getMerchantId().equals(reqVO.getMerchantId())) {
+            return CommonResult.error(ORDER_NOT_BELONG_TO_MERCHANT, reqVO.getMerchantId());
         }
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("order", orderDto);
-
-        // 计算队列信息（优化：使用一条SQL聚合查询）
-        // 假设状态为已支付（待制作/制作中）的订单在排队
-//        LambdaQueryWrapper<MtOrder> queryWrapper = Wrappers.lambdaQuery();
-//        queryWrapper.eq(MtOrder::getStatus, OrderStatusEnum.PAID.getKey());
-//        queryWrapper.lt(MtOrder::getId, reqVO.getOrderId()); // 在当前订单之前的
-//        List<MtOrder> queueOrders = orderService.list(queryWrapper);
-//
-//        int coffeeCount = 0;
-//        if (CollUtil.isNotEmpty(queueOrders)) {
-//            List<Integer> queueOrderIds = queueOrders.stream()
-//                    .map(MtOrder::getId)
-//                    .collect(Collectors.toList());
-//            // 使用批量查询，一次性统计所有订单的商品数量
-//            Integer count = mtOrderGoodsMapper.countGoodsByOrderIds(queueOrderIds);
-//            coffeeCount = count != null ? count : 0;
-//        }
-//
-//        result.put("queueCount", coffeeCount);
-//        result.put("estimatedWaitTime", coffeeCount * 5); // 假设每杯5分钟
-
-        return CommonResult.success(orderDto);
+        return CommonResult.success(order);
     }
 
     /**
@@ -412,37 +388,23 @@ public class OpenOrderController extends BaseController {
      * @throws BusinessCheckException 业务异常
      */
     @ApiOperation(value = "订单列表", notes = "支持多条件分页查询，使用MyBatis Plus优化性能")
-    @GetMapping(value = "/list")
+    @GetMapping(value = "/page")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<PageResult<UserOrderDto>> getOrderList(@Valid OrderListReqVO reqVO) throws BusinessCheckException {
+    public CommonResult<PageResult<UserOrderSimpleRespVO>> getOrderList(@Valid OrderListReqVO reqVO) throws BusinessCheckException {
         // 使用 MyBatis Plus 分页查询
         PageResult<MtOrder> pageResult = mtOrderMapper.selectOrderPage(reqVO);
-
         if (CollUtil.isEmpty(pageResult.getList())) {
             return CommonResult.success(PageResult.empty());
         }
-
         // 转换为 UserOrderDto
-        List<UserOrderDto> userOrderList = new ArrayList<>();
-        for (MtOrder order : pageResult.getList()) {
-            try {
-                UserOrderDto orderDto = orderService.getOrderById(order.getId());
-                if (orderDto != null) {
-                    userOrderList.add(orderDto);
-                }
-            } catch (Exception e) {
-                log.warn("获取订单详情失败: orderId={}, error={}", order.getId(), e.getMessage());
-            }
-        }
-
-        PageResult<UserOrderDto> result = new PageResult<>();
+        List<UserOrderRespVO> userOrderList = openApiOrderService.convertOrderList(pageResult.getList());
+        PageResult<UserOrderSimpleRespVO> result = new PageResult<>();
         result.setTotal(pageResult.getTotal());
         result.setTotalPages(pageResult.getTotalPages());
         result.setCurrentPage(pageResult.getCurrentPage());
         result.setPageSize(pageResult.getPageSize());
-        result.setList(userOrderList);
-
+        result.setList(BeanUtils.toBean(userOrderList,UserOrderSimpleRespVO.class));
         return CommonResult.success(result);
     }
 

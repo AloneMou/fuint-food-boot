@@ -272,4 +272,6 @@ public interface OrderService extends IService<MtOrder> {
      * @return 订单预创建结果（包含价格信息和可用优惠券列表）
      */
     Map<String, Object> preCreateOrder(Integer merchantId, Integer userId, List<MtCart> cartList, Integer userCouponId, Integer usePoint, String platform, String orderMode, Integer storeId) throws BusinessCheckException;
+
+
 }

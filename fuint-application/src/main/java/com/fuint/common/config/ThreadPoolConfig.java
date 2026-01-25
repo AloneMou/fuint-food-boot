@@ -66,8 +66,8 @@ public class ThreadPoolConfig {
      */
     @Bean(name = "goodsPriceExecutor")
     public ThreadPoolExecutor goodsPriceExecutor() {
-        int corePoolSize = 10;  // 核心线程数
-        int maximumPoolSize = 20;  // 最大线程数
+        int corePoolSize = 16;  // 核心线程数
+        int maximumPoolSize = 50;  // 最大线程数
         long keepAliveTime = 60L;  // 线程空闲时间
         TimeUnit unit = TimeUnit.SECONDS;  // 时间单位
         int queueCapacity = 500;  // 队列容量

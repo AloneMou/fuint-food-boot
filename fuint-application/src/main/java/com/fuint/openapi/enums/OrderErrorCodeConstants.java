@@ -49,6 +49,8 @@ public interface OrderErrorCodeConstants {
     ErrorCode ORDER_PAY_AMOUNT_ERROR = new ErrorCode(100_7_017, "订单支付金额异常");
     //当前订单不属于该用户
     ErrorCode ORDER_NOT_BELONG_TO_USER = new ErrorCode(100_7_018, "当前订单不属于该用户({})");
-    //价格不一致，请重新下单
-    ErrorCode PRICE_NOT_CONSISTENT = new ErrorCode(100_7_019, "价格不一致，请重新下单");
+    //当前订单不属于该商户
+    ErrorCode ORDER_NOT_BELONG_TO_MERCHANT = new ErrorCode(100_7_019, "当前订单不属于该商户({})");
+    // 价格不一致，请重新下单
+    ErrorCode PRICE_NOT_CONSISTENT = new ErrorCode(100_7_020, "价格不一致，请重新下单");
 }
