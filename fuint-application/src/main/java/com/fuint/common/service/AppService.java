@@ -6,6 +6,8 @@ import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.repository.model.app.MtApp;
 
+import java.util.List;
+
 /**
  * 应用管理业务接口
  *
@@ -114,4 +116,9 @@ public interface AppService extends IService<MtApp> {
      * @return 是否在白名单中
      */
     Boolean checkIpWhiteList(String appId, String ip) throws BusinessCheckException;
+
+    /**
+     * 获取所有可用APP列表
+     */
+    List<MtApp> getAvailableAppList();
 }

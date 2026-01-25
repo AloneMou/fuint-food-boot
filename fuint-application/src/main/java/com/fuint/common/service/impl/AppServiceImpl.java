@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -412,6 +413,11 @@ public class AppServiceImpl extends ServiceImpl<MtAppMapper, MtApp> implements A
 
         logger.warn("IP不在白名单中，appId：{}，ip：{}", appId, ip);
         return false;
+    }
+
+    @Override
+    public List<MtApp> getAvailableAppList() {
+        return mtAppMapper.selectAvailableAppList();
     }
 
     /**

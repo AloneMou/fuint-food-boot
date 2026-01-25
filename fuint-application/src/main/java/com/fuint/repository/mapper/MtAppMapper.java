@@ -2,8 +2,11 @@ package com.fuint.repository.mapper;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.fuint.common.enums.StatusEnum;
 import com.fuint.repository.model.app.MtApp;
 import org.apache.ibatis.annotations.Mapper;
+
+import java.util.List;
 
 /**
  * @author Miao
@@ -21,6 +24,12 @@ public interface MtAppMapper extends BaseMapper<MtApp> {
         updateObj.setId(id);
         updateObj.setAppSecret(newSecret);
         updateById(updateObj);
+    }
+
+    default List<MtApp> selectAvailableAppList() {
+        return selectList(new LambdaQueryWrapper<MtApp>()
+                .eq(MtApp::getStatus, StatusEnum.ENABLED.getKey())
+        );
     }
 
 }

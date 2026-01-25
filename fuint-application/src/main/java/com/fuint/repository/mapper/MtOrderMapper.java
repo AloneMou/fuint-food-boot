@@ -1,5 +1,6 @@
 package com.fuint.repository.mapper;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fuint.common.enums.OrderStatusEnum;
 import com.fuint.common.enums.TakeStatusEnum;
 import com.fuint.common.mybatis.query.LambdaQueryWrapperX;
@@ -58,14 +59,20 @@ public interface MtOrderMapper extends BaseMapperX<MtOrder> {
      * @return 分页结果
      */
     default PageResult<MtOrder> selectOrderPage(OrderListReqVO pageReqVO) {
-        LambdaQueryWrapperX<MtOrder> queryWrapper = new LambdaQueryWrapperX<MtOrder>()
+        LambdaQueryWrapper<MtOrder> queryWrapper = new LambdaQueryWrapperX<MtOrder>()
                 .eqIfPresent(MtOrder::getUserId, pageReqVO.getUserId())
                 .eqIfPresent(MtOrder::getMerchantId, pageReqVO.getMerchantId())
                 .eqIfPresent(MtOrder::getStoreId, pageReqVO.getStoreId())
-                .eqIfPresent(MtOrder::getStatus, pageReqVO.getStatus())
-                .eqIfPresent(MtOrder::getPayStatus, pageReqVO.getPayStatus())
+                .eqIfPresent(MtOrder::getStatus, pageReqVO.getStatus() != null ? pageReqVO.getStatus().getKey() : null)
+                .eqIfPresent(MtOrder::getPayStatus, pageReqVO.getPayStatus() != null ? pageReqVO.getPayStatus().getKey() : null)
+                .eqIfPresent(MtOrder::getOrderMode, pageReqVO.getOrderMode() != null ? pageReqVO.getOrderMode().getKey() : null)
+                .eqIfPresent(MtOrder::getType, pageReqVO.getOrderType() != null ? pageReqVO.getOrderType().getKey() : null)
+                .eqIfPresent(MtOrder::getPayType, pageReqVO.getPayType() != null ? pageReqVO.getPayType().getKey() : null)
                 .geIfPresent(MtOrder::getCreateTime, pageReqVO.getStartTime())
                 .leIfPresent(MtOrder::getCreateTime, pageReqVO.getEndTime())
+                .apply(StringUtils.isNotEmpty(pageReqVO.getGoodsName()),
+                        "EXISTS (SELECT 1 FROM mt_order_goods og LEFT JOIN mt_goods g ON og.goods_id = g.id WHERE og.order_id = mt_order.id AND g.name LIKE CONCAT('%', {0}, '%'))",
+                        pageReqVO.getGoodsName())
                 .orderByDesc(MtOrder::getCreateTime)
                 .orderByDesc(MtOrder::getId);
         return selectPage(pageReqVO, queryWrapper);

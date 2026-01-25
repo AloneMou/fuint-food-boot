@@ -55,5 +55,5 @@ public class OrderListReqVO extends PageParams {
 
     @DateTimeFormat(pattern = DatePattern.NORM_DATETIME_PATTERN)
     @ApiModelProperty(value = "下单时间止", example = "2024-12-31 23:59:59")
-    private String endTime;
+    private Date endTime;
 }

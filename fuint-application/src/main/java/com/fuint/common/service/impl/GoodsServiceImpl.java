@@ -1,6 +1,7 @@
 package com.fuint.common.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -838,106 +839,108 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
         }
         MtGoods updateObj = new MtGoods();
         BeanUtils.copyProperties(updateReqVO, updateObj);
-        mtGoods.setCouponIds(CollUtil.join(updateReqVO.getCouponIds(), ","));
-        // 图片处理
-        if (updateReqVO.getImages() != null && !updateReqVO.getImages().isEmpty()) {
-            updateObj.setLogo(updateReqVO.getImages().get(0));
+        if (CollUtil.isNotEmpty(updateReqVO.getCouponIds())) {
+            mtGoods.setCouponIds(CollUtil.join(updateReqVO.getCouponIds(), ","));
+        }
+        if (CollUtil.isNotEmpty(updateReqVO.getImages())) {
             updateObj.setImages(JSONObject.toJSONString(updateReqVO.getImages()));
-        } else if (StrUtil.isNotEmpty(updateReqVO.getLogo())) {
+        }
+        if (ObjectUtil.isNotNull(updateObj.getLogo())) {
             updateObj.setLogo(updateReqVO.getLogo());
         }
         updateObj.setUpdateTime(new Date());
-        updateObj.setOperator("openapi");
+        updateObj.setOperator("OPENAPI");
         this.updateById(updateObj);
-
-        if (!StrUtil.equals(updateReqVO.getIsSingleSpec(), mtGoods.getIsSingleSpec())) {
-            if (updateReqVO.getIsSingleSpec().equals(YesOrNoEnum.YES.getKey())) {
-                mtGoodsSpecMapper.deleteByGoodsId(mtGoods.getId());
-                mtGoodsSkuMapper.deleteByGoodsId(mtGoods.getId());
-                return;
-            }
-        } else {
-            if (updateReqVO.getIsSingleSpec().equals(YesOrNoEnum.YES.getKey())) {
-                return;
-            }
-        }
-        List<MtGoodsSpec> oldSpecLs = queryGoodsSpecList(mtGoods.getId());
-        List<MtGoodsSku> oldSkuLs = queryGoodsSkuList(mtGoods.getId());
-        List<MtGoodsSpec> specLs = new ArrayList<>();
-        for (GoodsSpecItemVO spec : updateReqVO.getSpecData()) {
-            for (GoodsSpecChildVO child : spec.getChild()) {
-                MtGoodsSpec specBean = new MtGoodsSpec();
-                specBean.setName(spec.getName());
-                specBean.setGoodsId(updateObj.getId());
-                specBean.setStatus(StatusEnum.ENABLED.getKey());
-                specBean.setValue(child.getName());
-                specLs.add(specBean);
-            }
-        }
-        List<List<MtGoodsSpec>> diffLs = diffList(oldSpecLs, specLs, (oldObj, newObj) -> {
-            String key = oldObj.getName() + "^" + oldObj.getValue();
-            String newKey = newObj.getName() + "^" + newObj.getValue();
-            return key.equals(newKey);
-        });
-        List<MtGoodsSpec> addLs = diffLs.get(0);
-        if (CollUtil.isNotEmpty(addLs)) {
-            mtGoodsSpecMapper.saveBatch(addLs);
-        }
-        List<MtGoodsSpec> updateLs = diffLs.get(1);
-        for (MtGoodsSpec spec : updateLs) {
-            mtGoodsSpecMapper.updateById(spec);
-        }
-        List<MtGoodsSpec> deleteLs = diffLs.get(2);
-        List<Integer> deleteIds = convertList(deleteLs, MtGoodsSpec::getId);
-        if (CollUtil.isNotEmpty(deleteIds)) {
-            mtGoodsSpecMapper.deleteBatchIds(deleteIds);
-        }
-
-        List<MtGoodsSpec> specList = queryGoodsSpecList(mtGoods.getId());
-        Map<String, Integer> specMap = convertMap(specList, spec -> spec.getName() + "^" + spec.getValue(), MtGoodsSpec::getId);
-        List<MtGoodsSku> skuLs = new ArrayList<>();
-        Integer stock = 0;
-        for (GoodsSkuCreateReqVO sku : updateReqVO.getSkuData()) {
-            List<GoodsSkuCreateReqVO.Spec> specs = sku.getSpecLs();
-            List<Integer> specIds = new ArrayList<>();
-            for (GoodsSkuCreateReqVO.Spec spec : specs) {
-                Integer specId = specMap.get(spec.getName() + "^" + spec.getValue());
-                if (specId != null) {
-                    specIds.add(specId);
+        if (StringUtils.isNotBlank(updateReqVO.getIsSingleSpec())) {
+            if (!StrUtil.equals(updateReqVO.getIsSingleSpec(), mtGoods.getIsSingleSpec())) {
+                if (updateReqVO.getIsSingleSpec().equals(YesOrNoEnum.YES.getKey())) {
+                    mtGoodsSpecMapper.deleteByGoodsId(mtGoods.getId());
+                    mtGoodsSkuMapper.deleteByGoodsId(mtGoods.getId());
+                    return;
+                }
+            } else {
+                if (updateReqVO.getIsSingleSpec().equals(YesOrNoEnum.YES.getKey())) {
+                    return;
                 }
             }
-            MtGoodsSku skuBean = new MtGoodsSku();
-            BeanUtils.copyProperties(sku, skuBean);
-            skuBean.setGoodsId(updateReqVO.getId());
-            skuBean.setSpecIds(CollUtil.join(specIds, "-"));
-            skuBean.setStatus(StatusEnum.ENABLED.getKey());
-            stock += skuBean.getStock();
-            skuLs.add(skuBean);
-        }
-        List<List<MtGoodsSku>> diffSkuLs = diffList(oldSkuLs, skuLs, (oldObj, newObj) -> {
-            String key = oldObj.getSpecIds();
-            String newKey = newObj.getSpecIds();
-            return key.equals(newKey);
-        });
-        List<MtGoodsSku> addSkuLs = diffSkuLs.get(0);
-        if (CollUtil.isNotEmpty(addSkuLs)) {
-            mtGoodsSkuMapper.saveBatch(addSkuLs);
-        }
-        List<MtGoodsSku> updateSkuLs = diffSkuLs.get(1);
-        for (MtGoodsSku sku : updateSkuLs) {
-            mtGoodsSkuMapper.updateById(sku);
-        }
-        List<MtGoodsSku> deleteSkuLs = diffSkuLs.get(2);
-        List<Integer> deleteSkuIds = convertList(deleteSkuLs, MtGoodsSku::getId);
-        if (CollUtil.isNotEmpty(deleteSkuIds)) {
-            mtGoodsSkuMapper.deleteBatchIds(deleteSkuIds);
-        }
+            List<MtGoodsSpec> oldSpecLs = queryGoodsSpecList(mtGoods.getId());
+            List<MtGoodsSku> oldSkuLs = queryGoodsSkuList(mtGoods.getId());
+            List<MtGoodsSpec> specLs = new ArrayList<>();
+            for (GoodsSpecItemVO spec : updateReqVO.getSpecData()) {
+                for (GoodsSpecChildVO child : spec.getChild()) {
+                    MtGoodsSpec specBean = new MtGoodsSpec();
+                    specBean.setName(spec.getName());
+                    specBean.setGoodsId(updateObj.getId());
+                    specBean.setStatus(StatusEnum.ENABLED.getKey());
+                    specBean.setValue(child.getName());
+                    specLs.add(specBean);
+                }
+            }
+            List<List<MtGoodsSpec>> diffLs = diffList(oldSpecLs, specLs, (oldObj, newObj) -> {
+                String key = oldObj.getName() + "^" + oldObj.getValue();
+                String newKey = newObj.getName() + "^" + newObj.getValue();
+                return key.equals(newKey);
+            });
+            List<MtGoodsSpec> addLs = diffLs.get(0);
+            if (CollUtil.isNotEmpty(addLs)) {
+                mtGoodsSpecMapper.saveBatch(addLs);
+            }
+            List<MtGoodsSpec> updateLs = diffLs.get(1);
+            for (MtGoodsSpec spec : updateLs) {
+                mtGoodsSpecMapper.updateById(spec);
+            }
+            List<MtGoodsSpec> deleteLs = diffLs.get(2);
+            List<Integer> deleteIds = convertList(deleteLs, MtGoodsSpec::getId);
+            if (CollUtil.isNotEmpty(deleteIds)) {
+                mtGoodsSpecMapper.deleteBatchIds(deleteIds);
+            }
 
-        // 更新库存
-        MtGoods updateStock = new MtGoods();
-        updateStock.setId(mtGoods.getId());
-        updateStock.setStock(stock);
-        mtGoodsMapper.updateById(updateStock);
+            List<MtGoodsSpec> specList = queryGoodsSpecList(mtGoods.getId());
+            Map<String, Integer> specMap = convertMap(specList, spec -> spec.getName() + "^" + spec.getValue(), MtGoodsSpec::getId);
+            List<MtGoodsSku> skuLs = new ArrayList<>();
+            Integer stock = 0;
+            for (GoodsSkuCreateReqVO sku : updateReqVO.getSkuData()) {
+                List<GoodsSkuCreateReqVO.Spec> specs = sku.getSpecLs();
+                List<Integer> specIds = new ArrayList<>();
+                for (GoodsSkuCreateReqVO.Spec spec : specs) {
+                    Integer specId = specMap.get(spec.getName() + "^" + spec.getValue());
+                    if (specId != null) {
+                        specIds.add(specId);
+                    }
+                }
+                MtGoodsSku skuBean = new MtGoodsSku();
+                BeanUtils.copyProperties(sku, skuBean);
+                skuBean.setGoodsId(updateReqVO.getId());
+                skuBean.setSpecIds(CollUtil.join(specIds, "-"));
+                skuBean.setStatus(StatusEnum.ENABLED.getKey());
+                stock += skuBean.getStock();
+                skuLs.add(skuBean);
+            }
+            List<List<MtGoodsSku>> diffSkuLs = diffList(oldSkuLs, skuLs, (oldObj, newObj) -> {
+                String key = oldObj.getSpecIds();
+                String newKey = newObj.getSpecIds();
+                return key.equals(newKey);
+            });
+            List<MtGoodsSku> addSkuLs = diffSkuLs.get(0);
+            if (CollUtil.isNotEmpty(addSkuLs)) {
+                mtGoodsSkuMapper.saveBatch(addSkuLs);
+            }
+            List<MtGoodsSku> updateSkuLs = diffSkuLs.get(1);
+            for (MtGoodsSku sku : updateSkuLs) {
+                mtGoodsSkuMapper.updateById(sku);
+            }
+            List<MtGoodsSku> deleteSkuLs = diffSkuLs.get(2);
+            List<Integer> deleteSkuIds = convertList(deleteSkuLs, MtGoodsSku::getId);
+            if (CollUtil.isNotEmpty(deleteSkuIds)) {
+                mtGoodsSkuMapper.deleteBatchIds(deleteSkuIds);
+            }
+
+            // 更新库存
+            MtGoods updateStock = new MtGoods();
+            updateStock.setId(mtGoods.getId());
+            updateStock.setStock(stock);
+            mtGoodsMapper.updateById(updateStock);
+        }
     }
 
     @Override

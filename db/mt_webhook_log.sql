@@ -1,0 +1,21 @@
+CREATE TABLE `mt_webhook_log` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `event_id` varchar(64) NOT NULL COMMENT '事件ID',
+  `event_type` varchar(64) NOT NULL COMMENT '事件类型',
+  `merchant_id` int(11) DEFAULT NULL COMMENT '商户ID',
+  `app_id` varchar(64) DEFAULT NULL COMMENT '应用ID',
+  `callback_url` varchar(255) DEFAULT NULL COMMENT '回调URL',
+  `request_headers` text COMMENT '请求头',
+  `request_body` longtext COMMENT '请求体',
+  `response_code` int(11) DEFAULT NULL COMMENT '响应状态码',
+  `response_body` longtext COMMENT '响应内容',
+  `status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '发送状态：0-进行中，1-成功，2-失败',
+  `retry_count` int(11) NOT NULL DEFAULT '0' COMMENT '重试次数',
+  `next_retry_time` datetime DEFAULT NULL COMMENT '下次重试时间',
+  `error_msg` text COMMENT '异常信息',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_event_id` (`event_id`),
+  KEY `idx_status_retry` (`status`,`retry_count`,`next_retry_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Webhook回调日志表';
