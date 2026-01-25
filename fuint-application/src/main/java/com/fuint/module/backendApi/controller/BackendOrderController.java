@@ -21,6 +21,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -240,6 +241,7 @@ public class BackendOrderController extends BaseController {
     @RequestMapping(value = "/delivered", method = RequestMethod.POST)
     @CrossOrigin
     @PreAuthorize("@pms.hasPermission('order:delivery')")
+    @Transactional(rollbackFor = Exception.class)
     public ResponseObject delivered(HttpServletRequest request, @RequestBody Map<String, Object> param) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
         Integer orderId = param.get("orderId") == null ? 0 : Integer.parseInt(param.get("orderId").toString());
@@ -277,6 +279,20 @@ public class BackendOrderController extends BaseController {
         MtOrder updatedOrder = orderService.getOrderInfo(orderId);
         if (updatedOrder != null) {
             eventCallbackService.sendOrderStatusChangedCallback(updatedOrder, orderInfo.getStatus(), OrderStatusEnum.DELIVERED.getKey());
+            
+            // 发送订单准备就绪回调
+            List<Map<String, Object>> items = new ArrayList<>();
+            if (orderInfo.getGoods() != null) {
+                for (OrderGoodsDto goods : orderInfo.getGoods()) {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("goodsId", goods.getGoodsId());
+                    item.put("skuId", goods.getSkuId());
+                    item.put("name", goods.getName());
+                    item.put("num", goods.getNum());
+                    items.add(item);
+                }
+            }
+            eventCallbackService.sendOrderReadyCallback(updatedOrder, items);
         }
 
         // 发送小程序订阅消息

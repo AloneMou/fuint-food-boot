@@ -17,6 +17,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -132,6 +133,7 @@ public class OpenCommentController extends BaseController {
     @PostMapping(value = "/create-order")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @Transactional(rollbackFor = Exception.class)
     public CommonResult<Integer> createOrderComment(@Valid @RequestBody OrderCommentCreateReqVO createReqVO) {
         try {
             Integer commentId = goodsCommentService.createOrderComment(createReqVO);
@@ -167,6 +169,7 @@ public class OpenCommentController extends BaseController {
     @PostMapping(value = "/create-price")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @Transactional(rollbackFor = Exception.class)
     public CommonResult<Integer> createPriceComment(@Valid @RequestBody PriceCommentCreateReqVO createReqVO) {
         try {
             Integer commentId = goodsCommentService.createPriceComment(createReqVO);
