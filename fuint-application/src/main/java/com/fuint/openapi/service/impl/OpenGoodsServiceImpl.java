@@ -2,6 +2,7 @@ package com.fuint.openapi.service.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.fuint.common.enums.*;
+import com.fuint.common.mybatis.query.LambdaQueryWrapperX;
 import com.fuint.common.service.*;
 import com.fuint.common.service.MemberService;
 import com.fuint.common.service.UserGradeService;
@@ -10,9 +11,7 @@ import com.fuint.openapi.v1.goods.product.vo.model.GoodsSkuRespVO;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecChildVO;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecItemVO;
 import com.fuint.openapi.v1.goods.product.vo.response.CGoodsListRespVO;
-import com.fuint.repository.mapper.MtCouponGoodsMapper;
-import com.fuint.repository.mapper.MtGoodsSkuMapper;
-import com.fuint.repository.mapper.MtGoodsSpecMapper;
+import com.fuint.repository.mapper.*;
 import com.fuint.repository.model.*;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
@@ -64,6 +63,12 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
     @Resource
     private MtCouponGoodsMapper mtCouponGoodsMapper;
 
+    @Resource
+    private MtGoodsCateMapper mtGoodsCateMapper;
+
+    @Resource
+    private MtStoreMapper storeMapper;
+
     @Resource(name = "goodsPriceExecutor")
     private ThreadPoolExecutor goodsPriceExecutor;
 
@@ -87,6 +92,11 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
         if (goodsLs == null || goodsLs.isEmpty()) {
             return new ArrayList<>();
         }
+
+        List<MtGoodsCate> cateLs = mtGoodsCateMapper.selectList(new LambdaQueryWrapperX<>());
+        List<MtStore> storeLs = storeMapper.selectList(new LambdaQueryWrapperX<>());
+        Map<Integer, String> storeMap = convertMap(storeLs, MtStore::getId, MtStore::getName);
+        Map<Integer, String> cateMap = convertMap(cateLs, MtGoodsCate::getId, MtGoodsCate::getName);
         List<Integer> goodsIds = convertList(goodsLs, MtGoods::getId);
         List<MtGoodsSku> skuLs = goodsSkuMapper.selectSkuLsByGoodsIds(goodsIds);
         List<MtGoodsSpec> specLs = goodsSpecMapper.selectSpecLsByGoodsIds(goodsIds);
@@ -107,7 +117,7 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
 
         List<CompletableFuture<CGoodsListRespVO>> futures = goodsLs.stream()
                 .map(goods -> CompletableFuture.supplyAsync(
-                        () -> buildGoodsVO(goods, skuMap, specMap, memberDiscountRate, finalPointSettings, finalCouponCtxList),
+                        () -> buildGoodsVO(goods, skuMap, specMap, memberDiscountRate, finalPointSettings, finalCouponCtxList, cateMap,storeMap),
                         goodsPriceExecutor
                 ))
                 .collect(Collectors.toList());
@@ -122,11 +132,16 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
                                           Map<Integer, List<MtGoodsSpec>> specMap,
                                           BigDecimal memberDiscountRate,
                                           PointSettings pointSettings,
-                                          List<CouponCtx> couponCtxList) {
+                                          List<CouponCtx> couponCtxList,
+                                          Map<Integer, String> cateMap,
+                                          Map<Integer, String> storeMap
+    ) {
         CGoodsListRespVO goodsVO = new CGoodsListRespVO();
         BeanUtils.copyProperties(goods, goodsVO);
+        goodsVO.setCateName(cateMap.getOrDefault(goods.getCateId(), ""));
+        goodsVO.setStoreName(storeMap.getOrDefault(goods.getStoreId(), ""));
         goodsVO.setCouponIds(splitToInt(goods.getCouponIds(), ","));
-        
+
         // 计算单规格商品的动态价格
         if (StrUtil.equals(YesOrNoEnum.YES.getKey(), goods.getIsSingleSpec())) {
             BigDecimal dynamicPrice = calculateDynamicPrice(
@@ -153,7 +168,7 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
         // 构建规格数据
         List<GoodsSpecItemVO> specVOList = buildSpecData(specMap.getOrDefault(goods.getId(), Collections.emptyList()));
         goodsVO.setSpecData(specVOList);
-        
+
         return goodsVO;
     }
 
@@ -303,10 +318,10 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
      */
     private BigDecimal calculateCouponDeduction(BigDecimal price, BigDecimal originalPrice, MtGoods goods, List<CouponCtx> couponCtxList) {
         BigDecimal couponDeduction = BigDecimal.ZERO;
-        
+
         for (CouponCtx ctx : couponCtxList) {
             MtCoupon coupon = ctx.getCoupon();
-            
+
             // 检查适用商品
             if (ApplyGoodsEnum.PARK_GOODS.getKey().equals(coupon.getApplyGoods())) {
                 if (ctx.getApplicableGoodsIds() == null || !ctx.getApplicableGoodsIds().contains(goods.getId())) {
@@ -335,7 +350,7 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
                 couponDeduction = amount;
             }
         }
-        
+
         // 优惠券抵扣不能超过当前价格
         return couponDeduction.min(price);
     }
@@ -349,7 +364,7 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
      * @return 积分抵扣金额
      */
     private BigDecimal calculatePointDeduction(BigDecimal afterCouponPrice, MtGoods goods, PointSettings pointSettings) {
-        if (!pointSettings.isCanUsePointAsMoney() 
+        if (!pointSettings.isCanUsePointAsMoney()
                 || !StrUtil.equals(YesOrNoEnum.YES.getKey(), goods.getCanUsePoint())
                 || pointSettings.getUserInfo() == null
                 || pointSettings.getUserInfo().getPoint() <= 0
@@ -365,12 +380,12 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
     /**
      * 计算商品动态价格（包含会员折扣、优惠券抵扣、积分抵扣）
      *
-     * @param originalPrice     商品原价
-     * @param currentPrice      当前价格（用于计算，通常是原价或SKU价格）
-     * @param goods             商品信息
+     * @param originalPrice      商品原价
+     * @param currentPrice       当前价格（用于计算，通常是原价或SKU价格）
+     * @param goods              商品信息
      * @param memberDiscountRate 会员折扣率
-     * @param pointSettings     积分设置
-     * @param couponCtxList    优惠券上下文列表
+     * @param pointSettings      积分设置
+     * @param couponCtxList      优惠券上下文列表
      * @return 动态价格
      */
     private BigDecimal calculateDynamicPrice(BigDecimal originalPrice,
@@ -381,7 +396,7 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
                                              List<CouponCtx> couponCtxList) {
         // 1. 应用会员折扣
         BigDecimal price = currentPrice;
-        if (StrUtil.equals(YesOrNoEnum.YES.getKey(), goods.getIsMemberDiscount()) 
+        if (StrUtil.equals(YesOrNoEnum.YES.getKey(), goods.getIsMemberDiscount())
                 && memberDiscountRate.compareTo(BigDecimal.ZERO) > 0) {
             price = price.multiply(memberDiscountRate).setScale(2, RoundingMode.HALF_UP);
         }
@@ -401,11 +416,11 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
     /**
      * 构建SKU数据
      *
-     * @param goods             商品信息
-     * @param skuList           SKU列表
+     * @param goods              商品信息
+     * @param skuList            SKU列表
      * @param memberDiscountRate 会员折扣率
-     * @param pointSettings     积分设置
-     * @param couponCtxList    优惠券上下文列表
+     * @param pointSettings      积分设置
+     * @param couponCtxList      优惠券上下文列表
      * @return SKU VO列表
      */
     private List<GoodsSkuRespVO> buildSkuData(MtGoods goods,
@@ -414,7 +429,7 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
                                               PointSettings pointSettings,
                                               List<CouponCtx> couponCtxList) {
         List<GoodsSkuRespVO> skuVOList = new ArrayList<>();
-        
+
         for (MtGoodsSku sku : skuList) {
             GoodsSkuRespVO skuVO = new GoodsSkuRespVO();
             BeanUtils.copyProperties(sku, skuVO);
@@ -431,7 +446,7 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
             skuVO.setDynamicPrice(dynamicPrice);
             skuVOList.add(skuVO);
         }
-        
+
         return skuVOList;
     }
 
@@ -444,22 +459,22 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
     private List<GoodsSpecItemVO> buildSpecData(List<MtGoodsSpec> specList) {
         List<GoodsSpecItemVO> specVOList = new ArrayList<>();
         Map<String, List<MtGoodsSpec>> specNameMap = convertMultiMap(specList, MtGoodsSpec::getName);
-        
+
         for (String key : specNameMap.keySet()) {
             GoodsSpecItemVO specVO = new GoodsSpecItemVO();
             specVO.setName(key);
-            
+
             List<MtGoodsSpec> childLs = specNameMap.get(key);
             List<GoodsSpecChildVO> childVOList = new ArrayList<>();
             for (MtGoodsSpec child : childLs) {
                 GoodsSpecChildVO childVO = new GoodsSpecChildVO();
                 BeanUtils.copyProperties(child, childVO);
+                childVO.setName(child.getValue());
                 childVOList.add(childVO);
             }
             specVO.setChild(childVOList);
             specVOList.add(specVO);
         }
-        
         return specVOList;
     }
 }
