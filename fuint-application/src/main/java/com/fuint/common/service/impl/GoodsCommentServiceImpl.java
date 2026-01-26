@@ -591,6 +591,20 @@ public class GoodsCommentServiceImpl extends ServiceImpl<MtGoodsCommentMapper, M
     }
 
     @Override
+    public List<CommentRespVO> queryCommentListByOrderId(Integer orderId) {
+        List<MtGoodsComment> commentList = mtGoodsCommentMapper.selectList(new com.fuint.common.mybatis.query.LambdaQueryWrapperX<MtGoodsComment>()
+                .eq(MtGoodsComment::getOrderId, orderId)
+                .ne(MtGoodsComment::getStatus, "D"));
+
+        if (CollUtil.isEmpty(commentList)) {
+            return new ArrayList<>();
+        }
+        return commentList.stream()
+                .map(this::convertToRespVO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public Boolean checkCommentExists(Integer orderId, Integer goodsId, Integer userId) {
         MtGoodsComment comment = mtGoodsCommentMapper.selectByOrderAndGoods(orderId, goodsId, userId);
         return comment != null;

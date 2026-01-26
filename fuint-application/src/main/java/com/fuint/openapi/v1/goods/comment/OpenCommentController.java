@@ -295,6 +295,17 @@ public class OpenCommentController extends BaseController {
         return CommonResult.success(commentList);
     }
 
+    @ApiOperation(value = "查询订单评价列表", notes = "查询指定订单的所有评价")
+    @GetMapping(value = "/order/{orderId}")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    public CommonResult<List<CommentRespVO>> getCommentListByOrderId(
+            @ApiParam(value = "订单ID", required = true, example = "1")
+            @PathVariable("orderId") Integer orderId) {
+        List<CommentRespVO> commentList = goodsCommentService.queryCommentListByOrderId(orderId);
+        return CommonResult.success(commentList);
+    }
+
 
     @ApiOperation(value = "检查是否已评价", notes = "检查指定订单的商品是否已被用户评价")
     @GetMapping(value = "/check")

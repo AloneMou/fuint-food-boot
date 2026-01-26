@@ -163,6 +163,14 @@ public interface GoodsCommentService {
     List<CommentRespVO> queryGoodsCommentList(Integer goodsId);
 
     /**
+     * 根据订单ID查询评价列表
+     *
+     * @param orderId 订单ID
+     * @return 评价列表
+     */
+    List<CommentRespVO> queryCommentListByOrderId(Integer orderId);
+
+    /**
      * 检查订单商品是否已评价
      *
      * @param orderId 订单ID
