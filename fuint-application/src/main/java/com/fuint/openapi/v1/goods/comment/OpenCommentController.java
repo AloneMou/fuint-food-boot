@@ -100,22 +100,6 @@ public class OpenCommentController extends BaseController {
     public CommonResult<Integer> createGoodsComment(@Valid @RequestBody GoodsCommentCreateReqVO createReqVO) {
         try {
             Integer commentId = goodsCommentService.createGoodsComment(createReqVO);
-            
-            // 触发评价事件回调
-            if (commentId != null) {
-                MtOrder order = orderService.getOrderInfo(createReqVO.getOrderId());
-                if (order != null) {
-                    Map<String, Object> data = new HashMap<>();
-                    data.put("commentId", commentId);
-                    data.put("orderId", createReqVO.getOrderId());
-                    data.put("goodsId", createReqVO.getGoodsId());
-                    data.put("userId", createReqVO.getUserId());
-                    data.put("score", createReqVO.getScore());
-                    data.put("type", "GOODS");
-                    eventCallbackService.sendCommentEventCallback(order.getMerchantId(), data);
-                }
-            }
-            
             return CommonResult.success(commentId);
         } catch (BusinessCheckException e) {
             log.warn("创建商品评价失败：{}", e.getMessage());
@@ -137,21 +121,7 @@ public class OpenCommentController extends BaseController {
     public CommonResult<Integer> createOrderComment(@Valid @RequestBody OrderCommentCreateReqVO createReqVO) {
         try {
             Integer commentId = goodsCommentService.createOrderComment(createReqVO);
-            
             // 触发评价事件回调
-            if (commentId != null) {
-                MtOrder order = orderService.getOrderInfo(createReqVO.getOrderId());
-                if (order != null) {
-                    Map<String, Object> data = new HashMap<>();
-                    data.put("commentId", commentId);
-                    data.put("orderId", createReqVO.getOrderId());
-                    data.put("userId", createReqVO.getUserId());
-                    data.put("score", createReqVO.getScore());
-                    data.put("type", "ORDER_NPS");
-                    eventCallbackService.sendCommentEventCallback(order.getMerchantId(), data);
-                }
-            }
-            
             return CommonResult.success(commentId);
         } catch (BusinessCheckException e) {
             log.warn("创建订单NPS评价失败：{}", e.getMessage());
@@ -173,21 +143,6 @@ public class OpenCommentController extends BaseController {
     public CommonResult<Integer> createPriceComment(@Valid @RequestBody PriceCommentCreateReqVO createReqVO) {
         try {
             Integer commentId = goodsCommentService.createPriceComment(createReqVO);
-            
-            // 触发评价事件回调
-            if (commentId != null) {
-                MtOrder order = orderService.getOrderInfo(createReqVO.getOrderId());
-                if (order != null) {
-                    Map<String, Object> data = new HashMap<>();
-                    data.put("commentId", commentId);
-                    data.put("orderId", createReqVO.getOrderId());
-                    data.put("userId", createReqVO.getUserId());
-                    data.put("score", createReqVO.getScore());
-                    data.put("type", "PRICE");
-                    eventCallbackService.sendCommentEventCallback(order.getMerchantId(), data);
-                }
-            }
-            
             return CommonResult.success(commentId);
         } catch (BusinessCheckException e) {
             log.warn("创建价格评价失败：{}", e.getMessage());
@@ -207,19 +162,6 @@ public class OpenCommentController extends BaseController {
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<Boolean> createBatchComment(@Valid @RequestBody CommentBatchCreateReqVO batchCreateReqVO) {
         Boolean result = goodsCommentService.createBatchComment(batchCreateReqVO);
-        
-        // 触发评价事件回调
-        if (Boolean.TRUE.equals(result)) {
-            MtOrder order = orderService.getOrderInfo(batchCreateReqVO.getOrderId());
-            if (order != null) {
-                Map<String, Object> data = new HashMap<>();
-                data.put("orderId", batchCreateReqVO.getOrderId());
-                data.put("userId", batchCreateReqVO.getUserId());
-                data.put("type", "BATCH");
-                eventCallbackService.sendCommentEventCallback(order.getMerchantId(), data);
-            }
-        }
-        
         return CommonResult.success(result);
     }
 

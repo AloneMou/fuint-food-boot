@@ -173,15 +173,6 @@ public class BackendBalanceController extends BaseController {
         mtBalance.setOrderSn("");
 
         balanceService.addBalance(mtBalance, true);
-
-        // 触发余额变动回调
-        Map<String, Object> callbackData = new HashMap<>();
-        callbackData.put("userId", userId);
-        callbackData.put("amount", mtBalance.getAmount());
-        callbackData.put("description", remark);
-        callbackData.put("operator", operator);
-        eventCallbackService.sendBalanceEventCallback(accountInfo.getMerchantId(), callbackData);
-
         return getSuccessResult(true);
     }
 
@@ -208,16 +199,6 @@ public class BackendBalanceController extends BaseController {
         }
 
         balanceService.distribute(accountInfo, object, userIds, amount, remark);
-
-        // 触发余额发放（批量变动）回调
-        Map<String, Object> callbackData = new HashMap<>();
-        callbackData.put("action", "DISTRIBUTE");
-        callbackData.put("amount", amount);
-        callbackData.put("object", object);
-        callbackData.put("userIds", userIds);
-        callbackData.put("description", remark);
-        eventCallbackService.sendBalanceEventCallback(accountInfo.getMerchantId(), callbackData);
-
         return getSuccessResult(true);
     }
 

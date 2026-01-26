@@ -356,9 +356,10 @@ public class OpenOrderController extends BaseController {
             return CommonResult.error(ORDER_NOT_BELONG_TO_USER, reqVO.getUserId());
         }
         // 发送退款申请事件回调
-
+        AccountInfo accountInfo = new AccountInfo();
+        accountInfo.setAccountName("OpenApi-System");
         // 执行退款
-        boolean result = refundService.doRefund(reqVO);
+        Boolean result = refundService.doRefund(reqVO.getOrderId(), reqVO.getAmount().toString(), reqVO.getRemark(), accountInfo);
         if (result) {
             // 发送退款成功事件回调
             MtOrder updatedOrder = orderService.getOrderInfo(reqVO.getOrderId());
