@@ -4,13 +4,11 @@ import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
-import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fuint.common.dto.AccountInfo;
 import com.fuint.common.dto.OrderDto;
 import com.fuint.common.dto.ResCartDto;
-import com.fuint.common.dto.UserOrderDto;
 import com.fuint.common.enums.*;
 import com.fuint.common.service.*;
 import com.fuint.framework.exception.BusinessCheckException;
@@ -40,7 +38,6 @@ import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.fuint.openapi.enums.OrderErrorCodeConstants.*;
 import static com.fuint.openapi.enums.RedisKeyConstants.CANCEL_ORDER;
@@ -156,26 +153,15 @@ public class OpenOrderController extends BaseController {
                     MtGoods goodsInfo = goodsService.queryGoodsById(cart.getGoodsId());
                     if (goodsInfo != null) {
                         Integer goodsStoreId = goodsInfo.getStoreId();
-                        // 如果当前门店ID为0（公共订单），商品必须是公共商品（storeId = 0）
-                        // 如果当前门店ID > 0（指定门店），商品必须是公共商品（storeId = 0）或属于当前门店（storeId = storeId）
                         if (goodsStoreId == null) {
-                            return CommonResult.error(GOODS_NOT_BELONG_TO_STORE);
+                            goodsStoreId = 0;
                         }
-                        if (storeId == 0) {
-                            // 公共订单，商品必须是公共商品
-                            if (goodsStoreId != 0) {
-                                return CommonResult.error(GOODS_NOT_BELONG_TO_STORE);
-                            }
-                        } else {
-                            // 指定门店订单，商品必须是公共商品或属于该门店
-                            if (goodsStoreId != 0 && !goodsStoreId.equals(storeId)) {
-                                return CommonResult.error(GOODS_NOT_BELONG_TO_STORE);
-                            }
+                        if (goodsStoreId != 0 && !goodsStoreId.equals(storeId)) {
+                            return CommonResult.error(GOODS_NOT_BELONG_TO_STORE, goodsInfo.getName());
                         }
                     }
                 } catch (Exception e) {
-                    log.warn("验证商品归属失败: goodsId={}, error={}", cart.getGoodsId(), e.getMessage());
-                    return CommonResult.error(GOODS_NOT_BELONG_TO_STORE);
+                    return CommonResult.error(GOODS_NOT_BELONG_TO_STORE, cart.getGoodsId());
                 }
             }
         }
@@ -257,7 +243,7 @@ public class OpenOrderController extends BaseController {
         MtOrder order = openApiOrderService.saveOrder(reqVO);
         // 发送订单创建回调
         eventCallbackService.sendOrderStatusChangedCallback(order, null, OrderStatusEnum.CREATED.getKey());
-        
+
         // 如果使用了优惠券，发送优惠券使用回调
         if (order.getCouponId() != null && order.getCouponId() > 0) {
             MtUserCoupon userCoupon = mtUserCouponMapper.selectById(order.getCouponId());

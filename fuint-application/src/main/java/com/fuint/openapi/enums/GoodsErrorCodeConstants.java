@@ -24,4 +24,6 @@ public interface GoodsErrorCodeConstants {
     ErrorCode GOODS_SKU_NOT_EXIST = new ErrorCode(100_4_005, "商品SKU({})不存在");
     //
     ErrorCode GOODS_SKU_NOT_ENOUGH = new ErrorCode(100_4_006, "商品({})库存不足");
+    //商品类型必须是goods、coupon、service
+    ErrorCode GOODS_TYPE_ERROR = new ErrorCode(100_4_007, "商品类型必须是goods、coupon、service");
 }

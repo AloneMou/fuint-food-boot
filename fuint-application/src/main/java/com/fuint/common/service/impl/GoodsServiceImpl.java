@@ -19,6 +19,7 @@ import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.pojo.PageResult;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecChildVO;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecItemCreateReqVO;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecItemVO;
@@ -32,15 +33,12 @@ import com.fuint.repository.mapper.MtGoodsMapper;
 import com.fuint.repository.mapper.MtGoodsSkuMapper;
 import com.fuint.repository.mapper.MtGoodsSpecMapper;
 import com.fuint.repository.model.*;
-import com.fuint.framework.pojo.PageResult;
 import com.fuint.repository.request.GoodsStatisticsReqVO;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -737,6 +735,9 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Integer createGoods(MtGoodsCreateReqVO createReqVO) {
+        if (!StrUtil.containsAny(createReqVO.getType(), "goods", "service", "coupon")) {
+            throw exception(GOODS_TYPE_ERROR);
+        }
         if (CollUtil.isNotEmpty(createReqVO.getCouponIds())) {
             if (createReqVO.getCouponIds().size() > 10) {
                 throw exception(GOODS_COUPON_TOO_MANY, 10);
@@ -820,6 +821,9 @@ public class GoodsServiceImpl extends ServiceImpl<MtGoodsMapper, MtGoods> implem
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateGoods(MtGoodsUpdateReqVO updateReqVO) throws BusinessCheckException {
+        if (!StrUtil.containsAny(updateReqVO.getType(), "goods", "service", "coupon")) {
+            throw exception(GOODS_TYPE_ERROR);
+        }
         MtGoods mtGoods = this.queryGoodsById(updateReqVO.getId());
         if (mtGoods == null) {
             throw exception(GOODS_NOT_FOUND);

@@ -14,7 +14,7 @@ public interface OrderErrorCodeConstants {
     //商品不能为空
     ErrorCode GOODS_NOT_EMPTY = new ErrorCode(100_7_002, "订单商品不能为空");
     //商品不属于当前门店或公共商品
-    ErrorCode GOODS_NOT_BELONG_TO_STORE = new ErrorCode(100_7_003, "商品不属于当前门店或公共商品");
+    ErrorCode GOODS_NOT_BELONG_TO_STORE = new ErrorCode(100_7_003, "商品({})不属于当前门店或公共商品");
 
 
     //无权操作该订单
