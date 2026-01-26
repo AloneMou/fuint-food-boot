@@ -76,10 +76,8 @@ public class WebhookRetryJob {
                 // 增加重试次数
                 webhookLog.setRetryCount(webhookLog.getRetryCount() + 1);
                 webhookLogMapper.updateById(webhookLog);
-
                 // 执行发送
-                eventCallbackService.doSend(app, webhookLog, webhookLog.getRequestBody());
-
+                eventCallbackService.doSend(app, webhookLog, webhookLog.getRequestBody(), webhookLog.getRequestPath());
             } catch (Exception e) {
                 log.error("Error retrying webhook {}: {}", webhookLog.getId(), e.getMessage());
             }

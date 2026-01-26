@@ -114,17 +114,6 @@ public class ClientPointsController extends BaseController {
         try {
             boolean result = pointService.doGift(mtUser.getId(), mobile, amount, remark);
             if (result) {
-                // 触发积分变动回调 (转赠)
-                MtUser sender = memberService.queryMemberById(mtUser.getId());
-                if (sender != null) {
-                    Map<String, Object> callbackData = new HashMap<>();
-                    callbackData.put("action", "GIVE");
-                    callbackData.put("userId", mtUser.getId());
-                    callbackData.put("mobile", mobile);
-                    callbackData.put("amount", amount);
-                    callbackData.put("description", remark);
-                    eventCallbackService.sendPointEventCallback(sender.getMerchantId(), callbackData);
-                }
                 return getSuccessResult(true);
             } else {
                 return getFailureResult(3008, "转赠积分失败");

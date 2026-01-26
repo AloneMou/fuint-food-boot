@@ -32,6 +32,9 @@ public class MtWebhookLog implements Serializable {
     @ApiModelProperty("事件ID")
     private String eventId;
 
+    @ApiModelProperty("链路ID")
+    private String traceId;
+
     @ApiModelProperty("事件类型")
     private String eventType;
 
@@ -43,6 +46,9 @@ public class MtWebhookLog implements Serializable {
 
     @ApiModelProperty("回调URL")
     private String callbackUrl;
+
+    @ApiModelProperty("请求方式")
+    private String requestPath;
 
     @ApiModelProperty("请求头")
     private String requestHeaders;
