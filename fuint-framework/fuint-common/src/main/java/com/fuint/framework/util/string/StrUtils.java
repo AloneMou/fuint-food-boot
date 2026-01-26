@@ -1,7 +1,9 @@
 package com.fuint.framework.util.string;
 
+import cn.hutool.core.lang.RegexPool;
 import cn.hutool.core.text.StrPool;
 import cn.hutool.core.util.ArrayUtil;
+import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
 import org.aspectj.lang.JoinPoint;
 
@@ -142,5 +144,17 @@ public class StrUtils {
         }
         return result.toString();
     }
+
+    public static String isHttp(String url, String prefix) {
+        if (StrUtil.isEmpty(url)) {
+            return url;
+        }
+        //hutool 工具类
+        if (ReUtil.isMatch(RegexPool.URL, url)) {
+            return url;
+        }
+        return prefix + url;
+    }
+
 
 }
