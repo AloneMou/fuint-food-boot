@@ -41,6 +41,7 @@ import java.math.BigDecimal;
 import java.util.*;
 
 import static com.fuint.common.enums.RedisKeyConstants.USER_COUPON;
+import static com.fuint.framework.util.string.StrUtils.isHttp;
 
 /**
  * 会员卡券业务实现类
@@ -474,7 +475,7 @@ public class UserCouponServiceImpl extends ServiceImpl<MtUserCouponMapper, MtUse
 
                 String image = couponInfo.getImage();
                 String baseImage = settingService.getUploadBasePath();
-                dto.setImage(baseImage + image);
+                dto.setImage(isHttp( image,baseImage));
                 dto.setStatus(userCouponDto.getStatus());
                 dto.setAmount(userCouponDto.getAmount());
                 dto.setBalance(userCouponDto.getBalance());

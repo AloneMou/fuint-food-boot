@@ -18,6 +18,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
+
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -25,13 +26,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.fuint.framework.util.string.StrUtils.isHttp;
+
 /**
  * 商品类controller
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
-@Api(tags="会员端-商品相关接口")
+@Api(tags = "会员端-商品相关接口")
 @RestController
 @AllArgsConstructor
 @RequestMapping(value = "/clientApi/goodsApi")
@@ -39,17 +42,17 @@ public class ClientGoodsController extends BaseController {
 
     /**
      * 商品服务接口
-     * */
+     */
     private GoodsService goodsService;
 
     /**
      * 商品类别服务接口
-     * */
+     */
     private CateService cateService;
 
     /**
      * 系统设置服务接口
-     * */
+     */
     private SettingService settingService;
 
     /**
@@ -90,11 +93,11 @@ public class ClientGoodsController extends BaseController {
         }
         List<MtGoodsCate> cateList = cateService.queryCateListByParams(param);
         Map<String, Object> goodsData = goodsService.getStoreGoodsList(storeId, "", 0, 1, 500);
-        List<MtGoods> goodsList = (ArrayList)goodsData.get("goodsList");
+        List<MtGoods> goodsList = (ArrayList) goodsData.get("goodsList");
         String baseImage = settingService.getUploadBasePath();
         if (goodsList.size() > 0) {
             for (MtGoods goods : goodsList) {
-                 goods.setLogo(baseImage + goods.getLogo());
+                goods.setLogo(isHttp( goods.getLogo(),baseImage));
             }
         }
 
@@ -125,13 +128,13 @@ public class ClientGoodsController extends BaseController {
     @CrossOrigin
     public ResponseObject list(HttpServletRequest request) throws BusinessCheckException {
         Integer storeId = request.getHeader("storeId") == null ? 0 : Integer.parseInt(request.getHeader("storeId"));
-        Map<String, Object> goodsData = goodsService.getStoreGoodsList(storeId, "", 0,1, 200);
+        Map<String, Object> goodsData = goodsService.getStoreGoodsList(storeId, "", 0, 1, 200);
         return getSuccessResult(goodsData.get("goodsList"));
     }
 
     /**
      * 搜索商品
-     * */
+     */
     @ApiOperation(value = "搜索商品")
     @RequestMapping(value = "/search", method = RequestMethod.POST)
     @CrossOrigin
@@ -160,7 +163,7 @@ public class ClientGoodsController extends BaseController {
             searchParams.put("name", name);
         }
         Integer merchantId = merchantService.getMerchantId(merchantNo);
-        if (merchantId > 0 ) {
+        if (merchantId > 0) {
             searchParams.put("merchantId", merchantId);
         }
 
@@ -200,7 +203,7 @@ public class ClientGoodsController extends BaseController {
         List<String> imageList = new ArrayList<>();
         String baseImage = settingService.getUploadBasePath();
         for (String image : images) {
-            imageList.add((baseImage + image));
+            imageList.add(isHttp(image, baseImage));
         }
         goodsDetailDto.setImages(imageList);
 
@@ -232,12 +235,12 @@ public class ClientGoodsController extends BaseController {
             dto.setName(mtSpec.getName());
             List<GoodsSpecValueDto> valueList = new ArrayList<>();
             for (MtGoodsSpec spec : goodsSpecList) {
-                 if (spec.getName().equals(mtSpec.getName())) {
-                     GoodsSpecValueDto valueDto = new GoodsSpecValueDto();
-                     valueDto.setSpecValue(spec.getValue());
-                     valueDto.setSpecValueId(spec.getId());
-                     valueList.add(valueDto);
-                 }
+                if (spec.getName().equals(mtSpec.getName())) {
+                    GoodsSpecValueDto valueDto = new GoodsSpecValueDto();
+                    valueDto.setSpecValue(spec.getValue());
+                    valueDto.setSpecValueId(spec.getId());
+                    valueList.add(valueDto);
+                }
             }
             dto.setValueList(valueList);
             specDtoList.add(dto);
@@ -248,21 +251,21 @@ public class ClientGoodsController extends BaseController {
         List<GoodsSkuDto> skuDtoList = new ArrayList<>();
         String basePath = settingService.getUploadBasePath();
         for (MtGoodsSku sku : goodsSkuList) {
-             GoodsSkuDto dto = new GoodsSkuDto();
-             dto.setId(sku.getId());
-             if (sku.getLogo() != null && StringUtils.isNotEmpty(sku.getLogo())) {
-                 dto.setLogo(basePath + sku.getLogo());
-             } else {
-                 dto.setLogo(goodsDetailDto.getLogo());
-             }
-             dto.setGoodsId(sku.getGoodsId());
-             dto.setSkuNo(sku.getSkuNo());
-             dto.setPrice(sku.getPrice());
-             dto.setLinePrice(sku.getLinePrice());
-             dto.setStock(sku.getStock());
-             dto.setWeight(sku.getWeight());
-             dto.setSpecIds(sku.getSpecIds());
-             skuDtoList.add(dto);
+            GoodsSkuDto dto = new GoodsSkuDto();
+            dto.setId(sku.getId());
+            if (sku.getLogo() != null && StringUtils.isNotEmpty(sku.getLogo())) {
+                dto.setLogo(isHttp(sku.getLogo(), basePath));
+            } else {
+                dto.setLogo(goodsDetailDto.getLogo());
+            }
+            dto.setGoodsId(sku.getGoodsId());
+            dto.setSkuNo(sku.getSkuNo());
+            dto.setPrice(sku.getPrice());
+            dto.setLinePrice(sku.getLinePrice());
+            dto.setStock(sku.getStock());
+            dto.setWeight(sku.getWeight());
+            dto.setSpecIds(sku.getSpecIds());
+            skuDtoList.add(dto);
         }
 
         if (goodsDetailDto.getIsSingleSpec().equals(YesOrNoEnum.YES.getKey())) {
@@ -287,7 +290,7 @@ public class ClientGoodsController extends BaseController {
 
     /**
      * 通过sku编码获取商品信息
-     * */
+     */
     @ApiOperation(value = "通过sku编码获取商品信息")
     @RequestMapping(value = "/getGoodsInfoBySkuNo", method = RequestMethod.POST)
     @CrossOrigin

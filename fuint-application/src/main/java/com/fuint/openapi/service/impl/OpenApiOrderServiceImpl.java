@@ -2,9 +2,8 @@ package com.fuint.openapi.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import cn.hutool.db.sql.Order;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fuint.common.dto.*;
 import com.fuint.common.enums.*;
 import com.fuint.common.service.*;
@@ -24,7 +23,6 @@ import com.fuint.repository.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import weixin.popular.util.JsonUtil;
@@ -37,6 +35,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.fuint.framework.exception.util.ServiceExceptionUtil.exception;
+import static com.fuint.framework.util.string.StrUtils.isHttp;
 import static com.fuint.openapi.enums.GoodsErrorCodeConstants.GOODS_SKU_NOT_ENOUGH;
 import static com.fuint.openapi.enums.GoodsErrorCodeConstants.GOODS_SKU_NOT_EXIST;
 import static com.fuint.openapi.enums.OrderErrorCodeConstants.*;
@@ -1485,9 +1484,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
                     goodsDto.setNum(Integer.parseInt(item[2]));
                     goodsDto.setPrice(item[0]);
                     goodsDto.setDiscount("0");
-                    if (!coupon.getImage().contains(baseImage)) {
-                        goodsDto.setImage(baseImage + coupon.getImage());
-                    }
+                    goodsDto.setImage(isHttp(coupon.getImage(), baseImage));
                     goodsList.add(goodsDto);
                 }
             }
@@ -1835,9 +1832,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
      * 使用SKU信息更新商品信息
      */
     private void updateGoodsWithSkuInfo(MtGoods mtGoods, MtGoodsSku mtGoodsSku, String basePath) {
-        if (StringUtils.isNotEmpty(mtGoodsSku.getLogo()) && !mtGoodsSku.getLogo().contains(basePath)) {
-            mtGoods.setLogo(basePath + mtGoodsSku.getLogo());
-        }
+        mtGoods.setLogo(isHttp(mtGoodsSku.getLogo(), basePath));
         if (mtGoodsSku.getWeight().compareTo(ZERO) > 0) {
             mtGoods.setWeight(mtGoodsSku.getWeight());
         }

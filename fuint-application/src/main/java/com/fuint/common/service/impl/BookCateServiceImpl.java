@@ -24,11 +24,14 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.*;
+
+import static com.fuint.framework.util.string.StrUtils.isHttp;
 
 /**
  * 预约分类服务接口
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -42,7 +45,7 @@ public class BookCateServiceImpl extends ServiceImpl<MtBookCateMapper, MtBookCat
 
     /**
      * 系统设置服务接口
-     * */
+     */
     private SettingService settingService;
 
     /**
@@ -148,9 +151,9 @@ public class BookCateServiceImpl extends ServiceImpl<MtBookCateMapper, MtBookCat
     /**
      * 修改预约分类
      *
-     * @param  mtBookCate
-     * @throws BusinessCheckException
+     * @param mtBookCate
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -193,14 +196,14 @@ public class BookCateServiceImpl extends ServiceImpl<MtBookCateMapper, MtBookCat
      * 根据条件搜索焦点图
      *
      * @param params 查询参数
-     * @throws BusinessCheckException
      * @return
-     * */
+     * @throws BusinessCheckException
+     */
     @Override
     public List<MtBookCate> queryBookCateListByParams(Map<String, Object> params) {
-        String status =  params.get("status") == null ? StatusEnum.ENABLED.getKey(): params.get("status").toString();
-        String storeId =  params.get("storeId") == null ? "" : params.get("storeId").toString();
-        String merchantId =  params.get("merchantId") == null ? "" : params.get("merchantId").toString();
+        String status = params.get("status") == null ? StatusEnum.ENABLED.getKey() : params.get("status").toString();
+        String storeId = params.get("storeId") == null ? "" : params.get("storeId").toString();
+        String merchantId = params.get("merchantId") == null ? "" : params.get("merchantId").toString();
         String name = params.get("name") == null ? "" : params.get("name").toString();
 
         LambdaQueryWrapper<MtBookCate> lambdaQueryWrapper = Wrappers.lambdaQuery();
@@ -226,7 +229,7 @@ public class BookCateServiceImpl extends ServiceImpl<MtBookCateMapper, MtBookCat
 
         if (dataList.size() > 0) {
             for (MtBookCate mtBookCate : dataList) {
-                 mtBookCate.setLogo(baseImage + mtBookCate.getLogo());
+                mtBookCate.setLogo(isHttp(mtBookCate.getLogo(), baseImage));
             }
         }
 

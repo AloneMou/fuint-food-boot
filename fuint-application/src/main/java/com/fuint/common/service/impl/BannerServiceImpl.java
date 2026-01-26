@@ -31,6 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+import static com.fuint.framework.util.string.StrUtils.isHttp;
+
 /**
  * 焦点图服务接口
  * <p>
@@ -251,7 +253,7 @@ public class BannerServiceImpl extends ServiceImpl<MtBannerMapper, MtBanner> imp
 
         if (dataList.size() > 0) {
             for (MtBanner banner : dataList) {
-                banner.setImage(baseImage + banner.getImage());
+                banner.setImage(isHttp(banner.getImage(),baseImage));
             }
         }
 

@@ -43,6 +43,7 @@ import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.fuint.framework.util.string.StrUtils.isHttp;
 import static com.fuint.openapi.enums.OrderErrorCodeConstants.GOODS_NOT_EMPTY;
 import static com.fuint.openapi.enums.UserErrorCodeConstants.USER_NOT_FOUND;
 
@@ -1691,9 +1692,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                     goodsDto.setNum(Integer.parseInt(item[2]));
                     goodsDto.setPrice(item[0]);
                     goodsDto.setDiscount("0");
-                    if (coupon.getImage().indexOf(baseImage) == -1) {
-                        goodsDto.setImage(baseImage + coupon.getImage());
-                    }
+                    goodsDto.setImage(isHttp(coupon.getImage(), baseImage));
                     goodsList.add(goodsDto);
                 }
             }

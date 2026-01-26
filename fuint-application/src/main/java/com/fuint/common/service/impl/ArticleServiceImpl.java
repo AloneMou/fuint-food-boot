@@ -25,11 +25,14 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.*;
+
+import static com.fuint.framework.util.string.StrUtils.isHttp;
 
 /**
  * 文章服务接口
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -41,12 +44,12 @@ public class ArticleServiceImpl extends ServiceImpl<MtArticleMapper, MtArticle> 
 
     /**
      * 系统设置服务接口
-     * */
+     */
     private SettingService settingService;
 
     /**
      * 商户服务接口
-     * */
+     */
     private MerchantService merchantService;
 
     /**
@@ -96,10 +99,10 @@ public class ArticleServiceImpl extends ServiceImpl<MtArticleMapper, MtArticle> 
 
         String basePath = settingService.getUploadBasePath();
         for (MtArticle mtArticle : articleList) {
-             ArticleDto articleDto = new ArticleDto();
-             BeanUtils.copyProperties(mtArticle, articleDto);
-             articleDto.setImage(basePath + mtArticle.getImage());
-             dataList.add(articleDto);
+            ArticleDto articleDto = new ArticleDto();
+            BeanUtils.copyProperties(mtArticle, articleDto);
+            articleDto.setImage(isHttp(mtArticle.getImage(), basePath));
+            dataList.add(articleDto);
         }
 
         PageRequest pageRequest = PageRequest.of(paginationRequest.getCurrentPage(), paginationRequest.getPageSize());
@@ -175,14 +178,14 @@ public class ArticleServiceImpl extends ServiceImpl<MtArticleMapper, MtArticle> 
         ArticleDto articleDto = new ArticleDto();
         BeanUtils.copyProperties(mtArticle, articleDto);
         String baseImage = settingService.getUploadBasePath();
-        articleDto.setImage(baseImage + mtArticle.getImage());
+        articleDto.setImage(isHttp(mtArticle.getImage(), baseImage));
         return articleDto;
     }
 
     /**
      * 编辑文章
      *
-     * @param  articleDto 文章参数
+     * @param articleDto 文章参数
      * @throws BusinessCheckException
      */
     @Override
@@ -237,11 +240,11 @@ public class ArticleServiceImpl extends ServiceImpl<MtArticleMapper, MtArticle> 
      *
      * @param params 搜索条件
      * @return
-     * */
+     */
     @Override
     public List<MtArticle> queryArticleListByParams(Map<String, Object> params) {
-        String status =  params.get("status") == null ? StatusEnum.ENABLED.getKey(): params.get("status").toString();
-        String storeId =  params.get("storeId") == null ? "" : params.get("storeId").toString();
+        String status = params.get("status") == null ? StatusEnum.ENABLED.getKey() : params.get("status").toString();
+        String storeId = params.get("storeId") == null ? "" : params.get("storeId").toString();
         String title = params.get("title") == null ? "" : params.get("title").toString();
         String merchantId = params.get("merchantId") == null ? "" : params.get("merchantId").toString();
 
@@ -257,9 +260,9 @@ public class ArticleServiceImpl extends ServiceImpl<MtArticleMapper, MtArticle> 
         }
         if (StringUtils.isNotBlank(storeId)) {
             lambdaQueryWrapper.and(wq -> wq
-                              .eq(MtArticle::getStoreId, 0)
-                              .or()
-                              .eq(MtArticle::getStoreId, storeId));
+                    .eq(MtArticle::getStoreId, 0)
+                    .or()
+                    .eq(MtArticle::getStoreId, storeId));
         }
 
         lambdaQueryWrapper.orderByAsc(MtArticle::getSort);
@@ -268,7 +271,7 @@ public class ArticleServiceImpl extends ServiceImpl<MtArticleMapper, MtArticle> 
 
         if (dataList.size() > 0) {
             for (MtArticle article : dataList) {
-                 article.setImage(baseImage + article.getImage());
+                article.setImage(isHttp(article.getImage(), baseImage));
             }
         }
 

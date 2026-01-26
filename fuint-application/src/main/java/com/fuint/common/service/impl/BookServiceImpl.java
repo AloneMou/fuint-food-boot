@@ -37,6 +37,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static com.fuint.framework.util.string.StrUtils.isHttp;
+
 /**
  * 预约服务接口
  *
@@ -104,7 +106,7 @@ public class BookServiceImpl extends ServiceImpl<MtBookMapper, MtBook> implement
             for (MtBook mtBook : bookList) {
                  BookDto bookDto = new BookDto();
                  BeanUtils.copyProperties(mtBook, bookDto);
-                 bookDto.setLogo(baseImage + mtBook.getLogo());
+                 bookDto.setLogo(isHttp( mtBook.getLogo(),baseImage));
                  dataList.add(bookDto);
             }
         }

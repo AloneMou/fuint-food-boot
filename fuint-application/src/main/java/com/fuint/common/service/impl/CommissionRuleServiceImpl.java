@@ -33,11 +33,14 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.*;
+
+import static com.fuint.framework.util.string.StrUtils.isHttp;
 
 /**
  * 分销提成服务接口
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -53,12 +56,12 @@ public class CommissionRuleServiceImpl extends ServiceImpl<MtCommissionRuleMappe
 
     /**
      * 商品服务接口
-     * */
+     */
     private GoodsService goodsService;
 
     /**
      * 系统设置服务接口
-     * */
+     */
     private SettingService settingService;
 
     /**
@@ -127,30 +130,30 @@ public class CommissionRuleServiceImpl extends ServiceImpl<MtCommissionRuleMappe
         Date date = new Date();
         mtCommissionRule.setCreateTime(date);
         mtCommissionRule.setUpdateTime(date);
-        mtCommissionRule.setMerchantId(mtCommissionRule.getMerchantId()== null ? 0 : mtCommissionRule.getMerchantId());
+        mtCommissionRule.setMerchantId(mtCommissionRule.getMerchantId() == null ? 0 : mtCommissionRule.getMerchantId());
         String storeIds = StringUtils.join(commissionRule.getStoreIdList().toArray(), ",");
         mtCommissionRule.setStoreIds(storeIds);
         boolean result = save(mtCommissionRule);
         if (result) {
             if (commissionRule.getDetailList() != null && commissionRule.getDetailList().size() > 0) {
                 for (CommissionRuleItemParam itemParam : commissionRule.getDetailList()) {
-                     MtCommissionRuleItem mtCommissionRuleItem = new MtCommissionRuleItem();
-                     mtCommissionRuleItem.setRuleId(mtCommissionRule.getId());
-                     mtCommissionRuleItem.setType(mtCommissionRule.getType());
-                     mtCommissionRuleItem.setTarget(mtCommissionRule.getTarget());
-                     mtCommissionRuleItem.setMerchantId(mtCommissionRule.getMerchantId());
-                     mtCommissionRuleItem.setStoreId(mtCommissionRule.getStoreId());
-                     mtCommissionRuleItem.setStoreIds(storeIds);
-                     mtCommissionRuleItem.setCreateTime(date);
-                     mtCommissionRuleItem.setUpdateTime(date);
-                     mtCommissionRuleItem.setOperator(commissionRule.getOperator());
-                     mtCommissionRuleItem.setStatus(mtCommissionRule.getStatus());
-                     mtCommissionRuleItem.setMethod(itemParam.getMethod());
-                     mtCommissionRuleItem.setTarget(commissionRule.getTarget());
-                     mtCommissionRuleItem.setTargetId(itemParam.getGoodsId());
-                     mtCommissionRuleItem.setMember(itemParam.getMemberVal());
-                     mtCommissionRuleItem.setGuest(itemParam.getVisitorVal());
-                     mtCommissionRuleItemMapper.insert(mtCommissionRuleItem);
+                    MtCommissionRuleItem mtCommissionRuleItem = new MtCommissionRuleItem();
+                    mtCommissionRuleItem.setRuleId(mtCommissionRule.getId());
+                    mtCommissionRuleItem.setType(mtCommissionRule.getType());
+                    mtCommissionRuleItem.setTarget(mtCommissionRule.getTarget());
+                    mtCommissionRuleItem.setMerchantId(mtCommissionRule.getMerchantId());
+                    mtCommissionRuleItem.setStoreId(mtCommissionRule.getStoreId());
+                    mtCommissionRuleItem.setStoreIds(storeIds);
+                    mtCommissionRuleItem.setCreateTime(date);
+                    mtCommissionRuleItem.setUpdateTime(date);
+                    mtCommissionRuleItem.setOperator(commissionRule.getOperator());
+                    mtCommissionRuleItem.setStatus(mtCommissionRule.getStatus());
+                    mtCommissionRuleItem.setMethod(itemParam.getMethod());
+                    mtCommissionRuleItem.setTarget(commissionRule.getTarget());
+                    mtCommissionRuleItem.setTargetId(itemParam.getGoodsId());
+                    mtCommissionRuleItem.setMember(itemParam.getMemberVal());
+                    mtCommissionRuleItem.setGuest(itemParam.getVisitorVal());
+                    mtCommissionRuleItemMapper.insert(mtCommissionRuleItem);
                 }
             }
         } else {
@@ -181,21 +184,21 @@ public class CommissionRuleServiceImpl extends ServiceImpl<MtCommissionRuleMappe
         List<MtCommissionRuleItem> mtCommissionRuleItems = mtCommissionRuleItemMapper.selectByMap(param);
         List<CommissionRuleItemDto> detailList = new ArrayList<>();
         String basePath = settingService.getUploadBasePath();
-        if (mtCommissionRuleItems != null && mtCommissionRuleItems.size() > 0) {
+        if (mtCommissionRuleItems != null && !mtCommissionRuleItems.isEmpty()) {
             for (MtCommissionRuleItem item : mtCommissionRuleItems) {
-                 CommissionRuleItemDto commissionRuleItemDto = new CommissionRuleItemDto();
-                 commissionRuleItemDto.setGoodsId(item.getTargetId());
-                 MtGoods mtGoods = goodsService.queryGoodsById(item.getTargetId());
-                 if (mtGoods != null) {
-                     commissionRuleItemDto.setGoodsName(mtGoods.getName());
-                     commissionRuleItemDto.setLogo(basePath + mtGoods.getLogo());
-                     commissionRuleItemDto.setPrice(mtGoods.getPrice());
-                 }
-                 commissionRuleItemDto.setType(item.getType());
-                 commissionRuleItemDto.setMemberVal(item.getMember());
-                 commissionRuleItemDto.setMethod(item.getMethod());
-                 commissionRuleItemDto.setVisitorVal(item.getGuest());
-                 detailList.add(commissionRuleItemDto);
+                CommissionRuleItemDto commissionRuleItemDto = new CommissionRuleItemDto();
+                commissionRuleItemDto.setGoodsId(item.getTargetId());
+                MtGoods mtGoods = goodsService.queryGoodsById(item.getTargetId());
+                if (mtGoods != null) {
+                    commissionRuleItemDto.setGoodsName(mtGoods.getName());
+                    commissionRuleItemDto.setLogo(isHttp(mtGoods.getLogo(), basePath));
+                    commissionRuleItemDto.setPrice(mtGoods.getPrice());
+                }
+                commissionRuleItemDto.setType(item.getType());
+                commissionRuleItemDto.setMemberVal(item.getMember());
+                commissionRuleItemDto.setMethod(item.getMethod());
+                commissionRuleItemDto.setVisitorVal(item.getGuest());
+                detailList.add(commissionRuleItemDto);
             }
         }
         commissionRuleDto.setDetailList(detailList);
@@ -205,7 +208,7 @@ public class CommissionRuleServiceImpl extends ServiceImpl<MtCommissionRuleMappe
             List<String> storeIdList = Arrays.asList(mtCommissionRule.getStoreIds().split(","));
             if (storeIdList != null && storeIdList.size() > 0) {
                 for (String storeId : storeIdList) {
-                     storeIds.add(Integer.parseInt(storeId));
+                    storeIds.add(Integer.parseInt(storeId));
                 }
             }
         }
@@ -217,9 +220,9 @@ public class CommissionRuleServiceImpl extends ServiceImpl<MtCommissionRuleMappe
     /**
      * 更新分销提成规则
      *
-     * @param  commissionRule 规则参数
-     * @throws BusinessCheckException
+     * @param commissionRule 规则参数
      * @return
+     * @throws BusinessCheckException
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -305,10 +308,10 @@ public class CommissionRuleServiceImpl extends ServiceImpl<MtCommissionRuleMappe
         params.put("STATUS", StatusEnum.ENABLED.getKey());
         List<MtCommissionRuleItem> mtCommissionRuleItems = mtCommissionRuleItemMapper.selectByMap(params);
         for (MtCommissionRuleItem item : mtCommissionRuleItems) {
-             if (!itemIds.contains(item.getId())) {
-                 item.setStatus(StatusEnum.DISABLE.getKey());
-                 mtCommissionRuleItemMapper.updateById(item);
-             }
+            if (!itemIds.contains(item.getId())) {
+                item.setStatus(StatusEnum.DISABLE.getKey());
+                mtCommissionRuleItemMapper.updateById(item);
+            }
         }
 
         mtCommissionRule.setUpdateTime(new Date());

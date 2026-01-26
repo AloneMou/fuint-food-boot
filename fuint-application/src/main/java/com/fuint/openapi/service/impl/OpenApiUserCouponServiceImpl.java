@@ -27,7 +27,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.fuint.framework.util.collection.CollectionUtils.*;
-import static com.fuint.framework.util.object.BeanUtils.toBean;
+import static com.fuint.framework.util.string.StrUtils.isHttp;
 
 /**
  * OpenAPI用户优惠券服务实现类
@@ -147,9 +147,9 @@ public class OpenApiUserCouponServiceImpl implements OpenApiUserCouponService {
      */
     private UserCouponRespVO convertToRespVO(MtUserCoupon userCoupon,
                                              Map<Integer, MtCoupon> couponMap,
-                                              Map<String, String> storeNamesMap,
-                                              Map<Integer, Long> confirmCountMap,
-                                              String baseImage) {
+                                             Map<String, String> storeNamesMap,
+                                             Map<Integer, Long> confirmCountMap,
+                                             String baseImage) {
         UserCouponRespVO respVO = BeanUtils.toBean(userCoupon, UserCouponRespVO.class);
         respVO.setCreateTime(userCoupon.getCreateTime());
         // 设置用户优惠券基础信息
@@ -172,7 +172,7 @@ public class OpenApiUserCouponServiceImpl implements OpenApiUserCouponService {
 
         // 设置图片（拼接完整路径）
         if (StringUtils.isNotEmpty(couponInfo.getImage())) {
-            respVO.setImage(baseImage + couponInfo.getImage());
+            respVO.setImage(isHttp(couponInfo.getImage(), baseImage));
         }
 
         // 设置使用门槛说明（优化：简化逻辑）
@@ -198,7 +198,7 @@ public class OpenApiUserCouponServiceImpl implements OpenApiUserCouponService {
             } catch (Exception e) {
                 log.warn("解析优惠券有效期失败: {}", effectiveDate, e);
             }
-        }else if (StringUtils.isNotEmpty(effectiveDate) && effectiveDate.contains("-")){
+        } else if (StringUtils.isNotEmpty(effectiveDate) && effectiveDate.contains("-")) {
             try {
                 String[] dates = effectiveDate.split("-");
                 if (dates.length == 2) {
@@ -252,7 +252,7 @@ public class OpenApiUserCouponServiceImpl implements OpenApiUserCouponService {
      */
     private String buildCouponTips(MtCoupon couponInfo, MtUserCoupon userCoupon, Map<Integer, Long> confirmCountMap) {
         String couponType = couponInfo.getType();
-        
+
         // 普通优惠券
         if (CouponTypeEnum.COUPON.getKey().equals(couponType)) {
             String outRule = couponInfo.getOutRule();
@@ -262,18 +262,18 @@ public class OpenApiUserCouponServiceImpl implements OpenApiUserCouponService {
                 return "无门槛券";
             }
         }
-        
+
         // 储值卡
         if (CouponTypeEnum.PRESTORE.getKey().equals(couponType)) {
             return "￥" + userCoupon.getAmount() + "，余额￥" + userCoupon.getBalance();
         }
-        
+
         // 计次卡（从Map中获取核销次数，避免重复查询）
         if (CouponTypeEnum.TIMER.getKey().equals(couponType)) {
             Long confirmNum = confirmCountMap.getOrDefault(userCoupon.getId(), 0L);
             return "已使用" + confirmNum + "次，可使用" + couponInfo.getOutRule() + "次";
         }
-        
+
         return "";
     }
 
@@ -338,7 +338,7 @@ public class OpenApiUserCouponServiceImpl implements OpenApiUserCouponService {
     /**
      * 构建 storeIds -> storeNames 的映射
      *
-     * @param coupons           优惠券集合
+     * @param coupons          优惠券集合
      * @param storeIdToNameMap 店铺ID到名称的映射
      * @return storeIds字符串到storeNames字符串的映射
      */

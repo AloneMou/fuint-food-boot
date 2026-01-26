@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 
+import static com.fuint.framework.util.string.StrUtils.isHttp;
+
 /**
  * 卡券接口controller
  *
@@ -172,7 +174,7 @@ public class ClientCouponController extends BaseController {
         couponDto.setStoreNames(storeNames);
 
         String baseImage = settingService.getUploadBasePath();
-        couponDto.setImage(baseImage + couponInfo.getImage());
+        couponDto.setImage(isHttp( couponInfo.getImage(),baseImage));
         String effectiveDate = "";
         if (couponInfo.getExpireType().equals(CouponExpireTypeEnum.FIX.getKey())) {
             effectiveDate = DateUtil.formatDate(couponInfo.getBeginTime(), "yyyy.MM.dd HH:mm") + " - " + DateUtil.formatDate(couponInfo.getEndTime(), "yyyy.MM.dd");

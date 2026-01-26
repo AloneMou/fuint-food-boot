@@ -39,6 +39,7 @@ import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.util.*;
 
+import static com.fuint.framework.util.string.StrUtils.isHttp;
 import static com.fuint.openapi.enums.OrderErrorCodeConstants.*;
 import static com.fuint.openapi.enums.RedisKeyConstants.CANCEL_ORDER;
 import static com.fuint.openapi.enums.UserErrorCodeConstants.USER_NOT_FOUND;
@@ -689,10 +690,7 @@ public class OpenOrderController extends BaseController {
                 goodsVO.setLinePrice(goodsInfo.getLinePrice() != null ? goodsInfo.getLinePrice() : BigDecimal.ZERO);
 
                 // 处理商品图片
-                String logo = goodsInfo.getLogo();
-                if (StringUtils.isNotEmpty(logo) && !logo.startsWith("http")) {
-                    logo = basePath + logo;
-                }
+                String logo = isHttp(goodsInfo.getLogo(), basePath);
                 goodsVO.setGoodsImage(logo);
 
                 // 计算小计（使用当前价格，已应用会员折扣）

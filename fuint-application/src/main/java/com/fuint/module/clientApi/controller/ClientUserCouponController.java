@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
+
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,13 +33,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import static com.fuint.framework.util.string.StrUtils.isHttp;
+
 /**
  * 会员卡券controller
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
-@Api(tags="会员端-会员卡券相关接口")
+@Api(tags = "会员端-会员卡券相关接口")
 @RestController
 @AllArgsConstructor
 @RequestMapping(value = "/clientApi/userCouponApi")
@@ -50,22 +53,22 @@ public class ClientUserCouponController extends BaseController {
 
     /**
      * 卡券服务接口
-     * */
+     */
     private CouponService couponService;
 
     /**
      * 核销记录服务接口
-     * */
+     */
     private ConfirmLogService confirmLogService;
 
     /**
      * 员工服务接口
-     * */
+     */
     private StaffService staffService;
 
     /**
      * 系统设置服务接口
-     * */
+     */
     private SettingService settingService;
 
     /**
@@ -157,7 +160,7 @@ public class ClientUserCouponController extends BaseController {
             result.setQrCode(qrCode);
 
             String baseImage = settingService.getUploadBasePath();
-            result.setImage(baseImage + couponInfo.getImage());
+            result.setImage(isHttp(couponInfo.getImage(), baseImage));
 
             result.setId(userCouponId);
             result.setDescription(couponInfo.getDescription());

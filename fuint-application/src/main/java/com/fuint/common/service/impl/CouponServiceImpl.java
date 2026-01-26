@@ -43,6 +43,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static com.fuint.common.enums.RedisKeyConstants.COUPON_INFO;
+import static com.fuint.framework.util.string.StrUtils.isHttp;
 
 /**
  * 卡券业务实现类
@@ -508,7 +509,7 @@ public class CouponServiceImpl extends ServiceImpl<MtCouponMapper, MtCoupon> imp
             CouponDto item = new CouponDto();
             BeanUtils.copyProperties(dataList.get(i), item);
             item.setIsReceive(false);
-            item.setImage(baseImage + item.getImage());
+            item.setImage(isHttp(item.getImage(),baseImage));
 
             // 是否领取，且领取量大于限制数
             List<String> statusList = Arrays.asList(UserCouponStatusEnum.UNUSED.getKey(), UserCouponStatusEnum.USED.getKey(), UserCouponStatusEnum.EXPIRE.getKey());
