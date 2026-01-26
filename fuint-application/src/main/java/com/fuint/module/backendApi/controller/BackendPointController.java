@@ -283,15 +283,6 @@ public class BackendPointController extends BaseController {
         mtPoint.setOrderSn("");
 
         pointService.addPoint(mtPoint);
-
-        // 触发积分变动回调
-        Map<String, Object> callbackData = new HashMap<>();
-        callbackData.put("userId", userId);
-        callbackData.put("amount", mtPoint.getAmount());
-        callbackData.put("description", remark);
-        callbackData.put("operator", accountInfo.getAccountName());
-        eventCallbackService.sendPointEventCallback(accountInfo.getMerchantId(), callbackData);
-
         return getSuccessResult(true);
     }
 }
