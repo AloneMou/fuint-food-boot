@@ -450,7 +450,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         mtOrder.setUpdateTime(new Date());
         mtOrder.setDeliveryFee(BigDecimal.ZERO);
         mtOrder.setSettleStatus(SettleStatusEnum.WAIT.getKey());
-        mtOrder.setTakeStatus(TakeStatusEnum.WAIT_CONFIRM.getKey());
+        mtOrder.setTakeStatus(TakeStatusEnum.PENDING.getKey());
         if (mtOrder.getId() == null || mtOrder.getId() <= 0) {
             mtOrder.setCreateTime(new Date());
         }
@@ -1350,7 +1350,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         }
         MtOrder mtOrder = mtOrderMapper.selectById(orderId);
         UserOrderRespVO order = getOrderDetail(mtOrder, true, true);
-        if (!order.getTakeStatus().equals(TakeStatusEnum.MAKE_SUCCESS)) {
+        if (!order.getTakeStatus().equals(TakeStatusEnum.COMPLETED)) {
             Integer makeCount = getToMakeCount(mtOrder.getMerchantId(), mtOrder.getStoreId(), mtOrder.getPayTime(), mtOrder.getId());
             order.setQueueCount(makeCount);
             order.setEstimatedWaitTime(makeCount * 5);

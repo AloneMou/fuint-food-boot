@@ -49,7 +49,7 @@ public class BackendAppController extends BaseController {
     @ApiOperation(value = "分页查询APP应用列表")
     @RequestMapping(value = "/list", method = RequestMethod.GET)
     @CrossOrigin
-    @PreAuthorize("@pms.hasPermission('system:app:index')")
+    @PreAuthorize("@pms.hasPermission('system:app:list')")
     public ResponseObject list(HttpServletRequest request) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
         Integer page = request.getParameter("page") == null ? Constants.PAGE_NUMBER : Integer.parseInt(request.getParameter("page"));
@@ -96,7 +96,7 @@ public class BackendAppController extends BaseController {
     @ApiOperation(value = "获取APP应用详情")
     @RequestMapping(value = "/info/{id}", method = RequestMethod.GET)
     @CrossOrigin
-    @PreAuthorize("@pms.hasPermission('system:app:index')")
+    @PreAuthorize("@pms.hasPermission('system:app:list')")
     public ResponseObject info(HttpServletRequest request, @PathVariable("id") Long id) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
         AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);

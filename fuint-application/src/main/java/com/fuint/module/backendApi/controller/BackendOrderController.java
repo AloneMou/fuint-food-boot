@@ -278,21 +278,10 @@ public class BackendOrderController extends BaseController {
         // 发送订单状态变更回调
         MtOrder updatedOrder = orderService.getOrderInfo(orderId);
         if (updatedOrder != null) {
-            eventCallbackService.sendOrderStatusChangedCallback(updatedOrder, orderInfo.getStatus(), OrderStatusEnum.DELIVERED.getKey());
+            eventCallbackService.sendOrderStatusCallback(updatedOrder, orderInfo.getStatus());
             
             // 发送订单准备就绪回调
-            List<Map<String, Object>> items = new ArrayList<>();
-            if (orderInfo.getGoods() != null) {
-                for (OrderGoodsDto goods : orderInfo.getGoods()) {
-                    Map<String, Object> item = new HashMap<>();
-                    item.put("goodsId", goods.getGoodsId());
-                    item.put("skuId", goods.getSkuId());
-                    item.put("name", goods.getName());
-                    item.put("num", goods.getNum());
-                    items.add(item);
-                }
-            }
-            eventCallbackService.sendOrderReadyCallback(updatedOrder, items);
+            eventCallbackService.sendOrderReadyCallback(updatedOrder);
         }
 
         // 发送小程序订阅消息
@@ -375,7 +364,7 @@ public class BackendOrderController extends BaseController {
         // 发送订单状态变更回调
         MtOrder updatedOrder = orderService.getOrderInfo(orderId);
         if (updatedOrder != null && StringUtils.isNotEmpty(status) && !status.equals(oldStatus)) {
-            eventCallbackService.sendOrderStatusChangedCallback(updatedOrder, oldStatus, status);
+            eventCallbackService.sendOrderStatusCallback(updatedOrder, oldStatus);
         }
 
         return getSuccessResult(true);
@@ -427,7 +416,7 @@ public class BackendOrderController extends BaseController {
         // 发送订单状态变更回调
         MtOrder updatedOrder = orderService.getOrderInfo(orderId);
         if (updatedOrder != null && !updatedOrder.getStatus().equals(oldStatus)) {
-            eventCallbackService.sendOrderStatusChangedCallback(updatedOrder, oldStatus, updatedOrder.getStatus());
+            eventCallbackService.sendOrderStatusCallback(updatedOrder, oldStatus);
         }
 
         return getSuccessResult(true);

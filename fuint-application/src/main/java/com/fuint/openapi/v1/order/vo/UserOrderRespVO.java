@@ -29,7 +29,7 @@ public class UserOrderRespVO {
     @ApiModelProperty("自增ID")
     private Integer id;
 
-    @ApiModelProperty(value = "取餐状态", allowableValues = "WAIT_CONFIRM,CONFIRM_SUCCESS,MAKING,MAKE_SUCCESS")
+    @ApiModelProperty(value = "取餐状态", allowableValues = "PENDING,CONFIRMED,PROCESSING,READY,COMPLETED,CANCELLED")
     private TakeStatusEnum takeStatus;
 
     @ApiModelProperty("前面还有多少杯")

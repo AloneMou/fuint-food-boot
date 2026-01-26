@@ -67,6 +67,9 @@ public class BackendRefundController extends BaseController {
      */
     private EventCallbackService eventCallbackService;
 
+    @javax.annotation.Resource
+    private com.fuint.repository.mapper.MtRefundMapper mtRefundMapper;
+
     /**
      * 退款列表查询
      *
@@ -232,6 +235,16 @@ public class BackendRefundController extends BaseController {
             dto.setRemark(remark);
             refundService.agreeRefund(dto);
         }
+
+        // 发送退款状态变更回调
+        com.fuint.repository.model.MtRefund refund = mtRefundMapper.selectById(refundId);
+        if (refund != null) {
+            MtOrder order = orderService.getOrderInfo(refund.getOrderId());
+            if (order != null) {
+                eventCallbackService.sendPayStatusCallback(order, refund);
+            }
+        }
+
         return getSuccessResult(true);
     }
 
@@ -260,7 +273,14 @@ public class BackendRefundController extends BaseController {
             // 发送退款成功事件回调
             MtOrder order = orderService.getOrderInfo(orderId);
             if (order != null) {
-                eventCallbackService.sendPaymentStatusChangedCallback(order, "REFUNDED");
+                com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.fuint.repository.model.MtRefund> queryWrapper = com.baomidou.mybatisplus.core.toolkit.Wrappers.lambdaQuery();
+                queryWrapper.eq(com.fuint.repository.model.MtRefund::getOrderId, orderId);
+                queryWrapper.orderByDesc(com.fuint.repository.model.MtRefund::getId);
+                queryWrapper.last("LIMIT 1");
+                com.fuint.repository.model.MtRefund refund = mtRefundMapper.selectOne(queryWrapper);
+                if (refund != null) {
+                    eventCallbackService.sendPayStatusCallback(order, refund);
+                }
             }
             return getSuccessResult(true);
         } else {

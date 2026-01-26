@@ -25,6 +25,6 @@ public class OrderReadyReqVO {
     private Integer merchantId;
 
     @NotNull(message = "取餐状态不能为空")
-    @ApiModelProperty(value = "取餐状态", allowableValues = "WAIT_CONFIRM,CONFIRM_SUCCESS,MAKING,MAKE_SUCCESS")
+    @ApiModelProperty(value = "取餐状态", allowableValues = "PENDING,CONFIRMED,PROCESSING,READY,COMPLETED,CANCELLED")
     private TakeStatusEnum takeStatus;
 }

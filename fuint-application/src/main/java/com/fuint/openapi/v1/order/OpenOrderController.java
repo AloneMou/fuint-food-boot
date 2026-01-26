@@ -92,6 +92,9 @@ public class OpenOrderController extends BaseController {
     private MtUserCouponMapper mtUserCouponMapper;
 
     @Resource
+    private com.fuint.repository.mapper.MtRefundMapper mtRefundMapper;
+
+    @Resource
     private EventCallbackService eventCallbackService;
 
 
@@ -243,7 +246,7 @@ public class OpenOrderController extends BaseController {
         reqVO.setType(OrderTypeEnum.GOODS);
         MtOrder order = openApiOrderService.saveOrder(reqVO);
         // 发送订单创建回调
-        eventCallbackService.sendOrderStatusChangedCallback(order, null, OrderStatusEnum.CREATED.getKey());
+        eventCallbackService.sendOrderStatusCallback(order, null);
 
         // 如果使用了优惠券，发送优惠券使用回调
         if (order.getCouponId() != null && order.getCouponId() > 0) {
@@ -258,15 +261,13 @@ public class OpenOrderController extends BaseController {
             openApiOrderService.setOrderPayed(order.getId(), order.getPayAmount());
             // 获取更新后的订单信息
             MtOrder updatedOrder = orderService.getOrderInfo(order.getId());
-            eventCallbackService.sendPaymentStatusChangedCallback(updatedOrder, "SUCCESS");
-            eventCallbackService.sendOrderStatusChangedCallback(updatedOrder, OrderStatusEnum.CREATED.getKey(), OrderStatusEnum.PAID.getKey());
+            eventCallbackService.sendOrderStatusCallback(updatedOrder, OrderStatusEnum.CREATED.getKey());
         } else if (order.getPayAmount().compareTo(BigDecimal.ZERO) == 0) {
             // 未支付订单，自动支付
             openApiOrderService.setOrderPayed(order.getId(), order.getPayAmount());
             // 获取更新后的订单信息
             MtOrder updatedOrder = orderService.getOrderInfo(order.getId());
-            eventCallbackService.sendPaymentStatusChangedCallback(updatedOrder, "SUCCESS");
-            eventCallbackService.sendOrderStatusChangedCallback(updatedOrder, OrderStatusEnum.CREATED.getKey(), OrderStatusEnum.PAID.getKey());
+            eventCallbackService.sendOrderStatusCallback(updatedOrder, OrderStatusEnum.CREATED.getKey());
         }
         // 返回订单信息
         return CommonResult.success(openApiOrderService.getUserOrderDetail(order.getId()));
@@ -301,7 +302,7 @@ public class OpenOrderController extends BaseController {
             // 获取更新后的订单信息
             MtOrder updatedOrder = orderService.getOrderInfo(reqVO.getOrderId());
             // 发送订单取消回调
-            eventCallbackService.sendOrderStatusChangedCallback(updatedOrder, oldStatus, OrderStatusEnum.CANCEL.getKey());
+            eventCallbackService.sendOrderStatusCallback(updatedOrder, oldStatus);
             return CommonResult.success(true);
         } finally {
             lock.unlock();
@@ -334,10 +335,8 @@ public class OpenOrderController extends BaseController {
         if (result) {
             // 获取更新后的订单信息
             MtOrder updatedOrder = orderService.getOrderInfo(reqVO.getOrderId());
-            // 发送订单支付成功事件回调
-            eventCallbackService.sendPaymentStatusChangedCallback(updatedOrder, "SUCCESS");
             // 发送订单状态变更回调
-            eventCallbackService.sendOrderStatusChangedCallback(updatedOrder, order.getStatus(), OrderStatusEnum.PAID.getKey());
+            eventCallbackService.sendOrderStatusCallback(updatedOrder, order.getStatus());
         }
         return CommonResult.success(result);
     }
@@ -356,15 +355,24 @@ public class OpenOrderController extends BaseController {
         if (reqVO.getUserId() != null && !order.getUserId().equals(reqVO.getUserId())) {
             return CommonResult.error(ORDER_NOT_BELONG_TO_USER, reqVO.getUserId());
         }
-        AccountInfo accountInfo = new AccountInfo();
-        accountInfo.setAccountName("OpenApi-System");
-        eventCallbackService.sendPaymentStatusChangedCallback(order, "REFUNDING");
-        Boolean result = refundService.doRefund(reqVO.getOrderId(), reqVO.getAmount().toString(), reqVO.getRemark(), accountInfo);
+        // 发送退款申请事件回调
+
+        // 执行退款
+        boolean result = refundService.doRefund(reqVO);
         if (result) {
-            // 获取更新后的订单信息
+            // 发送退款成功事件回调
             MtOrder updatedOrder = orderService.getOrderInfo(reqVO.getOrderId());
-            // 发送订单退款成功事件回调
-            eventCallbackService.sendPaymentStatusChangedCallback(updatedOrder, "REFUNDED");
+            
+            // 查询最新的退款记录
+            LambdaQueryWrapper<MtRefund> queryWrapper = Wrappers.lambdaQuery();
+            queryWrapper.eq(MtRefund::getOrderId, reqVO.getOrderId());
+            queryWrapper.orderByDesc(MtRefund::getId);
+            queryWrapper.last("LIMIT 1");
+            MtRefund refund = mtRefundMapper.selectOne(queryWrapper);
+            
+            if (refund != null) {
+                eventCallbackService.sendPayStatusCallback(updatedOrder, refund);
+            }
         }
         return CommonResult.success(result);
     }
@@ -477,48 +485,54 @@ public class OpenOrderController extends BaseController {
         if (reqVO.getTakeStatus().equals(takeStatus)) {
             return CommonResult.success(true);
         }
-        if (reqVO.getTakeStatus().equals(TakeStatusEnum.TAKE_SUCCESS)) {
-            // 标记已取餐
-            OrderDto orderDto = new OrderDto();
-            orderDto.setId(reqVO.getOrderId());
-            orderDto.setStatus(OrderStatusEnum.RECEIVED.getKey());
-            orderDto.setTakeStatus(reqVO.getTakeStatus().getKey());
-            orderService.updateOrder(orderDto);
+        String oldTakeStatus = order.getTakeStatus();
+        
+        if (reqVO.getTakeStatus().equals(TakeStatusEnum.COMPLETED)) {
+            // 标记已取餐，同时更新订单状态为已收货
+            order.setStatus(OrderStatusEnum.RECEIVED.getKey());
         }
         order.setTakeStatus(reqVO.getTakeStatus().getKey());
         orderService.updateOrder(order);
+        
         // 获取更新后的订单信息
         MtOrder updatedOrder = orderService.getOrderInfo(reqVO.getOrderId());
+        
+        // 发送取餐状态变更回调（所有状态变更都发送）
+        eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, oldTakeStatus);
 
-        // 获取订单商品列表（优化：使用 MyBatis Plus 查询）
-        LambdaQueryWrapper<MtOrderGoods> goodsWrapper = Wrappers.lambdaQuery();
-        goodsWrapper.eq(MtOrderGoods::getOrderId, reqVO.getOrderId());
-        List<MtOrderGoods> goodsList = mtOrderGoodsMapper.selectList(goodsWrapper);
-
-        List<Map<String, Object>> items = new ArrayList<>();
-        for (MtOrderGoods orderGoods : goodsList) {
-            Map<String, Object> item = new HashMap<>();
-            item.put("skuId", orderGoods.getSkuId());
-            item.put("quantity", orderGoods.getNum());
-
-            // 通过goodsId查询商品信息获取商品名称
-            try {
-                MtGoods goodsInfo = goodsService.queryGoodsById(orderGoods.getGoodsId());
-                if (goodsInfo != null) {
-                    item.put("goodsName", goodsInfo.getName());
-                } else {
+        // 如果是制作完成（可取餐），额外发送可取餐通知
+        if (reqVO.getTakeStatus() == TakeStatusEnum.READY) {
+            // 获取订单商品列表（优化：使用 MyBatis Plus 查询）
+            LambdaQueryWrapper<MtOrderGoods> goodsWrapper = Wrappers.lambdaQuery();
+            goodsWrapper.eq(MtOrderGoods::getOrderId, reqVO.getOrderId());
+            List<MtOrderGoods> goodsList = mtOrderGoodsMapper.selectList(goodsWrapper);
+    
+            List<Map<String, Object>> items = new ArrayList<>();
+            for (MtOrderGoods orderGoods : goodsList) {
+                Map<String, Object> item = new HashMap<>();
+                item.put("skuId", orderGoods.getSkuId());
+                item.put("quantity", orderGoods.getNum());
+    
+                // 通过goodsId查询商品信息获取商品名称
+                try {
+                    MtGoods goodsInfo = goodsService.queryGoodsById(orderGoods.getGoodsId());
+                    if (goodsInfo != null) {
+                        item.put("goodsName", goodsInfo.getName());
+                    } else {
+                        item.put("goodsName", "");
+                    }
+                } catch (Exception e) {
+                    log.warn("获取商品信息失败: goodsId={}, error={}", orderGoods.getGoodsId(), e.getMessage());
                     item.put("goodsName", "");
                 }
-            } catch (Exception e) {
-                log.warn("获取商品信息失败: goodsId={}, error={}", orderGoods.getGoodsId(), e.getMessage());
-                item.put("goodsName", "");
+    
+                items.add(item);
             }
-
-            items.add(item);
+    
+            // 发送可取餐状态通知回调
+            eventCallbackService.sendOrderReadyCallback(updatedOrder);
         }
-
-        // 发送可取餐状态通知回调
-        eventCallbackService.sendOrderReadyCallback(updatedOrder, items);
+        
         return CommonResult.success(true);
     }
 

@@ -95,7 +95,7 @@ public interface MtOrderMapper extends BaseMapperX<MtOrder> {
                 .inIfPresent(MtOrder::getStatus,
                         OrderStatusEnum.PAID.getKey(), OrderStatusEnum.DELIVERY.getKey(),
                         OrderStatusEnum.DELIVERED.getKey(), OrderStatusEnum.RECEIVED.getKey())
-                .in(MtOrder::getTakeStatus, TakeStatusEnum.MAKING.getKey(), TakeStatusEnum.WAIT_CONFIRM.getKey(), TakeStatusEnum.MAKING.getKey())
+                .in(MtOrder::getTakeStatus, TakeStatusEnum.PROCESSING.getKey(), TakeStatusEnum.PENDING.getKey(), TakeStatusEnum.CONFIRMED.getKey())
                 .le(MtOrder::getPayTime, orderTime)
                 .ne(MtOrder::getId, orderId));
     }

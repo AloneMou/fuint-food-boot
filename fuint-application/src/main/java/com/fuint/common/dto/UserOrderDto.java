@@ -136,5 +136,7 @@ public class UserOrderDto implements Serializable {
     @ApiModelProperty("所属员工")
     private MtStaff staffInfo;
 
+    @ApiModelProperty("接单状态")
+    private String takeStatus;
 }
 

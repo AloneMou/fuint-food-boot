@@ -142,7 +142,7 @@ public class MerchantOrderController extends BaseController {
         
         // 发送订单取消回调
         if (orderInfo != null) {
-            eventCallbackService.sendOrderStatusChangedCallback(orderInfo, oldStatus, orderInfo.getStatus());
+            eventCallbackService.sendOrderStatusCallback(orderInfo, oldStatus);
         }
         
         return getSuccessResult(orderInfo);

@@ -210,8 +210,7 @@ public class ClientPayController extends BaseController {
                                 // 发送支付成功回调
                                 MtOrder order = orderService.getOrderInfo(orderInfo.getId());
                                 if (order != null) {
-                                    eventCallbackService.sendPaymentStatusChangedCallback(order, "SUCCESS");
-                                    eventCallbackService.sendOrderStatusChangedCallback(order, OrderStatusEnum.CREATED.getKey(), order.getStatus());
+                                    eventCallbackService.sendOrderStatusCallback(order, OrderStatusEnum.CREATED.getKey());
                                 }
                                 weixinService.processRespXml(response, true);
                             } else {
@@ -279,8 +278,7 @@ public class ClientPayController extends BaseController {
                     // 发送支付成功回调
                     MtOrder order = orderService.getOrderInfo(orderInfo.getId());
                     if (order != null) {
-                        eventCallbackService.sendPaymentStatusChangedCallback(order, "SUCCESS");
-                        eventCallbackService.sendOrderStatusChangedCallback(order, OrderStatusEnum.CREATED.getKey(), order.getStatus());
+                        eventCallbackService.sendOrderStatusCallback(order, OrderStatusEnum.CREATED.getKey());
                     }
                     return "success";
                 } else {
