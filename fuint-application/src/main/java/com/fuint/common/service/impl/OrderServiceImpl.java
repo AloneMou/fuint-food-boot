@@ -1155,7 +1155,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
             if (StringUtils.isNotEmpty(remark)) {
                 mtOrder.setRemark(remark);
             }
-
+            mtOrder.setTakeStatus(TakeStatusEnum.CANCELLED.getKey());
             mtOrder.setStatus(OrderStatusEnum.CANCEL.getKey());
             mtOrderMapper.updateById(mtOrder);
 
@@ -1410,6 +1410,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         reqDto.setId(orderId);
         reqDto.setStatus(OrderStatusEnum.PAID.getKey());
         reqDto.setPayStatus(PayStatusEnum.SUCCESS.getKey());
+        reqDto.setTakeStatus(TakeStatusEnum.PENDING.getKey());
         if (payAmount != null) {
             reqDto.setPayAmount(payAmount);
         }
@@ -1560,7 +1561,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
      */
     private UserOrderDto getOrderDetail(MtOrder orderInfo, boolean needAddress, boolean getPayStatus) throws BusinessCheckException {
         UserOrderDto userOrderDto = new UserOrderDto();
-
+        userOrderDto.setTakeStatus(orderInfo.getTakeStatus());
         userOrderDto.setId(orderInfo.getId());
         userOrderDto.setMerchantId(orderInfo.getMerchantId());
         userOrderDto.setUserId(orderInfo.getUserId());

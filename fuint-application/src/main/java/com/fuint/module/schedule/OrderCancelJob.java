@@ -74,9 +74,11 @@ public class OrderCancelJob {
                     if (dealNum <= MAX_SEND_NUM && (overTime.getTime() <= nowTime.getTime())) {
                         if (mtOrder.getPayStatus().equals(PayStatusEnum.WAIT.getKey())) {
                             String oldStatus = mtOrder.getStatus();
+                            String oldTakeStatus = mtOrder.getTakeStatus();
                             MtOrder canceledOrder = orderService.cancelOrder(mtOrder.getId(), "超时未支付取消");
                             if (canceledOrder != null) {
                                 eventCallbackService.sendOrderStatusCallback(canceledOrder, oldStatus);
+                                eventCallbackService.sendOrderTakeStatusCallback(canceledOrder, oldTakeStatus);
                             }
                             dealNum++;
                         } else if (mtOrder.getPayStatus().equals(PayStatusEnum.SUCCESS.getKey())) {
@@ -90,6 +92,7 @@ public class OrderCancelJob {
                             MtOrder updatedOrder = orderService.getOrderInfo(mtOrder.getId());
                             if (updatedOrder != null) {
                                 eventCallbackService.sendOrderStatusCallback(updatedOrder, mtOrder.getStatus());
+                                eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, mtOrder.getTakeStatus());
                             }
                         }
                     }

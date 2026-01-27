@@ -913,6 +913,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         reqDto.setId(orderId);
         reqDto.setStatus(OrderStatusEnum.PAID.getKey());
         reqDto.setPayStatus(PayStatusEnum.SUCCESS.getKey());
+        reqDto.setTakeStatus(TakeStatusEnum.PENDING.getKey());
         if (payAmount != null) {
             reqDto.setPayAmount(payAmount);
         }

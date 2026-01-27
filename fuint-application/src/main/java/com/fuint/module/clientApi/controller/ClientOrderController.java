@@ -129,11 +129,13 @@ public class ClientOrderController extends BaseController {
         }
 
         String oldStatus = order.getStatus();
+        String oldTakeStatus = order.getTakeStatus();
         MtOrder orderInfo = orderService.cancelOrder(order.getId(), "会员取消");
 
         // 发送订单取消回调
         if (orderInfo != null) {
             eventCallbackService.sendOrderStatusCallback(orderInfo, oldStatus);
+            eventCallbackService.sendOrderTakeStatusCallback(orderInfo, oldTakeStatus);
         }
 
         return getSuccessResult(orderInfo);
@@ -167,7 +169,7 @@ public class ClientOrderController extends BaseController {
         reqDto.setId(Integer.parseInt(orderId));
         reqDto.setStatus(OrderStatusEnum.RECEIVED.getKey());
         reqDto.setTakeStatus(TakeStatusEnum.COMPLETED.getKey());
-        
+
         String oldStatus = order.getStatus();
         String oldTakeStatus = order.getTakeStatus();
         MtOrder orderInfo = orderService.updateOrder(reqDto);

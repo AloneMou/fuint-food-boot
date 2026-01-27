@@ -7,7 +7,6 @@ import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fuint.common.dto.AccountInfo;
-import com.fuint.common.dto.OrderDto;
 import com.fuint.common.dto.ResCartDto;
 import com.fuint.common.enums.*;
 import com.fuint.common.service.*;
@@ -255,22 +254,28 @@ public class OpenOrderController extends BaseController {
                 eventCallbackService.sendCouponEventCallback(userCoupon, "USED", order.getOrderSn());
             }
         }
-
+        UserOrderRespVO userOrderRespVO = openApiOrderService.getUserOrderDetail(order.getId());
         if (reqVO.getIsPay() != null && reqVO.getIsPay()) {
             // 已支付订单，发送支付成功回调
             openApiOrderService.setOrderPayed(order.getId(), order.getPayAmount());
             // 获取更新后的订单信息
             MtOrder updatedOrder = orderService.getOrderInfo(order.getId());
             eventCallbackService.sendOrderStatusCallback(updatedOrder, OrderStatusEnum.CREATED.getKey());
+            if (userOrderRespVO.getTakeStatus() != null) {
+                eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, userOrderRespVO.getTakeStatus().getKey());
+            }
         } else if (order.getPayAmount().compareTo(BigDecimal.ZERO) == 0) {
             // 未支付订单，自动支付
             openApiOrderService.setOrderPayed(order.getId(), order.getPayAmount());
             // 获取更新后的订单信息
             MtOrder updatedOrder = orderService.getOrderInfo(order.getId());
             eventCallbackService.sendOrderStatusCallback(updatedOrder, OrderStatusEnum.CREATED.getKey());
+            if (userOrderRespVO.getTakeStatus() != null) {
+                eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, userOrderRespVO.getTakeStatus().getKey());
+            }
         }
         // 返回订单信息
-        return CommonResult.success(openApiOrderService.getUserOrderDetail(order.getId()));
+        return CommonResult.success(userOrderRespVO);
     }
 
     @ApiOperation(value = "取消订单", notes = "取消订单，若已支付则自动退款")
@@ -292,6 +297,7 @@ public class OpenOrderController extends BaseController {
                 return CommonResult.error(ORDER_NOT_ALLOW_OPERATE);
             }
             String oldStatus = order.getStatus();
+            String oldTakeStatus = order.getTakeStatus();
             // 如果已支付，执行退款
             if (order.getPayStatus().equals(PayStatusEnum.SUCCESS.getKey())) {
                 AccountInfo accountInfo = new AccountInfo();
@@ -303,6 +309,7 @@ public class OpenOrderController extends BaseController {
             MtOrder updatedOrder = orderService.getOrderInfo(reqVO.getOrderId());
             // 发送订单取消回调
             eventCallbackService.sendOrderStatusCallback(updatedOrder, oldStatus);
+            eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, oldTakeStatus);
             return CommonResult.success(true);
         } finally {
             lock.unlock();
@@ -337,6 +344,7 @@ public class OpenOrderController extends BaseController {
             MtOrder updatedOrder = orderService.getOrderInfo(reqVO.getOrderId());
             // 发送订单状态变更回调
             eventCallbackService.sendOrderStatusCallback(updatedOrder, order.getStatus());
+            eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, order.getTakeStatus());
         }
         return CommonResult.success(result);
     }
@@ -363,14 +371,14 @@ public class OpenOrderController extends BaseController {
         if (result) {
             // 发送退款成功事件回调
             MtOrder updatedOrder = orderService.getOrderInfo(reqVO.getOrderId());
-            
+
             // 查询最新的退款记录
             LambdaQueryWrapper<MtRefund> queryWrapper = Wrappers.lambdaQuery();
             queryWrapper.eq(MtRefund::getOrderId, reqVO.getOrderId());
             queryWrapper.orderByDesc(MtRefund::getId);
             queryWrapper.last("LIMIT 1");
             MtRefund refund = mtRefundMapper.selectOne(queryWrapper);
-            
+
             if (refund != null) {
                 eventCallbackService.sendPayStatusCallback(updatedOrder, refund);
             }
@@ -487,17 +495,17 @@ public class OpenOrderController extends BaseController {
             return CommonResult.success(true);
         }
         String oldTakeStatus = order.getTakeStatus();
-        
+
         if (reqVO.getTakeStatus().equals(TakeStatusEnum.COMPLETED)) {
             // 标记已取餐，同时更新订单状态为已收货
             order.setStatus(OrderStatusEnum.RECEIVED.getKey());
         }
         order.setTakeStatus(reqVO.getTakeStatus().getKey());
         orderService.updateOrder(order);
-        
+
         // 获取更新后的订单信息
         MtOrder updatedOrder = orderService.getOrderInfo(reqVO.getOrderId());
-        
+
         // 发送取餐状态变更回调（所有状态变更都发送）
         eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, oldTakeStatus);
 
@@ -507,13 +515,13 @@ public class OpenOrderController extends BaseController {
             LambdaQueryWrapper<MtOrderGoods> goodsWrapper = Wrappers.lambdaQuery();
             goodsWrapper.eq(MtOrderGoods::getOrderId, reqVO.getOrderId());
             List<MtOrderGoods> goodsList = mtOrderGoodsMapper.selectList(goodsWrapper);
-    
+
             List<Map<String, Object>> items = new ArrayList<>();
             for (MtOrderGoods orderGoods : goodsList) {
                 Map<String, Object> item = new HashMap<>();
                 item.put("skuId", orderGoods.getSkuId());
                 item.put("quantity", orderGoods.getNum());
-    
+
                 // 通过goodsId查询商品信息获取商品名称
                 try {
                     MtGoods goodsInfo = goodsService.queryGoodsById(orderGoods.getGoodsId());
@@ -526,14 +534,14 @@ public class OpenOrderController extends BaseController {
                     log.warn("获取商品信息失败: goodsId={}, error={}", orderGoods.getGoodsId(), e.getMessage());
                     item.put("goodsName", "");
                 }
-    
+
                 items.add(item);
             }
-    
+
             // 发送可取餐状态通知回调
             eventCallbackService.sendOrderReadyCallback(updatedOrder);
         }
-        
+
         return CommonResult.success(true);
     }
 
