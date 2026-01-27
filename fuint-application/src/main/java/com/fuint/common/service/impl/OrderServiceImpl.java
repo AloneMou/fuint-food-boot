@@ -21,6 +21,7 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.util.PropertiesUtil;
 import com.fuint.framework.util.SeqUtil;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.repository.mapper.*;
 import com.fuint.repository.model.*;
 import com.github.pagehelper.Page;
@@ -185,6 +186,11 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
      * 云打印服务接口
      */
     private PrinterService printerService;
+
+    /**
+     * 事件回调服务接口
+     */
+    private EventCallbackService eventCallbackService;
 
     /**
      * 获取用户订单列表
@@ -1014,6 +1020,8 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
             if (payType.equals(PayTypeEnum.CASH.getKey()) && StringUtils.isNotEmpty(operator)) {
                 // 收银台现金支付，更新为已支付
                 setOrderPayed(orderInfo.getId(), null);
+                MtOrder order = this.getById(orderInfo.getId());
+                eventCallbackService.sendOrderStatusCallback(order, orderInfo.getStatus());
             } else if (payType.equals(PayTypeEnum.BALANCE.getKey())) {
                 // 余额支付
                 MtBalance balance = new MtBalance();
@@ -1026,6 +1034,8 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                 boolean isPay = balanceService.addBalance(balance, true);
                 if (isPay) {
                     setOrderPayed(orderInfo.getId(), realPayAmount);
+                    MtOrder order = this.getById(orderInfo.getId());
+                    eventCallbackService.sendOrderStatusCallback(order, orderInfo.getStatus());
                 } else {
                     errorMessage = PropertiesUtil.getResponseErrorMessageByCode(5001);
                 }
@@ -1044,6 +1054,8 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         } else {
             // 应付金额是0，直接更新为已支付
             setOrderPayed(orderInfo.getId(), null);
+            MtOrder order = this.getById(orderInfo.getId());
+            eventCallbackService.sendOrderStatusCallback(order, orderInfo.getStatus());
         }
 //        }
 
@@ -1806,6 +1818,8 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                     if (payResult != null && payResult.get("trade_state").equals("SUCCESS")) {
                         BigDecimal payAmount = new BigDecimal(payResult.get("total_fee")).divide(new BigDecimal("100"));
                         setOrderPayed(orderInfo.getId(), payAmount);
+                        MtOrder order = this.getById(orderInfo.getId());
+                        eventCallbackService.sendOrderStatusCallback(order, orderInfo.getStatus());
                         userOrderDto.setPayStatus(PayStatusEnum.SUCCESS.getKey());
                     }
                 } catch (Exception e) {
@@ -1819,6 +1833,8 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                     if (payResult != null) {
                         BigDecimal payAmount = new BigDecimal(payResult.get("payAmount"));
                         setOrderPayed(orderInfo.getId(), payAmount);
+                        MtOrder order = this.getById(orderInfo.getId());
+                        eventCallbackService.sendOrderStatusCallback(order, orderInfo.getStatus());
                         userOrderDto.setPayStatus(PayStatusEnum.SUCCESS.getKey());
                     }
                 } catch (Exception e) {

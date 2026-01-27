@@ -168,7 +168,7 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
      */
     public static class PayStatusEvent extends BaseCallbackEvent {
         public PayStatusEvent(Object source, Integer merchantId, MtRefund refund, MtOrder order) {
-            super(source, merchantId, "PAY_STATUS_CHANGE", refund, MapUtil.of("order", order));
+            super(source, merchantId, "REFUND_STATUS_CHANGE", refund, MapUtil.of("order", order));
         }
     }
 
