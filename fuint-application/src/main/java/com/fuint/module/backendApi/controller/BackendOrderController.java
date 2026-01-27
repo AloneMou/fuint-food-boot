@@ -593,10 +593,76 @@ public class BackendOrderController extends BaseController {
         if (orderId < 0) {
             return getFailureResult(201, "系统出错啦，订单ID不能为空");
         }
-
+        MtOrder order = orderService.getOrderInfo(orderId);
+        if (TakeStatusEnum.PROCESSING.getKey().equals(order.getTakeStatus())) {
+            OrderDto orderDto = new OrderDto();
+            orderDto.setId(orderId);
+            orderDto.setTakeStatus(TakeStatusEnum.READY.getKey());
+            orderService.updateOrder(orderDto);
+            MtOrder newOrder = orderService.getOrderInfo(orderId);
+            eventCallbackService.sendOrderTakeStatusCallback(newOrder, TakeStatusEnum.PROCESSING.getKey());
+            eventCallbackService.sendOrderReadyCallback(newOrder);
+        }
         OrderDto orderDto = new OrderDto();
         orderDto.setId(orderId);
         orderService.sendTakeFoodRemind(orderDto);
+        return getSuccessResult(true);
+    }
+
+    @ApiOperation(value = "订单接单")
+    @RequestMapping(value = "/confirmed", method = RequestMethod.POST)
+    @CrossOrigin
+    @PreAuthorize("@pms.hasPermission('order:edit')")
+    public ResponseObject confirmedTake(HttpServletRequest request, @RequestBody Map<String, Object> param) throws BusinessCheckException {
+        String token = request.getHeader("Access-Token");
+        int orderId = param.get("orderId") == null ? 0 : Integer.parseInt(param.get("orderId").toString());
+        AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
+        if (accountInfo == null) {
+            return getFailureResult(1001, "请先登录");
+        }
+
+        if (orderId < 0) {
+            return getFailureResult(201, "系统出错啦，订单ID不能为空");
+        }
+        MtOrder order = orderService.getOrderInfo(orderId);
+        if (!TakeStatusEnum.PENDING.getKey().equals(order.getTakeStatus())) {
+            return getFailureResult(201, "订单已确认，请勿重复操作");
+        }
+        OrderDto orderDto = new OrderDto();
+        orderDto.setId(orderId);
+        orderDto.setTakeStatus(TakeStatusEnum.CONFIRMED.getKey());
+        orderService.updateOrder(orderDto);
+        MtOrder newOrder = orderService.getOrderInfo(orderId);
+        eventCallbackService.sendOrderTakeStatusCallback(newOrder, order.getTakeStatus());
+        return getSuccessResult(true);
+    }
+
+
+    @ApiOperation(value = "订单制作中")
+    @RequestMapping(value = "/processing", method = RequestMethod.POST)
+    @CrossOrigin
+    @PreAuthorize("@pms.hasPermission('order:edit')")
+    public ResponseObject processing(HttpServletRequest request, @RequestBody Map<String, Object> param){
+        String token = request.getHeader("Access-Token");
+        int orderId = param.get("orderId") == null ? 0 : Integer.parseInt(param.get("orderId").toString());
+        AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
+        if (accountInfo == null) {
+            return getFailureResult(1001, "请先登录");
+        }
+
+        if (orderId < 0) {
+            return getFailureResult(201, "系统出错啦，订单ID不能为空");
+        }
+        MtOrder order = orderService.getOrderInfo(orderId);
+        if (!TakeStatusEnum.CONFIRMED.getKey().equals(order.getTakeStatus())) {
+            return getFailureResult(201, "订单已经在制作中，请勿重复操作");
+        }
+        OrderDto orderDto = new OrderDto();
+        orderDto.setId(orderId);
+        orderDto.setTakeStatus(TakeStatusEnum.PROCESSING.getKey());
+        orderService.updateOrder(orderDto);
+        MtOrder newOrder = orderService.getOrderInfo(orderId);
+        eventCallbackService.sendOrderTakeStatusCallback(newOrder, order.getTakeStatus());
         return getSuccessResult(true);
     }
 }
