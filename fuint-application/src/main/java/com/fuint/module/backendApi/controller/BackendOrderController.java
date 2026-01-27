@@ -263,6 +263,7 @@ public class BackendOrderController extends BaseController {
         OrderDto dto = new OrderDto();
         dto.setId(orderId);
         dto.setStatus(OrderStatusEnum.DELIVERED.getKey());
+        dto.setTakeStatus(TakeStatusEnum.READY.getKey());
 
         if (StringUtils.isNotEmpty(expressCompany) || StringUtils.isNotEmpty(expressNo)) {
             ExpressDto expressInfo = new ExpressDto();
@@ -279,7 +280,6 @@ public class BackendOrderController extends BaseController {
         MtOrder updatedOrder = orderService.getOrderInfo(orderId);
         if (updatedOrder != null) {
             eventCallbackService.sendOrderStatusCallback(updatedOrder, orderInfo.getStatus());
-            
             // 发送订单准备就绪回调
             eventCallbackService.sendOrderReadyCallback(updatedOrder);
         }
@@ -298,7 +298,7 @@ public class BackendOrderController extends BaseController {
             if (StringUtils.isNotBlank(userInfo.getMpOpenId())) {
                 weixinService.sendTemplateMessage(userInfo.getMerchantId(), userInfo.getId(), userInfo.getMpOpenId(), WxMessageEnum.DELIVER_GOODS.getKey(), "pages/order/index", params, sendTime);
 
-            }else{
+            } else {
                 weixinService.sendTemplateMessage(userInfo.getMerchantId(), userInfo.getId(), userInfo.getOpenId(), WxMessageEnum.DELIVER_GOODS.getKey(), "pages/order/index", params, sendTime);
 
             }
@@ -403,13 +403,17 @@ public class BackendOrderController extends BaseController {
         }
         if (StringUtils.isNotEmpty(verifyCode)) {
             orderDto.setVerifyCode(verifyCode);
+            orderDto.setTakeStatus(TakeStatusEnum.COMPLETED.getKey());
         }
 
         String oldStatus = "";
+        String oldTakeStatus = "";
         UserOrderDto existOrder = orderService.getOrderById(orderId);
         if (existOrder != null) {
             oldStatus = existOrder.getStatus();
+            oldTakeStatus = existOrder.getTakeStatus();
         }
+
 
         orderService.updateOrder(orderDto);
 
@@ -418,7 +422,9 @@ public class BackendOrderController extends BaseController {
         if (updatedOrder != null && !updatedOrder.getStatus().equals(oldStatus)) {
             eventCallbackService.sendOrderStatusCallback(updatedOrder, oldStatus);
         }
-
+        if (updatedOrder != null && !updatedOrder.getTakeStatus().equals(oldTakeStatus)) {
+            eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, oldTakeStatus);
+        }
         return getSuccessResult(true);
     }
 

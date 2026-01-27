@@ -8,13 +8,14 @@ import cn.hutool.crypto.digest.HmacAlgorithm;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fuint.common.enums.OrderStatusEnum;
+import com.fuint.common.enums.TakeStatusEnum;
 import com.fuint.common.service.AppService;
+import com.fuint.framework.util.SeqUtil;
 import com.fuint.framework.util.collection.MapUtils;
 import com.fuint.framework.util.json.JsonUtils;
-import com.fuint.framework.util.SeqUtil;
-import com.fuint.common.enums.OrderStatusEnum;
-import com.fuint.common.enums.RefundStatusEnum;
 import com.fuint.repository.mapper.MtWebhookLogMapper;
 import com.fuint.repository.model.MtOrder;
 import com.fuint.repository.model.MtRefund;
@@ -35,10 +36,15 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -184,7 +190,12 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
      */
     public void sendOrderTakeStatusCallback(MtOrder order, String previousStatus) {
         if (order == null) return;
-        applicationEventPublisher.publishEvent(new OrderTakeStatusEvent(this, order.getMerchantId(), order, previousStatus));
+        if (StringUtils.isNotBlank(order.getTakeStatus())) {
+            if (!order.getTakeStatus().equals(previousStatus)) {
+                applicationEventPublisher.publishEvent(new OrderTakeStatusEvent(this, order.getMerchantId(), order, previousStatus));
+            }
+        }
+
     }
 
     /**
@@ -192,7 +203,9 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
      */
     public void sendOrderStatusCallback(MtOrder order, String previousStatus) {
         if (order == null) return;
-        applicationEventPublisher.publishEvent(new OrderStatusEvent(this, order.getMerchantId(), order, previousStatus));
+        if (!order.getStatus().equals(previousStatus)) {
+            applicationEventPublisher.publishEvent(new OrderStatusEvent(this, order.getMerchantId(), order, previousStatus));
+        }
     }
 
     /**
@@ -200,7 +213,9 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
      */
     public void sendOrderReadyCallback(MtOrder order) {
         if (order == null) return;
-        applicationEventPublisher.publishEvent(new OrderReadyEvent(this, order.getMerchantId(), order));
+        if (TakeStatusEnum.READY.getKey().equals(order.getTakeStatus())) {
+            applicationEventPublisher.publishEvent(new OrderReadyEvent(this, order.getMerchantId(), order));
+        }
     }
 
     /**
@@ -434,17 +449,19 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
             String timestamp = String.valueOf(System.currentTimeMillis());
             String method = "POST";
 
+            String accessKey = "GH";
+            String secretKey = "wLiArcTnfH2N";
             // 签名算法：HMAC-SHA256
             // 签名字符串：{method}\n{path}\n{timestamp}\n{nonce}
             String signString = method + "\n" + path + "\n" + timestamp + "\n" + nonce;
 
-            HMac mac = new HMac(HmacAlgorithm.HmacSHA256, app.getAppSecret().getBytes(StandardCharsets.UTF_8));
+            HMac mac = new HMac(HmacAlgorithm.HmacSHA256, secretKey.getBytes(StandardCharsets.UTF_8));
             String signature = mac.digestBase64(signString, false);
 
             HttpRequest request = HttpRequest.post(fullUrl)
                     .body(payloadJson)
                     .header("Content-Type", "application/json")
-                    .header("X-Access-Key", app.getAppId())
+                    .header("X-Access-Key", accessKey)
                     .header("X-Timestamp", timestamp)
                     .header("X-Nonce", nonce)
                     .header("X-Signature", signature)
@@ -457,7 +474,7 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
             log.info("Webhook回调发送结果: eventType={}, status={}", eventType, statusCode);
 
             Map<String, String> headerMap = new HashMap<>();
-            headerMap.put("X-Access-Key", app.getAppId());
+            headerMap.put("X-Access-Key", accessKey);
             headerMap.put("X-Timestamp", timestamp);
             headerMap.put("X-Nonce", nonce);
             headerMap.put("X-Signature", signature);
@@ -466,18 +483,20 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
             webhookLog.setResponseCode(statusCode);
             webhookLog.setResponseBody(StringUtils.substring(responseBody, 0, 2000));
 
-            if (httpResponse.isOk()) {
+            JSONObject responseBodyJson = JSON.parseObject(responseBody);
+
+            if (responseBodyJson.getBoolean("success") && "00000".equals(responseBodyJson.getString("code"))) {
                 // 检查响应体中的 code 是否为 00000 (根据文档)
                 // 这里简单判断 HTTP 200 即视为发送成功，业务层面的成功由对方保证
                 webhookLog.setStatus(1); // 成功
                 webhookLog.setErrorMsg(null);
                 webhookLog.setNextRetryTime(null);
             } else {
+                webhookLog.setTraceId(responseBodyJson.getString("traceId"));
                 handleFailure(webhookLog, "HTTP状态码异常: " + statusCode);
             }
             webhookLog.setUpdateTime(new Date());
             webhookLogMapper.updateById(webhookLog);
-
         } catch (Exception e) {
             log.error("Webhook回调发送失败: eventType={}, error={}", eventType, e.getMessage());
             handleFailure(webhookLog, e.getMessage());
@@ -496,7 +515,7 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
         int retryCount = webhookLog.getRetryCount();
         if (retryCount < 3) {
             // 设置下次重试时间：1s, 5s, 30s (根据文档 5.2 重试策略建议)
-            long delay = 0;
+            long delay;
             switch (retryCount) {
                 case 0:
                     delay = 1000;
@@ -527,6 +546,7 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
     @Scheduled(cron = "0 0/1 * * * ?")
     public void retryFailedCallbacks() {
         try {
+            log.info("开始执行重试回调任务");
             Date now = new Date();
             LambdaQueryWrapper<MtWebhookLog> queryWrapper = new LambdaQueryWrapper<>();
             queryWrapper.eq(MtWebhookLog::getStatus, 2)
@@ -536,6 +556,7 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
 
             List<MtWebhookLog> retryLogs = webhookLogMapper.selectList(queryWrapper);
             if (retryLogs == null || retryLogs.isEmpty()) {
+                log.info("没有需要重试的回调任务");
                 return;
             }
 

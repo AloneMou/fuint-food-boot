@@ -1,7 +1,9 @@
 package com.fuint.module.clientApi.controller;
 
 import com.alipay.api.AlipayApiException;
-import com.fuint.common.dto.*;
+import com.fuint.common.dto.CouponDto;
+import com.fuint.common.dto.UserInfo;
+import com.fuint.common.dto.UserOrderDto;
 import com.fuint.common.enums.OrderStatusEnum;
 import com.fuint.common.enums.SettingTypeEnum;
 import com.fuint.common.enums.YesOrNoEnum;
@@ -11,7 +13,10 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.openapi.service.EventCallbackService;
-import com.fuint.repository.model.*;
+import com.fuint.repository.model.MtOrder;
+import com.fuint.repository.model.MtSetting;
+import com.fuint.repository.model.MtUser;
+import com.fuint.repository.model.MtUserGrade;
 import com.ijpay.alipay.AliPayApi;
 import com.ijpay.core.kit.HttpKit;
 import com.ijpay.core.kit.WxPayKit;
@@ -20,12 +25,13 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
@@ -33,11 +39,11 @@ import java.util.Map;
 
 /**
  * 支付类controller
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
-@Api(tags="会员端-支付相关接口")
+@Api(tags = "会员端-支付相关接口")
 @RestController
 @AllArgsConstructor
 @RequestMapping(value = "/clientApi/pay")
@@ -47,42 +53,42 @@ public class ClientPayController extends BaseController {
 
     /**
      * 微信服务接口
-     * */
+     */
     private WeixinService weixinService;
 
     /**
      * 支付宝服务接口
-     * */
+     */
     private AlipayService alipayService;
 
     /**
      * 支付服务接口
-     * */
+     */
     private PaymentService paymentService;
 
     /**
      * 订单服务接口
-     * */
+     */
     private OrderService orderService;
 
     /**
      * 会员服务接口
-     * */
+     */
     private MemberService memberService;
 
     /**
      * 系统设置接口
-     * */
+     */
     private SettingService settingService;
 
     /**
      * 会员卡券接口
-     * */
+     */
     private UserCouponService userCouponService;
 
     /**
      * 会员等级接口
-     * */
+     */
     private UserGradeService userGradeService;
 
     /**
@@ -97,7 +103,7 @@ public class ClientPayController extends BaseController {
 
     /**
      * 支付前查询
-     * */
+     */
     @ApiOperation(value = "支付前查询")
     @RequestMapping(value = "/prePay", method = RequestMethod.GET)
     @CrossOrigin
@@ -166,13 +172,13 @@ public class ClientPayController extends BaseController {
 
     /**
      * 发起支付
-     * */
+     */
     @ApiOperation(value = "发起支付")
     @RequestMapping(value = "/doPay", method = RequestMethod.GET)
     @CrossOrigin
     public ResponseObject doPay(HttpServletRequest request) throws BusinessCheckException {
-       Map<String, Object> result = paymentService.doPay(request);
-       return getSuccessResult(result);
+        Map<String, Object> result = paymentService.doPay(request);
+        return getSuccessResult(result);
     }
 
     /**
@@ -205,12 +211,13 @@ public class ClientPayController extends BaseController {
                     if (compareFlag == 0) { // 支付金额正确
                         if (orderInfo.getStatus().equals(OrderStatusEnum.CREATED.getKey())) {
                             boolean flag = paymentService.paymentCallback(orderInfo);
-                            logger.info("回调结果：" + flag);
+                            logger.info("回调结果：{}", flag);
                             if (flag) {
                                 // 发送支付成功回调
                                 MtOrder order = orderService.getOrderInfo(orderInfo.getId());
                                 if (order != null) {
-                                    eventCallbackService.sendOrderStatusCallback(order, OrderStatusEnum.CREATED.getKey());
+                                    eventCallbackService.sendOrderStatusCallback(order, orderInfo.getStatus());
+                                    eventCallbackService.sendOrderTakeStatusCallback(order, orderInfo.getTakeStatus());
                                 }
                                 weixinService.processRespXml(response, true);
                             } else {
@@ -278,7 +285,8 @@ public class ClientPayController extends BaseController {
                     // 发送支付成功回调
                     MtOrder order = orderService.getOrderInfo(orderInfo.getId());
                     if (order != null) {
-                        eventCallbackService.sendOrderStatusCallback(order, OrderStatusEnum.CREATED.getKey());
+                        eventCallbackService.sendOrderStatusCallback(order, orderInfo.getStatus());
+                        eventCallbackService.sendOrderTakeStatusCallback(order, orderInfo.getTakeStatus());
                     }
                     return "success";
                 } else {
