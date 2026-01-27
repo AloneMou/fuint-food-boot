@@ -482,9 +482,8 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
             webhookLog.setRequestHeaders(JSON.toJSONString(headerMap));
             webhookLog.setResponseCode(statusCode);
             webhookLog.setResponseBody(StringUtils.substring(responseBody, 0, 2000));
-
             JSONObject responseBodyJson = JSON.parseObject(responseBody);
-
+            webhookLog.setTraceId(responseBodyJson.getString("traceId"));
             if (responseBodyJson.getBoolean("success") && "00000".equals(responseBodyJson.getString("code"))) {
                 // 检查响应体中的 code 是否为 00000 (根据文档)
                 // 这里简单判断 HTTP 200 即视为发送成功，业务层面的成功由对方保证
@@ -492,7 +491,6 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
                 webhookLog.setErrorMsg(null);
                 webhookLog.setNextRetryTime(null);
             } else {
-                webhookLog.setTraceId(responseBodyJson.getString("traceId"));
                 handleFailure(webhookLog, "HTTP状态码异常: " + statusCode);
             }
             webhookLog.setUpdateTime(new Date());

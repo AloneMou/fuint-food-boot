@@ -5,9 +5,11 @@ import com.fuint.common.enums.OrderStatusEnum;
 import com.fuint.common.enums.PayStatusEnum;
 import com.fuint.common.enums.TakeStatusEnum;
 import com.fuint.common.service.OrderService;
+import com.fuint.common.service.UserCouponService;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.repository.model.MtOrder;
+import com.fuint.repository.model.MtUserCoupon;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -39,6 +41,9 @@ public class OrderCancelJob {
      */
     @Autowired
     private OrderService orderService;
+
+    @Autowired
+    private UserCouponService userCouponService;
 
     @Autowired
     private EventCallbackService eventCallbackService;
@@ -93,6 +98,12 @@ public class OrderCancelJob {
                             if (updatedOrder != null) {
                                 eventCallbackService.sendOrderStatusCallback(updatedOrder, mtOrder.getStatus());
                                 eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, mtOrder.getTakeStatus());
+                                if (updatedOrder.getCouponId() != null && updatedOrder.getCouponId() > 0) {
+                                    MtUserCoupon userCoupon = userCouponService.getById(updatedOrder.getCouponId());
+                                    if (userCoupon != null) {
+                                        eventCallbackService.sendCouponEventCallback(userCoupon, "USED", updatedOrder.getOrderSn());
+                                    }
+                                }
                             }
                         }
                     }

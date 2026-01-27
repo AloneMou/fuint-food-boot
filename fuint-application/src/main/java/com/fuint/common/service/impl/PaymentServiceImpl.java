@@ -7,6 +7,7 @@ import com.fuint.common.util.CommonUtil;
 import com.fuint.common.util.TokenUtil;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.ResponseObject;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.repository.mapper.MtOrderMapper;
 import com.fuint.repository.model.*;
 import lombok.AllArgsConstructor;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -24,12 +26,12 @@ import java.util.Map;
 
 /**
  * 支付相关接口
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
 @Service
-@AllArgsConstructor(onConstructor_= {@Lazy})
+@AllArgsConstructor(onConstructor_ = {@Lazy})
 public class PaymentServiceImpl implements PaymentService {
 
     private static final Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
@@ -38,47 +40,49 @@ public class PaymentServiceImpl implements PaymentService {
 
     /**
      * 微信服务接口
-     * */
+     */
     private WeixinService weixinService;
 
     /**
      * 支付宝服务接口
-     * */
+     */
     private AlipayService alipayService;
 
     /**
      * 会员服务接口
-     * */
+     */
     private MemberService memberService;
 
     /**
      * 订单服务接口
-     * */
+     */
     private OrderService orderService;
 
     /**
      * 余额服务接口
-     * */
+     */
     private BalanceService balanceService;
 
     /**
      * 会员卡券服务接口
-     * */
+     */
     private UserCouponService userCouponService;
+
+    private EventCallbackService eventCallbackService;
 
     /**
      * 创建预支付订单
      *
-     * @param userInfo 会员信息
-     * @param orderInfo 订单信息
-     * @param payAmount 支付金额
-     * @param authCode 付款码
+     * @param userInfo   会员信息
+     * @param orderInfo  订单信息
+     * @param payAmount  支付金额
+     * @param authCode   付款码
      * @param giveAmount 赠送金额
-     * @param ip 支付IP地址
-     * @param platform 支付平台
-     * @param isWechat 是否微信客户端
+     * @param ip         支付IP地址
+     * @param platform   支付平台
+     * @param isWechat   是否微信客户端
      * @return
-     * */
+     */
     @Override
     public ResponseObject createPrepayOrder(MtUser userInfo, MtOrder orderInfo, Integer payAmount, String authCode, Integer giveAmount, String ip, String platform, String isWechat) throws BusinessCheckException {
         logger.info("PaymentService createPrepayOrder inParams userInfo={} payAmount={} giveAmount={} goodsInfo={}", userInfo, payAmount, giveAmount, orderInfo);
@@ -101,7 +105,7 @@ public class PaymentServiceImpl implements PaymentService {
      *
      * @param orderInfo 订单信息
      * @return
-     * */
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Boolean paymentCallback(UserOrderDto orderInfo) throws BusinessCheckException {
@@ -155,7 +159,7 @@ public class PaymentServiceImpl implements PaymentService {
      *
      * @param request 请求参数
      * @return
-     * */
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> doPay(HttpServletRequest request) throws BusinessCheckException {
@@ -177,6 +181,8 @@ public class PaymentServiceImpl implements PaymentService {
         if (orderInfo == null) {
             throw new BusinessCheckException("该订单不存在");
         }
+        String oldTakeStatus = orderInfo.getTakeStatus();
+        String oldStatus = orderInfo.getStatus();
         MtUser mtUser = null;
         if (loginInfo != null) {
             mtUser = memberService.queryMemberById(loginInfo.getId());
@@ -245,6 +251,14 @@ public class PaymentServiceImpl implements PaymentService {
                 }
                 orderService.updateOrder(reqOrder);
                 orderInfo = orderService.getOrderInfo(orderInfo.getId());
+                eventCallbackService.sendOrderStatusCallback(orderInfo, oldStatus);
+                eventCallbackService.sendOrderTakeStatusCallback(orderInfo, oldTakeStatus);
+                if (orderInfo.getCouponId() != null && orderInfo.getCouponId() > 0) {
+                    MtUserCoupon userCoupon = userCouponService.getById(orderInfo.getCouponId());
+                    if (userCoupon != null) {
+                        eventCallbackService.sendCouponEventCallback(userCoupon, "USED", orderInfo.getOrderSn());
+                    }
+                }
             } else {
                 throw new BusinessCheckException("会员余额不足");
             }
@@ -261,6 +275,15 @@ public class PaymentServiceImpl implements PaymentService {
             orderService.updateOrder(reqOrder);
             orderService.setOrderPayed(orderInfo.getId(), null);
             orderInfo = orderService.getOrderInfo(orderInfo.getId());
+
+            eventCallbackService.sendOrderStatusCallback(orderInfo, oldStatus);
+            eventCallbackService.sendOrderTakeStatusCallback(orderInfo, oldTakeStatus);
+            if (orderInfo.getCouponId() != null && orderInfo.getCouponId() > 0) {
+                MtUserCoupon userCoupon = userCouponService.getById(orderInfo.getCouponId());
+                if (userCoupon != null) {
+                    eventCallbackService.sendCouponEventCallback(userCoupon, "USED", orderInfo.getOrderSn());
+                }
+            }
         } else {
             String ip = CommonUtil.getIPFromHttpRequest(request);
             BigDecimal pay = realPayAmount.multiply(new BigDecimal("100"));

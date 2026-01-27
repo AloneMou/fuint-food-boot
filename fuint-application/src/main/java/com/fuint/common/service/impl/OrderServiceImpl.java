@@ -1022,6 +1022,14 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                 setOrderPayed(orderInfo.getId(), null);
                 MtOrder order = this.getById(orderInfo.getId());
                 eventCallbackService.sendOrderStatusCallback(order, orderInfo.getStatus());
+                eventCallbackService.sendOrderTakeStatusCallback(order, orderInfo.getTakeStatus());
+                // 如果使用了优惠券，发送优惠券使用回调
+                if (order.getCouponId() != null && order.getCouponId() > 0) {
+                    MtUserCoupon userCoupon = mtUserCouponMapper.selectById(order.getCouponId());
+                    if (userCoupon != null) {
+                        eventCallbackService.sendCouponEventCallback(userCoupon, "USED", order.getOrderSn());
+                    }
+                }
             } else if (payType.equals(PayTypeEnum.BALANCE.getKey())) {
                 // 余额支付
                 MtBalance balance = new MtBalance();
@@ -1036,6 +1044,14 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                     setOrderPayed(orderInfo.getId(), realPayAmount);
                     MtOrder order = this.getById(orderInfo.getId());
                     eventCallbackService.sendOrderStatusCallback(order, orderInfo.getStatus());
+                    eventCallbackService.sendOrderTakeStatusCallback(order, orderInfo.getTakeStatus());
+                    // 如果使用了优惠券，发送优惠券使用回调
+                    if (order.getCouponId() != null && order.getCouponId() > 0) {
+                        MtUserCoupon userCoupon = mtUserCouponMapper.selectById(order.getCouponId());
+                        if (userCoupon != null) {
+                            eventCallbackService.sendCouponEventCallback(userCoupon, "USED", order.getOrderSn());
+                        }
+                    }
                 } else {
                     errorMessage = PropertiesUtil.getResponseErrorMessageByCode(5001);
                 }
@@ -1056,6 +1072,14 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
             setOrderPayed(orderInfo.getId(), null);
             MtOrder order = this.getById(orderInfo.getId());
             eventCallbackService.sendOrderStatusCallback(order, orderInfo.getStatus());
+            eventCallbackService.sendOrderTakeStatusCallback(order, orderInfo.getTakeStatus());
+            // 如果使用了优惠券，发送优惠券使用回调
+            if (order.getCouponId() != null && order.getCouponId() > 0) {
+                MtUserCoupon userCoupon = mtUserCouponMapper.selectById(order.getCouponId());
+                if (userCoupon != null) {
+                    eventCallbackService.sendCouponEventCallback(userCoupon, "USED", order.getOrderSn());
+                }
+            }
         }
 //        }
 
@@ -1820,6 +1844,14 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                         setOrderPayed(orderInfo.getId(), payAmount);
                         MtOrder order = this.getById(orderInfo.getId());
                         eventCallbackService.sendOrderStatusCallback(order, orderInfo.getStatus());
+                        eventCallbackService.sendOrderTakeStatusCallback(order, orderInfo.getTakeStatus());
+                        // 如果使用了优惠券，发送优惠券使用回调
+                        if (order.getCouponId() != null && order.getCouponId() > 0) {
+                            MtUserCoupon userCoupon = mtUserCouponMapper.selectById(order.getCouponId());
+                            if (userCoupon != null) {
+                                eventCallbackService.sendCouponEventCallback(userCoupon, "USED", order.getOrderSn());
+                            }
+                        }
                         userOrderDto.setPayStatus(PayStatusEnum.SUCCESS.getKey());
                     }
                 } catch (Exception e) {
@@ -1835,6 +1867,14 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                         setOrderPayed(orderInfo.getId(), payAmount);
                         MtOrder order = this.getById(orderInfo.getId());
                         eventCallbackService.sendOrderStatusCallback(order, orderInfo.getStatus());
+                        eventCallbackService.sendOrderTakeStatusCallback(order, orderInfo.getTakeStatus());
+                        // 如果使用了优惠券，发送优惠券使用回调
+                        if (order.getCouponId() != null && order.getCouponId() > 0) {
+                            MtUserCoupon userCoupon = mtUserCouponMapper.selectById(order.getCouponId());
+                            if (userCoupon != null) {
+                                eventCallbackService.sendCouponEventCallback(userCoupon, "USED", order.getOrderSn());
+                            }
+                        }
                         userOrderDto.setPayStatus(PayStatusEnum.SUCCESS.getKey());
                     }
                 } catch (Exception e) {

@@ -13,10 +13,7 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.web.BaseController;
 import com.fuint.framework.web.ResponseObject;
 import com.fuint.openapi.service.EventCallbackService;
-import com.fuint.repository.model.MtOrder;
-import com.fuint.repository.model.MtSetting;
-import com.fuint.repository.model.MtUser;
-import com.fuint.repository.model.MtUserGrade;
+import com.fuint.repository.model.*;
 import com.ijpay.alipay.AliPayApi;
 import com.ijpay.core.kit.HttpKit;
 import com.ijpay.core.kit.WxPayKit;
@@ -218,6 +215,13 @@ public class ClientPayController extends BaseController {
                                 if (order != null) {
                                     eventCallbackService.sendOrderStatusCallback(order, orderInfo.getStatus());
                                     eventCallbackService.sendOrderTakeStatusCallback(order, orderInfo.getTakeStatus());
+                                    // 如果使用了优惠券，发送优惠券使用回调
+                                    if (order.getCouponId() != null && order.getCouponId() > 0) {
+                                        MtUserCoupon userCoupon = userCouponService.getById(order.getCouponId());
+                                        if (userCoupon != null) {
+                                            eventCallbackService.sendCouponEventCallback(userCoupon, "USED", order.getOrderSn());
+                                        }
+                                    }
                                 }
                                 weixinService.processRespXml(response, true);
                             } else {
