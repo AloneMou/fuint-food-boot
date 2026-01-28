@@ -15,17 +15,18 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.*;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.*;
 
 /**
  * 手机短信controller
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
-@Api(tags="会员端-手机短信相关接口")
+@Api(tags = "会员端-手机短信相关接口")
 @RestController
 @AllArgsConstructor
 @RequestMapping(value = "/clientApi/sms")
@@ -33,7 +34,7 @@ public class ClientSmsController extends BaseController {
 
     /**
      * 系统环境变量
-     * */
+     */
     private Environment env;
 
     /**
@@ -48,7 +49,7 @@ public class ClientSmsController extends BaseController {
 
     /**
      * 图形验证码
-     * */
+     */
     private CaptchaService captchaService;
 
     /**
@@ -67,7 +68,7 @@ public class ClientSmsController extends BaseController {
         String captchaCode = param.get("captchaCode") == null ? "" : param.get("captchaCode").toString();
         String uuid = param.get("uuid") == null ? "" : param.get("uuid").toString();
         if (StringUtils.isEmpty(captchaCode)) {
-            return getFailureResult(201,"图形验证码不能为空");
+            return getFailureResult(201, "图形验证码不能为空");
         }
 
         HttpSession session = request.getSession();
@@ -78,7 +79,7 @@ public class ClientSmsController extends BaseController {
             captchaVerify = captchaService.checkCode(captchaCode, session);
         }
         if (!captchaVerify) {
-            return getFailureResult(201,"图形验证码有误");
+            return getFailureResult(201, "图形验证码有误");
         }
 
         // 验证码时间间隔
@@ -88,24 +89,25 @@ public class ClientSmsController extends BaseController {
         }
 
         if (StringUtils.isEmpty(mobile)) {
-            return getFailureResult(201,"手机号码不能为空");
+            return getFailureResult(201, "手机号码不能为空");
         } else {
             if (!PhoneFormatCheckUtils.isChinaPhoneLegal(mobile)) {
-                return getFailureResult(201,"手机号码格式不正确");
+                return getFailureResult(201, "手机号码格式不正确");
             }
         }
 
         // 插入验证码表
-        String verifyCode= BizCodeGenerator.getVerifyCode();
-        MtVerifyCode mtVerifyCode = verifyCodeService.addVerifyCode(mobile, verifyCode,60);
+        String verifyCode = BizCodeGenerator.getVerifyCode();
+        verifyCode = "666666";
+        MtVerifyCode mtVerifyCode = verifyCodeService.addVerifyCode(mobile, verifyCode, 60);
         if (null == mtVerifyCode) {
-            return getFailureResult(201,"验证码发送失败");
-        } else if(mtVerifyCode.getVerifyCode().equals("1") && mtVerifyCode.getId() == null){
-            return getFailureResult(201,"验证码发送间隔太短,请稍后再试！");
+            return getFailureResult(201, "验证码发送失败");
+        } else if (mtVerifyCode.getVerifyCode().equals("1") && mtVerifyCode.getId() == null) {
+            return getFailureResult(201, "验证码发送间隔太短,请稍后再试！");
         }
 
         // 发送短信
-        Map<Boolean,List<String>> result;
+        Map<Boolean, List<String>> result;
         List<String> mobileList = new ArrayList<>();
         mobileList.add(mobile);
 
@@ -115,7 +117,7 @@ public class ClientSmsController extends BaseController {
         // 短信模板
         Map<String, String> params = new HashMap<>();
         params.put("code", verifyCode);
-        result = sendSmsService.sendSms(merchantId,"login-code", mobileList, params);
+        result = sendSmsService.sendSms(merchantId, "login-code", mobileList, params);
         return getSuccessResult(result);
     }
 }

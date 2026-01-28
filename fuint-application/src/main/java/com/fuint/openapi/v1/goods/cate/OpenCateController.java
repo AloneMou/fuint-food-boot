@@ -7,6 +7,7 @@ import com.fuint.common.dto.GoodsCateDto;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.service.CateService;
 import com.fuint.common.service.StoreService;
+import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
@@ -55,6 +56,7 @@ public class OpenCateController extends BaseController {
     @PostMapping(value = "/create")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)创建商品分类")
     public CommonResult<Integer> createCate(@Valid @RequestBody MtGoodsCateCreateReqVO cateCreateReqVO) throws BusinessCheckException {
         MtGoodsCate mtGoodsCate = BeanUtils.toBean(cateCreateReqVO, MtGoodsCate.class);
 
@@ -78,6 +80,7 @@ public class OpenCateController extends BaseController {
     @PutMapping(value = "/update")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)更新商品分类")
     public CommonResult<Boolean> updateCate(@Valid @RequestBody MtGoodsCateUpdateReqVO updateReqVO) throws BusinessCheckException {
         MtGoodsCate mtGoodsCate = BeanUtils.toBean(updateReqVO, MtGoodsCate.class);
 
@@ -95,6 +98,7 @@ public class OpenCateController extends BaseController {
     @DeleteMapping(value = "/delete/{id}")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)删除商品分类")
     public CommonResult<Boolean> deleteCate(
             @ApiParam(value = "分类ID", required = true, example = "1")
             @PathVariable("id") Integer id) throws BusinessCheckException {
@@ -247,6 +251,7 @@ public class OpenCateController extends BaseController {
     @PutMapping(value = "/status/{id}")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)更新商品分类状态")
     public CommonResult<Boolean> updateCateStatus(
             @ApiParam(value = "分类ID", required = true, example = "1") @PathVariable("id") Integer id,
             @ApiParam(value = "状态：A-正常；D-删除", required = true, example = "A") @RequestParam String status) throws BusinessCheckException {

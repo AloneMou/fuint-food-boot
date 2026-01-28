@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.service.UserGradeService;
+import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
@@ -51,6 +52,7 @@ public class OpenUserGradeController extends BaseController {
     @PostMapping("/add")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)新增会员等级")
     public CommonResult<MtUserGrade> addUserGrade(@Valid @RequestBody MtUserGrade mtUserGrade) throws BusinessCheckException {
         log.info("Add user grade request: {}", mtUserGrade);
         if (StringUtils.isBlank(mtUserGrade.getName())) {
@@ -73,6 +75,7 @@ public class OpenUserGradeController extends BaseController {
     @PutMapping("/update")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)更新会员等级")
     public CommonResult<MtUserGrade> updateUserGrade(@Valid @RequestBody MtUserGrade mtUserGrade) throws BusinessCheckException {
         log.info("Update user grade request: {}", mtUserGrade);
         if (ObjectUtil.isEmpty(mtUserGrade.getId())) {
@@ -129,6 +132,7 @@ public class OpenUserGradeController extends BaseController {
     @DeleteMapping("/delete/{id}")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)删除会员等级")
     public CommonResult<Boolean> deleteUserGrade(@PathVariable("id") Integer id) throws BusinessCheckException {
         // 验证等级ID有效性
         MtUserGrade existGrade = userGradeService.queryUserGradeById(0, id, 0);

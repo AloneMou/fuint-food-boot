@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRate
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.fuint.common.dto.ReqCouponGroupDto;
 import com.fuint.common.enums.StatusEnum;
+import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.pojo.PageResult;
@@ -54,6 +55,7 @@ public class OpenCouponGroupController extends BaseController {
     @PostMapping("/create")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)创建优惠券分组")
     public CommonResult<Integer> createCouponGroup(@Valid @RequestBody CouponGroupCreateReqVO reqVO) throws BusinessCheckException {
         ReqCouponGroupDto dto = new ReqCouponGroupDto();
         BeanUtils.copyProperties(reqVO, dto);
@@ -77,6 +79,7 @@ public class OpenCouponGroupController extends BaseController {
     @PutMapping("/update")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)更新优惠券分组")
     public CommonResult<Boolean> updateCouponGroup(@Valid @RequestBody CouponGroupUpdateReqVO reqVO) throws BusinessCheckException {
         ReqCouponGroupDto dto = new ReqCouponGroupDto();
         BeanUtils.copyProperties(reqVO, dto);
@@ -97,6 +100,7 @@ public class OpenCouponGroupController extends BaseController {
     @DeleteMapping("/delete/{id}")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)删除优惠券分组")
     public CommonResult<Boolean> deleteCouponGroup(
             @ApiParam(value = "分组ID", required = true, example = "1") @PathVariable("id") Integer id,
             @ApiParam(value = "操作人", required = false, example = "openapi") @RequestParam(value = "operator", required = false, defaultValue = "openapi") String operator) throws BusinessCheckException {

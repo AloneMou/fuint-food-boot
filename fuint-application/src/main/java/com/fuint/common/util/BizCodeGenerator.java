@@ -46,8 +46,7 @@ public class BizCodeGenerator {
      * @return
      */
     public synchronized static String getVerifyCode() {
-        String verifyCode = getFixLengthString(6);
-        return verifyCode;
+        return getFixLengthString(6);
     }
 
     /**

@@ -5,13 +5,13 @@ import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRate
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.fuint.common.service.GoodsCommentService;
 import com.fuint.common.service.OrderService;
+import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.openapi.v1.goods.comment.vo.*;
-import com.fuint.repository.model.MtOrder;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -23,11 +23,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import static com.fuint.openapi.enums.CommentErrorCodeConstants.*;
+import static com.fuint.openapi.enums.CommentErrorCodeConstants.COMMENT_NOT_FOUND;
 
 /**
  * OpenAPI商品评价相关接口
@@ -97,6 +95,7 @@ public class OpenCommentController extends BaseController {
     @PostMapping(value = "/create-goods")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)提交商品评价")
     public CommonResult<Integer> createGoodsComment(@Valid @RequestBody GoodsCommentCreateReqVO createReqVO) {
         try {
             Integer commentId = goodsCommentService.createGoodsComment(createReqVO);
@@ -118,6 +117,7 @@ public class OpenCommentController extends BaseController {
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     @Transactional(rollbackFor = Exception.class)
+    @OperationServiceLog(description = "(OpenApi)提交订单NPS评价")
     public CommonResult<Integer> createOrderComment(@Valid @RequestBody OrderCommentCreateReqVO createReqVO) {
         try {
             Integer commentId = goodsCommentService.createOrderComment(createReqVO);
@@ -160,6 +160,7 @@ public class OpenCommentController extends BaseController {
     @PostMapping(value = "/create-batch")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)批量提交评价")
     public CommonResult<Boolean> createBatchComment(@Valid @RequestBody CommentBatchCreateReqVO batchCreateReqVO) {
         Boolean result = goodsCommentService.createBatchComment(batchCreateReqVO);
         return CommonResult.success(result);
@@ -190,6 +191,7 @@ public class OpenCommentController extends BaseController {
     @PutMapping(value = "/update")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)修改评价")
     public CommonResult<Boolean> updateComment(@Valid @RequestBody CommentUpdateReqVO updateReqVO) {
         try {
             Boolean result = goodsCommentService.updateComment(updateReqVO);
@@ -204,6 +206,7 @@ public class OpenCommentController extends BaseController {
     @DeleteMapping(value = "/delete")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)删除评价")
     public CommonResult<Boolean> deleteComment(@Valid @RequestBody CommentDeleteReqVO deleteReqVO) {
         try {
             Boolean result = goodsCommentService.deleteComment(deleteReqVO);
@@ -218,6 +221,7 @@ public class OpenCommentController extends BaseController {
     @PostMapping(value = "/reply")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)商家回复评价")
     public CommonResult<Boolean> replyComment(@Valid @RequestBody CommentReplyReqVO replyReqVO) {
         try {
             Boolean result = goodsCommentService.replyComment(replyReqVO);

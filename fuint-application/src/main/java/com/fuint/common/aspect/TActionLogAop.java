@@ -15,16 +15,20 @@ import org.apache.ibatis.javassist.bytecode.CodeAttribute;
 import org.apache.ibatis.javassist.bytecode.LocalVariableAttribute;
 import org.apache.ibatis.javassist.bytecode.MethodInfo;
 import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.annotation.*;
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
-import javax.servlet.http.HttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+
+import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -33,7 +37,7 @@ import java.util.Map;
 
 /**
  * 后台操作日志
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -190,6 +194,7 @@ public class TActionLogAop {
         if (url.length() > 255) {
             url = url.substring(0, 255);
         }
+        HttpServletRequest request = getRequest();
         TActionLog hal = new TActionLog();
         hal.setAcctName(userName);
         hal.setModule(module);
@@ -201,6 +206,7 @@ public class TActionLogAop {
         hal.setUserAgent(userAgent);
         hal.setMerchantId(merchantId);
         hal.setStoreId(storeId);
+        hal.setAppid(request.getHeader("appId"));
         if (param.length() > 10000) {
             param = param.substring(0, 10000);
         }

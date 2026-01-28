@@ -7,26 +7,25 @@ import cn.hutool.core.lang.UUID;
 import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.fuint.common.Constants;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fuint.common.dto.ReqCouponDto;
 import com.fuint.common.enums.CouponExpireTypeEnum;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.enums.UserCouponStatusEnum;
+import com.fuint.common.service.MemberService;
+import com.fuint.common.service.StoreService;
+import com.fuint.common.service.UserGradeService;
+import com.fuint.framework.annoation.OperationServiceLog;
+import com.fuint.framework.exception.BusinessCheckException;
+import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.util.string.StrUtils;
+import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.openapi.service.OpenApiCouponGroupService;
 import com.fuint.openapi.service.OpenApiCouponService;
-import com.fuint.common.service.*;
-import com.fuint.framework.exception.BusinessCheckException;
-import com.fuint.framework.pagination.PaginationRequest;
-import com.fuint.framework.pagination.PaginationResponse;
-import com.fuint.framework.pojo.CommonResult;
-import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.v1.marketing.coupon.vo.*;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fuint.repository.mapper.MtCouponGoodsMapper;
 import com.fuint.repository.mapper.MtGoodsMapper;
 import com.fuint.repository.mapper.MtUserCouponMapper;
@@ -40,7 +39,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
-import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -93,6 +91,7 @@ public class OpenCouponController extends BaseController {
     @ApiOperation(value = "创建优惠券", notes = "创建优惠券，支持配置多商品、数量、固定金额、费率、最大优惠额")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)创建优惠券")
     public CommonResult<Integer> createCoupon(@Valid @RequestBody MtCouponCreateReqVO createReqVO) {
         ReqCouponDto reqCouponDto = convertToDto(createReqVO);
         MtCoupon coupon = openApiCouponService.createCoupon(reqCouponDto);
@@ -104,6 +103,7 @@ public class OpenCouponController extends BaseController {
     @ApiOperation(value = "更新优惠券", notes = "更新优惠券信息")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)更新优惠券")
     public CommonResult<Boolean> updateCoupon(@Valid @RequestBody MtCouponUpdateReqVO updateReqVO) {
         MtCoupon existCoupon = openApiCouponService.queryCouponById(updateReqVO.getId());
         if (existCoupon == null) {
@@ -279,6 +279,7 @@ public class OpenCouponController extends BaseController {
     @ApiOperation(value = "发放优惠券", notes = "支持单个用户、批量用户、会员分组发券")
     @ApiSignature
     @RateLimiter(time = 60, count = 50, keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)发放优惠券")
     public CommonResult<Map<String, Object>> sendCoupon(@Valid @RequestBody CouponSendReqVO sendReqVO) {
         try {
             // 检查优惠券是否存在
@@ -377,6 +378,7 @@ public class OpenCouponController extends BaseController {
     @ApiOperation(value = "撤销优惠券", notes = "根据批次号撤销已发放的优惠券")
     @ApiSignature
     @RateLimiter(time = 60, count = 50, keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)撤销优惠券")
     public CommonResult<Boolean> revokeCoupon(@Valid @RequestBody CouponRevokeReqVO revokeReqVO) {
         // 检查优惠券是否存在
         MtCoupon coupon = openApiCouponService.queryCouponById(revokeReqVO.getCouponId());

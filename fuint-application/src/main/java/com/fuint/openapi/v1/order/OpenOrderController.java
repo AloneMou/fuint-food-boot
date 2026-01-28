@@ -10,6 +10,7 @@ import com.fuint.common.dto.AccountInfo;
 import com.fuint.common.dto.ResCartDto;
 import com.fuint.common.enums.*;
 import com.fuint.common.service.*;
+import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.pojo.PageResult;
@@ -240,6 +241,7 @@ public class OpenOrderController extends BaseController {
     @PostMapping(value = "/create")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)创建订单")
     public CommonResult<UserOrderRespVO> createOrder(@Valid @RequestBody OrderCreateReqVO reqVO) throws BusinessCheckException {
         reqVO.setPayType(PayTypeEnum.OPEN_API.getKey());
         reqVO.setType(OrderTypeEnum.GOODS);
@@ -282,6 +284,7 @@ public class OpenOrderController extends BaseController {
     @PostMapping(value = "/cancel")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)取消订单")
     public CommonResult<Boolean> cancelOrder(@Valid @RequestBody OrderCancelReqVO reqVO) throws BusinessCheckException {
         RLock lock = redissonClient.getLock(CANCEL_ORDER + reqVO.getOrderId());
         if (!lock.tryLock()) {
@@ -327,6 +330,7 @@ public class OpenOrderController extends BaseController {
     @PostMapping(value = "/pay")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)支付订单")
     public CommonResult<Boolean> payOrder(@Valid @RequestBody OrderPayReqVO reqVO) throws BusinessCheckException {
         reqVO.setPayType(PayTypeEnum.OPEN_API.getKey());
         MtOrder order = orderService.getOrderInfo(reqVO.getOrderId());
@@ -353,6 +357,7 @@ public class OpenOrderController extends BaseController {
     @PostMapping(value = "/refund")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)订单退款")
     public CommonResult<Boolean> refundOrder(@Valid @RequestBody OrderRefundReqVO reqVO) throws BusinessCheckException {
         // 发送申请退款回调
         MtOrder order = orderService.getOrderInfo(reqVO.getOrderId());
@@ -484,6 +489,7 @@ public class OpenOrderController extends BaseController {
     @PostMapping(value = "/update-take")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)标记订单可取餐")
     public CommonResult<Boolean> markOrderReady(@Valid @RequestBody OrderReadyReqVO reqVO) throws BusinessCheckException {
         MtOrder order = openApiOrderService.getOrderById(reqVO.getOrderId());
         // 验证商户权限

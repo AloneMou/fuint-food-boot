@@ -3,13 +3,14 @@ package com.fuint.repository.model;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.util.Date;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.util.Date;
 
 /**
  * 后台操作日志表
@@ -61,4 +62,7 @@ public class TActionLog implements Serializable {
 
     @ApiModelProperty("操作参数")
     private String param;
+
+    @ApiModelProperty("APPID")
+    private String appid;
 }

@@ -12,6 +12,7 @@ import com.fuint.common.enums.StaffCategoryEnum;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.enums.YesOrNoEnum;
 import com.fuint.common.service.*;
+import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.exception.ServiceException;
 import com.fuint.framework.pojo.CommonResult;
@@ -96,6 +97,7 @@ public class OpenUserController extends BaseController {
     @PostMapping(value = "/sync")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)单个员工数据同步")
     public CommonResult<MtUserSyncRespVO> syncUser(@Valid @RequestBody MtUserSyncReqVO syncReqVO) {
         try {
             List<String> mobileLs = convertList(Collections.singletonList(syncReqVO), MtUserSyncReqVO::getMobile);
@@ -120,6 +122,7 @@ public class OpenUserController extends BaseController {
     @PostMapping(value = "/batchSync")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)批量员工数据同步")
     public CommonResult<MtUserBatchSyncRespVO> batchSyncUser(@Valid @RequestBody MtUserBatchSyncReqVO batchSyncReqVO) {
         List<MtUserSyncReqVO> users = batchSyncReqVO.getUsers();
         if (users == null || users.isEmpty()) {

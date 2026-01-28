@@ -12,12 +12,12 @@ import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.enums.YesOrNoEnum;
 import com.fuint.common.service.GoodsService;
 import com.fuint.common.service.MemberService;
+import com.fuint.common.service.SettingService;
 import com.fuint.common.service.UserCouponService;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.pojo.CommonResult;
-import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.util.object.ObjectUtils;
 import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.service.OpenGoodsService;
@@ -49,7 +49,7 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.fuint.framework.exception.enums.GlobalErrorCodeConstants.BAD_REQUEST;
+import static com.fuint.framework.util.string.StrUtils.isHttp;
 import static com.fuint.framework.util.string.StrUtils.splitToInt;
 import static com.fuint.openapi.enums.GoodsErrorCodeConstants.GOODS_GET_DETAIL_FAILED;
 import static com.fuint.openapi.enums.GoodsErrorCodeConstants.GOODS_NOT_FOUND;
@@ -78,6 +78,9 @@ public class OpenGoodsController extends BaseController {
 
     @Resource
     private OpenGoodsService openGoodsService;
+
+    @Resource
+    private SettingService settingService;
 
     @ApiOperation(value = "创建商品", notes = "创建一个新的商品")
     @PostMapping(value = "/create")
@@ -119,11 +122,12 @@ public class OpenGoodsController extends BaseController {
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<MtGoodsRespVO> getGoodsDetail(@PathVariable("id") Integer id) {
         try {
+            String imagePath = settingService.getUploadBasePath();
             GoodsDto goodsDto = goodsService.getGoodsDetail(id, false);
             if (goodsDto == null) {
                 return CommonResult.error(GOODS_NOT_FOUND);
             }
-            MtGoodsRespVO respVO = convertToRespVO(goodsDto);
+            MtGoodsRespVO respVO = convertToRespVO(goodsDto, imagePath);
             return CommonResult.success(respVO);
         } catch (Exception e) {
             return CommonResult.error(GOODS_GET_DETAIL_FAILED);
@@ -135,6 +139,7 @@ public class OpenGoodsController extends BaseController {
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<MtGoodsPageRespVO> getGoodsPage(@Valid MtGoodsPageReqVO pageReqVO) throws BusinessCheckException {
+        String imagePath = settingService.getUploadBasePath();
         // 构建分页请求
         PaginationRequest paginationRequest = new PaginationRequest();
         paginationRequest.setCurrentPage(pageReqVO.getPage());
@@ -148,7 +153,7 @@ public class OpenGoodsController extends BaseController {
         MtGoodsPageRespVO respVO = new MtGoodsPageRespVO();
         // 转换数据
         List<MtGoodsRespVO> list = paginationResponse.getContent().stream()
-                .map(this::convertToRespVO)
+                .map(goods -> convertToRespVO(goods, imagePath))
                 .collect(Collectors.toList());
         respVO.setList(list);
         respVO.setTotal(paginationResponse.getTotalElements());
@@ -176,6 +181,7 @@ public class OpenGoodsController extends BaseController {
             @ApiParam(value = "店铺ID", example = "1") @RequestParam(required = false) Integer storeId,
             @ApiParam(value = "分类ID", example = "1") @RequestParam(required = false) Integer cateId) throws BusinessCheckException {
 
+        String imagePath = settingService.getUploadBasePath();
         Map<String, Object> params = new HashMap<>();
         params.put("status", StatusEnum.ENABLED.getKey());
         if (merchantId != null) {
@@ -197,7 +203,7 @@ public class OpenGoodsController extends BaseController {
 
         // 转换为响应VO
         List<MtGoodsRespVO> respList = paginationResponse.getContent().stream()
-                .map(this::convertToRespVO)
+                .map(goods -> convertToRespVO(goods, imagePath))
                 .collect(Collectors.toList());
 
         return CommonResult.success(respList);
@@ -272,7 +278,7 @@ public class OpenGoodsController extends BaseController {
     /**
      * 转换GoodsDto为响应VO
      */
-    private MtGoodsRespVO convertToRespVO(GoodsDto goodsDto) {
+    private MtGoodsRespVO convertToRespVO(GoodsDto goodsDto, String imagePath) {
         MtGoodsRespVO respVO = new MtGoodsRespVO();
 
         // 基本信息
@@ -295,13 +301,14 @@ public class OpenGoodsController extends BaseController {
         }
 
         respVO.setDescription(goodsDto.getDescription());
-        respVO.setLogo(goodsDto.getLogo());
+        respVO.setLogo(isHttp(goodsDto.getLogo(), imagePath));
 
         // 图片列表
         if (StringUtils.isNotEmpty(goodsDto.getImages())) {
             try {
                 List<String> imageList = JSONArray.parseArray(goodsDto.getImages(), String.class);
-                respVO.setImages(imageList);
+                List<String> imageLs = imageList.stream().map(img -> isHttp(img, imagePath)).collect(Collectors.toList());
+                respVO.setImages(imageLs);
             } catch (Exception e) {
                 respVO.setImages(new ArrayList<>());
             }
@@ -339,7 +346,7 @@ public class OpenGoodsController extends BaseController {
 
         if (goodsDto.getSkuList() != null && !goodsDto.getSkuList().isEmpty()) {
             List<GoodsSkuVO> skuData = goodsDto.getSkuList().stream()
-                    .map(this::convertToSkuVO)
+                    .map(sku -> convertToSkuVO(sku, imagePath))
                     .collect(Collectors.toList());
             respVO.setSkuData(skuData);
         }
@@ -377,12 +384,12 @@ public class OpenGoodsController extends BaseController {
     /**
      * 转换MtGoodsSku为VO
      */
-    private GoodsSkuVO convertToSkuVO(MtGoodsSku sku) {
+    private GoodsSkuVO convertToSkuVO(MtGoodsSku sku, String imagePath) {
         GoodsSkuVO vo = new GoodsSkuVO();
         vo.setId(sku.getId());
         vo.setSkuNo(sku.getSkuNo());
         vo.setSpecIds(sku.getSpecIds());
-        vo.setLogo(sku.getLogo());
+        vo.setLogo(isHttp(sku.getLogo(), imagePath));
         vo.setPrice(sku.getPrice());
         vo.setLinePrice(sku.getLinePrice());
         vo.setWeight(sku.getWeight());

@@ -1,11 +1,13 @@
 package com.fuint.openapi.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.fuint.common.enums.*;
 import com.fuint.common.mybatis.query.LambdaQueryWrapperX;
 import com.fuint.common.service.*;
 import com.fuint.common.service.MemberService;
 import com.fuint.common.service.UserGradeService;
+import com.fuint.framework.util.json.JsonUtils;
 import com.fuint.openapi.service.OpenGoodsService;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSkuRespVO;
 import com.fuint.openapi.v1.goods.product.vo.model.GoodsSpecChildVO;
@@ -27,6 +29,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 import static com.fuint.framework.util.collection.CollectionUtils.*;
+import static com.fuint.framework.util.string.StrUtils.isHttp;
 import static com.fuint.framework.util.string.StrUtils.splitToInt;
 import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 
@@ -115,9 +118,19 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
         final PointSettings finalPointSettings = pointSettings;
         final List<CouponCtx> finalCouponCtxList = couponCtxList;
 
+        String imagePath = settingService.getUploadBasePath();
         List<CompletableFuture<CGoodsListRespVO>> futures = goodsLs.stream()
                 .map(goods -> CompletableFuture.supplyAsync(
-                        () -> buildGoodsVO(goods, skuMap, specMap, memberDiscountRate, finalPointSettings, finalCouponCtxList, cateMap,storeMap),
+                        () -> buildGoodsVO(goods,
+                                skuMap,
+                                specMap,
+                                memberDiscountRate,
+                                finalPointSettings,
+                                finalCouponCtxList,
+                                cateMap,
+                                storeMap,
+                                imagePath
+                        ),
                         goodsPriceExecutor
                 ))
                 .collect(Collectors.toList());
@@ -134,10 +147,23 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
                                           PointSettings pointSettings,
                                           List<CouponCtx> couponCtxList,
                                           Map<Integer, String> cateMap,
-                                          Map<Integer, String> storeMap
+                                          Map<Integer, String> storeMap,
+                                          String imagePath
     ) {
         CGoodsListRespVO goodsVO = new CGoodsListRespVO();
         BeanUtils.copyProperties(goods, goodsVO);
+        goodsVO.setLogo(isHttp(goods.getLogo(), imagePath));
+        if (StrUtil.isNotBlank(goods.getImages())) {
+            goodsVO.setImages(JsonUtils.parseArray(goods.getImages(), String.class));
+        }
+        List<String> images = new ArrayList<>();
+        if (CollUtil.isNotEmpty(goodsVO.getImages())) {
+            for (String image : goodsVO.getImages()) {
+                image = isHttp(image, imagePath);
+                images.add(image);
+            }
+        }
+        goodsVO.setImages(images);
         goodsVO.setCateName(cateMap.getOrDefault(goods.getCateId(), ""));
         goodsVO.setStoreName(storeMap.getOrDefault(goods.getStoreId(), ""));
         goodsVO.setCouponIds(splitToInt(goods.getCouponIds(), ","));
@@ -161,7 +187,8 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
                 skuMap.getOrDefault(goods.getId(), Collections.emptyList()),
                 memberDiscountRate,
                 pointSettings,
-                couponCtxList
+                couponCtxList,
+                imagePath
         );
         goodsVO.setSkuData(skuVOList);
 
@@ -427,13 +454,13 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
                                               List<MtGoodsSku> skuList,
                                               BigDecimal memberDiscountRate,
                                               PointSettings pointSettings,
-                                              List<CouponCtx> couponCtxList) {
+                                              List<CouponCtx> couponCtxList, String imagePath) {
         List<GoodsSkuRespVO> skuVOList = new ArrayList<>();
 
         for (MtGoodsSku sku : skuList) {
             GoodsSkuRespVO skuVO = new GoodsSkuRespVO();
             BeanUtils.copyProperties(sku, skuVO);
-
+            sku.setLogo(isHttp(skuVO.getLogo(), imagePath));
             // 计算SKU动态价格
             BigDecimal dynamicPrice = calculateDynamicPrice(
                     goods.getPrice(),
