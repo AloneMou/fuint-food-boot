@@ -302,9 +302,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
                             .eq(MtUserCoupon::getStatus, UserCouponStatusEnum.UNUSED.getKey())
                             .eqIfPresent(MtUserCoupon::getUuid, uuid)
             );
-            for (MtUserCoupon userCoupon : userCoupons) {
-                ThreadUtil.execAsync(() -> eventCallbackService.sendCouponEventCallback(userCoupon, "REVOKED", null));
-            }
+
             LambdaUpdateWrapper<MtUserCoupon> updateWrapper = new LambdaUpdateWrapper<>();
             updateWrapper.set(MtUserCoupon::getStatus, UserCouponStatusEnum.DISABLE.getKey());
             updateWrapper.set(MtUserCoupon::getUpdateTime, new Date());
@@ -313,6 +311,10 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
             updateWrapper.eq(MtUserCoupon::getStatus, UserCouponStatusEnum.UNUSED.getKey());
             updateWrapper.eq(StringUtils.isNotBlank(uuid), MtUserCoupon::getUuid, uuid);
             userCouponService.update(updateWrapper);
+
+            for (MtUserCoupon userCoupon : userCoupons) {
+                ThreadUtil.execAsync(() -> eventCallbackService.sendCouponEventCallback(userCoupon, "REVOKED", null));
+            }
         } finally {
             lock.unlock();
         }
