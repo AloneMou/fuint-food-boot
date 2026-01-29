@@ -13,6 +13,11 @@ public interface RedisKeyConstants {
     String COUPON_REVOKE_LOCK = "coupon:revoke:lock";
 
     /**
+     * USER_COUPON_REVOKE_LOCK
+     */
+    String USER_COUPON_REVOKE_LOCK = "user:coupon:revoke:lock";
+
+    /**
      * 取消订单
      */
     String CANCEL_ORDER = "cancel:order";

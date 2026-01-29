@@ -4,8 +4,6 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
@@ -20,7 +18,7 @@ public class CouponRevokeReqVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @NotNull(message = "优惠券ID不能为空")
+    //    @NotNull(message = "优惠券ID不能为空")
     @ApiModelProperty(value = "优惠券ID", required = true, example = "1")
     private Integer couponId;
 
@@ -29,4 +27,7 @@ public class CouponRevokeReqVO implements Serializable {
 
     @ApiModelProperty(value = "操作人", hidden = true)
     private String operator;
+
+    @ApiModelProperty(value = "用户券ID")
+    private Integer userCouponId;
 }

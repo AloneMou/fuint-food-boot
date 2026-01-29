@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.ObjectUtil;
 import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
 import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRateLimiterKeyResolver;
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
@@ -380,26 +381,31 @@ public class OpenCouponController extends BaseController {
     @RateLimiter(time = 60, count = 50, keyResolver = ClientIpRateLimiterKeyResolver.class)
     @OperationServiceLog(description = "(OpenApi)撤销优惠券")
     public CommonResult<Boolean> revokeCoupon(@Valid @RequestBody CouponRevokeReqVO revokeReqVO) {
-        // 检查优惠券是否存在
-        MtCoupon coupon = openApiCouponService.queryCouponById(revokeReqVO.getCouponId());
-        if (coupon == null) {
-            return CommonResult.error(COUPON_NOT_FOUND);
-        }
-        if (StatusEnum.DISABLE.getKey().equals(coupon.getStatus())) {
-            return CommonResult.error(COUPON_NOT_FOUND);
-        }
-        String operator = StringUtils.isNotEmpty(revokeReqVO.getOperator()) ? revokeReqVO.getOperator() : "system";
-        openApiCouponService.revokeCoupon(revokeReqVO.getCouponId(), revokeReqVO.getUuid(), operator);
-
-        // 发送撤销优惠券回调
-        LambdaQueryWrapper<MtUserCoupon> queryWrapper = Wrappers.lambdaQuery();
-        queryWrapper.eq(MtUserCoupon::getUuid, revokeReqVO.getUuid());
-        queryWrapper.eq(MtUserCoupon::getStatus, UserCouponStatusEnum.DISABLE.getKey());
-        List<MtUserCoupon> userCoupons = mtUserCouponMapper.selectList(queryWrapper);
-        if (CollUtil.isNotEmpty(userCoupons)) {
-            for (MtUserCoupon userCoupon : userCoupons) {
-                eventCallbackService.sendCouponEventCallback(userCoupon, "REVOKED", null);
+        if (ObjectUtil.isNotNull(revokeReqVO.getUserCouponId())) {
+            openApiCouponService.revokeCoupon(revokeReqVO.getUserCouponId());
+        } else {
+            // 检查优惠券是否存在
+            MtCoupon coupon = openApiCouponService.queryCouponById(revokeReqVO.getCouponId());
+            if (coupon == null) {
+                return CommonResult.error(COUPON_NOT_FOUND);
             }
+            if (StatusEnum.DISABLE.getKey().equals(coupon.getStatus())) {
+                return CommonResult.error(COUPON_NOT_FOUND);
+            }
+            String operator = StringUtils.isNotEmpty(revokeReqVO.getOperator()) ? revokeReqVO.getOperator() : "system";
+            openApiCouponService.revokeCoupon(revokeReqVO.getCouponId(), revokeReqVO.getUuid(), operator);
+
+            // 发送撤销优惠券回调
+            LambdaQueryWrapper<MtUserCoupon> queryWrapper = Wrappers.lambdaQuery();
+            queryWrapper.eq(MtUserCoupon::getUuid, revokeReqVO.getUuid());
+            queryWrapper.eq(MtUserCoupon::getStatus, UserCouponStatusEnum.DISABLE.getKey());
+            List<MtUserCoupon> userCoupons = mtUserCouponMapper.selectList(queryWrapper);
+            if (CollUtil.isNotEmpty(userCoupons)) {
+                for (MtUserCoupon userCoupon : userCoupons) {
+                    eventCallbackService.sendCouponEventCallback(userCoupon, "REVOKED", null);
+                }
+            }
+
         }
 
         return CommonResult.success(true);

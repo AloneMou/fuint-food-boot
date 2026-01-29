@@ -2,6 +2,7 @@ package com.fuint.openapi.service.impl;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.thread.ThreadUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -11,6 +12,7 @@ import com.fuint.common.enums.CouponExpireTypeEnum;
 import com.fuint.common.enums.SendWayEnum;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.enums.UserCouponStatusEnum;
+import com.fuint.common.mybatis.query.LambdaQueryWrapperX;
 import com.fuint.common.service.UserCouponService;
 import com.fuint.common.util.CommonUtil;
 import com.fuint.framework.annoation.OperationServiceLog;
@@ -20,6 +22,7 @@ import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.util.SeqUtil;
+import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.openapi.service.OpenApiCouponService;
 import com.fuint.openapi.v1.marketing.coupon.vo.MtCouponPageReqVO;
 import com.fuint.repository.mapper.MtCouponGoodsMapper;
@@ -47,7 +50,10 @@ import java.util.stream.Collectors;
 import static com.fuint.framework.exception.enums.GlobalErrorCodeConstants.BAD_REQUEST;
 import static com.fuint.framework.exception.util.ServiceExceptionUtil.exception;
 import static com.fuint.openapi.enums.CouponErrorCodeConstants.*;
+import static com.fuint.openapi.enums.OrderErrorCodeConstants.USER_COUPON_ALREADY_USED;
+import static com.fuint.openapi.enums.OrderErrorCodeConstants.USER_COUPON_NOT_FOUND;
 import static com.fuint.openapi.enums.RedisKeyConstants.COUPON_REVOKE_LOCK;
+import static com.fuint.openapi.enums.RedisKeyConstants.USER_COUPON_REVOKE_LOCK;
 
 /**
  * OpenAPI优惠券业务实现类
@@ -79,6 +85,9 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
      */
     @Resource
     private RedissonClient redissonClient;
+
+    @Resource
+    private EventCallbackService eventCallbackService;
 
     /**
      * 分页查询优惠券列表 (Optimized)
@@ -286,6 +295,16 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
             throw new ServiceException(COUPON_REVOKE_PROCESSING);
         }
         try {
+            List<MtUserCoupon> userCoupons = mtUserCouponMapper.selectList(
+                    new LambdaQueryWrapperX<MtUserCoupon>()
+                            .eq(MtUserCoupon::getCouponId, couponId)
+                            .eq(MtUserCoupon::getUuid, uuid)
+                            .eq(MtUserCoupon::getStatus, UserCouponStatusEnum.UNUSED.getKey())
+                            .eqIfPresent(MtUserCoupon::getUuid, uuid)
+            );
+            for (MtUserCoupon userCoupon : userCoupons) {
+                ThreadUtil.execAsync(() -> eventCallbackService.sendCouponEventCallback(userCoupon, "REVOKED", null));
+            }
             LambdaUpdateWrapper<MtUserCoupon> updateWrapper = new LambdaUpdateWrapper<>();
             updateWrapper.set(MtUserCoupon::getStatus, UserCouponStatusEnum.DISABLE.getKey());
             updateWrapper.set(MtUserCoupon::getUpdateTime, new Date());
@@ -294,6 +313,32 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
             updateWrapper.eq(MtUserCoupon::getStatus, UserCouponStatusEnum.UNUSED.getKey());
             updateWrapper.eq(StringUtils.isNotBlank(uuid), MtUserCoupon::getUuid, uuid);
             userCouponService.update(updateWrapper);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void revokeCoupon(Integer userCouponId) {
+        RLock lock = redissonClient.getLock(USER_COUPON_REVOKE_LOCK + userCouponId);
+        if (!lock.tryLock()) {
+            throw new ServiceException(COUPON_REVOKE_PROCESSING);
+        }
+        try {
+            MtUserCoupon coupon = mtUserCouponMapper.selectById(userCouponId);
+            if (coupon == null) {
+                throw new ServiceException(USER_COUPON_NOT_FOUND);
+            }
+            if (UserCouponStatusEnum.USED.getKey().equals(coupon.getStatus())) {
+                throw new ServiceException(USER_COUPON_ALREADY_USED);
+            }
+            coupon.setStatus(UserCouponStatusEnum.DISABLE.getKey());
+            coupon.setUpdateTime(new Date());
+            coupon.setOperator("openapi");
+            mtUserCouponMapper.updateById(coupon);
+
+            coupon = mtUserCouponMapper.selectById(userCouponId);
+            eventCallbackService.sendCouponEventCallback(coupon, "REVOKED", null);
         } finally {
             lock.unlock();
         }

@@ -95,6 +95,14 @@ public interface OpenApiCouponService {
      */
     void revokeCoupon(Integer couponId, String uuid, String operator) throws BusinessCheckException;
 
+
+    /**
+     * 用户优惠券详情
+     *
+     * @param userCouponId 用户优惠券ID
+     */
+    void revokeCoupon(Integer userCouponId);
+
     /**
      * 获取已发放数量
      *

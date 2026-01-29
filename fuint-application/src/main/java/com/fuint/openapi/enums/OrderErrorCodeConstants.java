@@ -53,4 +53,7 @@ public interface OrderErrorCodeConstants {
     ErrorCode ORDER_NOT_BELONG_TO_MERCHANT = new ErrorCode(100_7_019, "当前订单不属于该商户({})");
     // 价格不一致，请重新下单
     ErrorCode PRICE_NOT_CONSISTENT = new ErrorCode(100_7_020, "价格不一致，请重新下单");
+
+    // 用户优惠券已使用
+    ErrorCode USER_COUPON_ALREADY_USED = new ErrorCode(100_7_021, "用户优惠券已使用");
 }
