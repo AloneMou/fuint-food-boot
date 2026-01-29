@@ -336,7 +336,19 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         Integer calculatedUsePoint = getIntegerValue(cartData.get("usePoint"));
 
         // 构建可用优惠券列表
-        List<Map<String, Object>> availableCoupons = buildAvailableCouponsList(couponList, selectedCouponId);
+        Map<String, Object> map = buildAvailableCouponsList(couponList, selectedCouponId);
+
+        List<Map<String, Object>> availableCoupons = (List<Map<String, Object>>) map.get("availableCoupons");
+        selectedCouponId = (Integer) map.get("selectedCouponId");
+
+        Integer finalSelectedCouponId = selectedCouponId;
+        CouponDto maxCoupon = couponList.stream().filter(item -> finalSelectedCouponId != null && item.getUserCouponId() == finalSelectedCouponId).findFirst().orElse(null);
+        if (maxCoupon != null) {
+            couponAmount = maxCoupon.getAmount();
+            if (couponAmount == null) {
+                couponAmount = BigDecimal.ZERO;
+            }
+        }
 
         // 模拟saveOrder的价格计算逻辑（第450-460行，第600-610行）
         // 1. 实付金额 = 商品总额 - 积分抵扣金额 - 优惠券金额（不含会员折扣和配送费）
@@ -357,6 +369,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
 
         // 3. 最终应付金额 = 实付金额 + 配送费
         BigDecimal payableAmount = payAmount.add(deliveryFee);
+
 
         // 构建返回结果
         Map<String, Object> result = new HashMap<>();
@@ -1656,12 +1669,15 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
     /**
      * 构建可用优惠券列表
      */
-    private List<Map<String, Object>> buildAvailableCouponsList(List<CouponDto> couponList, Integer selectedCouponId) {
+    private Map<String, Object> buildAvailableCouponsList(List<CouponDto> couponList, Integer selectedCouponId) {
         List<Map<String, Object>> availableCoupons = new ArrayList<>();
+        Map<String, Object> result = new HashMap<>();
         if (couponList == null || couponList.isEmpty()) {
-            return availableCoupons;
+            result.put("availableCoupons", availableCoupons);
+            result.put("selectedCouponId", selectedCouponId);
+            return result;
         }
-
+        CouponDto max = null;
         for (CouponDto coupon : couponList) {
             Map<String, Object> couponInfo = new HashMap<>();
             couponInfo.put("userCouponId", coupon.getUserCouponId());
@@ -1675,20 +1691,30 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
             // 判断是否可用
             String usable = UserCouponStatusEnum.UNUSED.getKey().equals(coupon.getStatus()) ? STATUS_AVAILABLE : STATUS_UNAVAILABLE;
             couponInfo.put("usable", usable);
+            if (!usable.equals(STATUS_AVAILABLE)) {
+                continue;
+            }
 
             // 储值卡余额
             if (CouponTypeEnum.PRESTORE.getKey().equals(coupon.getType())) {
                 couponInfo.put("balance", coupon.getAmount());
             }
 
-            // 是否选中
-            boolean selected = selectedCouponId != null && selectedCouponId.equals(coupon.getUserCouponId());
-            couponInfo.put("selected", selected);
-
+            if (max == null || coupon.getAmount().compareTo(max.getAmount()) > 0) {
+                max = coupon;
+                selectedCouponId = coupon.getUserCouponId();
+            }
             availableCoupons.add(couponInfo);
         }
-
-        return availableCoupons;
+        for (Map<String, Object> couponInfo : availableCoupons) {
+            String userCouponId = couponInfo.get("userCouponId").toString();
+            if (selectedCouponId.equals(Integer.parseInt(userCouponId))) {
+                couponInfo.put("selected", true);
+            }
+        }
+        result.put("availableCoupons", availableCoupons);
+        result.put("selectedCouponId", selectedCouponId);
+        return result;
     }
 
     /**
@@ -1913,6 +1939,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
      */
     private CouponDto buildCouponDto(MtCoupon couponInfo, MtUserCoupon userCoupon, BigDecimal totalPrice, List<MtCart> cartList) {
         CouponDto couponDto = new CouponDto();
+        BeanUtils.copyProperties(couponInfo, couponDto);
         couponDto.setId(couponInfo.getId());
         couponDto.setUserCouponId(userCoupon.getId());
         couponDto.setName(couponInfo.getName());
@@ -1932,6 +1959,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
 
         // 设置有效期
         setCouponEffectiveDate(couponDto, couponInfo, userCoupon);
+        //检查优惠劵是否满足价格限制
 
         return couponDto;
     }
