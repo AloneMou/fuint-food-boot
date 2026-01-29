@@ -414,7 +414,7 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
                 return "/api/openapi/coffee/callback/order-status";
             case "ORDER_READY":
                 return "/api/openapi/coffee/callback/order-ready";
-            case "PAY_STATUS_CHANGE":
+            case "REFUND_STATUS_CHANGE":
                 return "/api/openapi/coffee/callback/pay-status";
             case "COUPON_EVENT":
                 return "/api/openapi/coffee/callback/coupon-event";
