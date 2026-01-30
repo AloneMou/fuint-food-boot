@@ -130,7 +130,7 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
                 throw new BusinessCheckException("该店铺不存在");
             }
         }
-
+        mtStore.setEstimatedWait(storeDto.getEstimatedWait());
         mtStore.setName(storeDto.getName());
         mtStore.setLogo(storeDto.getLogo());
         mtStore.setContact(storeDto.getContact());

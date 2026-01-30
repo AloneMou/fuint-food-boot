@@ -1399,6 +1399,9 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
                 waitTime = merchant.getEstimatedWait();
             }
         }
+        if (waitTime <= 0) {
+            waitTime = 5;
+        }
         return waitTime;
     }
 

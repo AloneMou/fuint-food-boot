@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,11 +30,11 @@ import java.util.Map;
 
 /**
  * 商户管理类controller
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
-@Api(tags="管理端-商户管理相关接口")
+@Api(tags = "管理端-商户管理相关接口")
 @RestController
 @AllArgsConstructor
 @RequestMapping(value = "/backendApi/merchant")
@@ -46,13 +47,13 @@ public class BackendMerchantController extends BaseController {
 
     /**
      * 系统设置服务接口
-     * */
+     */
     private SettingService settingService;
 
     /**
      * 分页查询商户列表
      *
-     * @param  request  HttpServletRequest对象
+     * @param request HttpServletRequest对象
      * @return 商户列表
      */
     @ApiOperation(value = "分页查询商户列表")
@@ -99,11 +100,11 @@ public class BackendMerchantController extends BaseController {
         MerchantTypeEnum[] typeListEnum = MerchantTypeEnum.values();
         List<ParamDto> typeList = new ArrayList<>();
         for (MerchantTypeEnum enumItem : typeListEnum) {
-             ParamDto paramDto = new ParamDto();
-             paramDto.setKey(enumItem.getKey());
-             paramDto.setName(enumItem.getValue());
-             paramDto.setValue(enumItem.getKey());
-             typeList.add(paramDto);
+            ParamDto paramDto = new ParamDto();
+            paramDto.setKey(enumItem.getKey());
+            paramDto.setName(enumItem.getValue());
+            paramDto.setValue(enumItem.getKey());
+            typeList.add(paramDto);
         }
 
         Map<String, Object> result = new HashMap<>();
@@ -116,9 +117,9 @@ public class BackendMerchantController extends BaseController {
 
     /**
      * 查询商户列表
-     * */
+     */
     @ApiOperation(value = "查询商户列表")
-    @RequestMapping(value = "/searchMerchant",  method = RequestMethod.GET)
+    @RequestMapping(value = "/searchMerchant", method = RequestMethod.GET)
     @CrossOrigin
     public ResponseObject searchMerchant(HttpServletRequest request) throws BusinessCheckException {
         String merchantId = request.getParameter("id") == null ? "" : request.getParameter("id");
@@ -200,8 +201,9 @@ public class BackendMerchantController extends BaseController {
         String wxAppSecret = params.get("wxAppSecret") == null ? "" : CommonUtil.replaceXSS(params.get("wxAppSecret").toString());
         String wxOfficialAppId = params.get("wxOfficialAppId") == null ? "" : CommonUtil.replaceXSS(params.get("wxOfficialAppId").toString());
         String wxOfficialAppSecret = params.get("wxOfficialAppSecret") == null ? "" : CommonUtil.replaceXSS(params.get("wxOfficialAppSecret").toString());
-
+        Integer estimatedWait = params.get("estimatedWait") == null ? 0 : Integer.parseInt(params.get("estimatedWait").toString());
         MtMerchant merchantInfo = new MtMerchant();
+        merchantInfo.setEstimatedWait(estimatedWait);
         merchantInfo.setType(type);
         merchantInfo.setName(name);
         merchantInfo.setNo(merchantNo);
@@ -263,7 +265,8 @@ public class BackendMerchantController extends BaseController {
             id = accountInfo.getMerchantId();
         }
 
-        MtMerchant merchantInfo = merchantService.queryMerchantById(id);;
+        MtMerchant merchantInfo = merchantService.queryMerchantById(id);
+        ;
 
         Map<String, Object> result = new HashMap<>();
         result.put("merchantInfo", merchantInfo);
