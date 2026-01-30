@@ -27,7 +27,7 @@
         <jedis.version>2.9.0</jedis.version>
         <kryo.version>4.0.2</kryo.version>
         <mysql.version>8.0.25</mysql.version>
-        <mybatis-plus.version>3.1.2</mybatis-plus.version>
+        <mybatis-plus.version>3.5.3.1</mybatis-plus.version>
 
         <redisson.version>3.16.6</redisson.version>
         <!-- 服务保障相关 -->
