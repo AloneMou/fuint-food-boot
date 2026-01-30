@@ -593,19 +593,20 @@ public class BackendOrderController extends BaseController {
         if (orderId < 0) {
             return getFailureResult(201, "系统出错啦，订单ID不能为空");
         }
+
+        OrderDto orderDto = new OrderDto();
+        orderDto.setId(orderId);
+        orderService.sendTakeFoodRemind(orderDto);
         MtOrder order = orderService.getOrderInfo(orderId);
         if (TakeStatusEnum.PROCESSING.getKey().equals(order.getTakeStatus())) {
-            OrderDto orderDto = new OrderDto();
-            orderDto.setId(orderId);
-            orderDto.setTakeStatus(TakeStatusEnum.READY.getKey());
-            orderService.updateOrder(orderDto);
+            OrderDto updateObj = new OrderDto();
+            updateObj.setId(orderId);
+            updateObj.setTakeStatus(TakeStatusEnum.READY.getKey());
+            orderService.updateOrder(updateObj);
             MtOrder newOrder = orderService.getOrderInfo(orderId);
             eventCallbackService.sendOrderTakeStatusCallback(newOrder, TakeStatusEnum.PROCESSING.getKey());
             eventCallbackService.sendOrderReadyCallback(newOrder);
         }
-        OrderDto orderDto = new OrderDto();
-        orderDto.setId(orderId);
-        orderService.sendTakeFoodRemind(orderDto);
         return getSuccessResult(true);
     }
 
@@ -625,6 +626,12 @@ public class BackendOrderController extends BaseController {
             return getFailureResult(201, "系统出错啦，订单ID不能为空");
         }
         MtOrder order = orderService.getOrderInfo(orderId);
+        if (!PayStatusEnum.SUCCESS.getKey().equals(order.getPayStatus())) {
+            throw new BusinessCheckException("该订单未支付");
+        }
+        if (!OrderModeEnum.ONESELF.getKey().equals(order.getOrderMode())) {
+            throw new BusinessCheckException("该订单非自取订单");
+        }
         if (!TakeStatusEnum.PENDING.getKey().equals(order.getTakeStatus())) {
             return getFailureResult(201, "订单已确认，请勿重复操作");
         }
@@ -654,6 +661,12 @@ public class BackendOrderController extends BaseController {
             return getFailureResult(201, "系统出错啦，订单ID不能为空");
         }
         MtOrder order = orderService.getOrderInfo(orderId);
+        if (!PayStatusEnum.SUCCESS.getKey().equals(order.getPayStatus())) {
+            throw new BusinessCheckException("该订单未支付");
+        }
+        if (!OrderModeEnum.ONESELF.getKey().equals(order.getOrderMode())) {
+            throw new BusinessCheckException("该订单非自取订单");
+        }
         if (!TakeStatusEnum.CONFIRMED.getKey().equals(order.getTakeStatus())) {
             return getFailureResult(201, "订单已经在制作中，请勿重复操作");
         }
