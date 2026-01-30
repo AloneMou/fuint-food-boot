@@ -68,4 +68,9 @@ public class OrderPreCreateRespVO {
     @ApiModelProperty(value = "配送起送金额（元）", example = "10.00")
     private BigDecimal deliveryMinAmount;
 
+    @ApiModelProperty("前面还有多少杯")
+    private Integer queueCount;
+
+    @ApiModelProperty("预计取餐时间/分钟")
+    private Integer estimatedWaitTime;
 }

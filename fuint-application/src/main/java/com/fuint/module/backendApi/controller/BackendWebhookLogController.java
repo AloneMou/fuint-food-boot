@@ -60,7 +60,7 @@ public class BackendWebhookLogController extends BaseController {
     @ApiOperation(value = "分页查询Webhook回调日志列表")
     @RequestMapping(value = "/list", method = RequestMethod.GET)
     @CrossOrigin
-    @PreAuthorize("@pms.hasPermission('system:webhookLog:list')")
+    @PreAuthorize("@pms.hasPermission('system:webhook:index')")
     public ResponseObject list(HttpServletRequest request) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
         Integer page = request.getParameter("page") == null ? Constants.PAGE_NUMBER : Integer.parseInt(request.getParameter("page"));
@@ -115,7 +115,7 @@ public class BackendWebhookLogController extends BaseController {
     @ApiOperation(value = "获取Webhook回调日志详情")
     @RequestMapping(value = "/info/{id}", method = RequestMethod.GET)
     @CrossOrigin
-    @PreAuthorize("@pms.hasPermission('system:webhookLog:list')")
+    @PreAuthorize("@pms.hasPermission('system:webhook:index')")
     public ResponseObject info(HttpServletRequest request, @PathVariable("id") Long id) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
         AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
@@ -144,7 +144,7 @@ public class BackendWebhookLogController extends BaseController {
     @ApiOperation(value = "创建Webhook回调日志")
     @RequestMapping(value = "/create", method = RequestMethod.POST)
     @CrossOrigin
-    @PreAuthorize("@pms.hasPermission('system:webhookLog:add')")
+    @PreAuthorize("@pms.hasPermission('system:webhook:add')")
     public ResponseObject create(HttpServletRequest request, @RequestBody Map<String, Object> params) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
         String eventId = params.get("eventId") == null ? "" : params.get("eventId").toString();
@@ -190,7 +190,7 @@ public class BackendWebhookLogController extends BaseController {
     @ApiOperation(value = "更新Webhook回调日志")
     @RequestMapping(value = "/update", method = RequestMethod.POST)
     @CrossOrigin
-    @PreAuthorize("@pms.hasPermission('system:webhookLog:edit')")
+    @PreAuthorize("@pms.hasPermission('system:webhook:edit')")
     public ResponseObject update(HttpServletRequest request, @RequestBody Map<String, Object> params) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
         String idStr = params.get("id") == null ? "" : params.get("id").toString();
@@ -267,7 +267,7 @@ public class BackendWebhookLogController extends BaseController {
     @ApiOperation(value = "删除Webhook回调日志")
     @RequestMapping(value = "/delete", method = RequestMethod.POST)
     @CrossOrigin
-    @PreAuthorize("@pms.hasPermission('system:webhookLog:delete')")
+    @PreAuthorize("@pms.hasPermission('system:webhook:delete')")
     public ResponseObject delete(HttpServletRequest request, @RequestBody Map<String, Object> params) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
         String idStr = params.get("id") == null ? "" : params.get("id").toString();
@@ -302,7 +302,7 @@ public class BackendWebhookLogController extends BaseController {
     @ApiOperation(value = "重新发送Webhook回调")
     @RequestMapping(value = "/resend", method = RequestMethod.POST)
     @CrossOrigin
-    @PreAuthorize("@pms.hasPermission('system:webhookLog:resend')")
+    @PreAuthorize("@pms.hasPermission('system:webhook:resend')")
     public ResponseObject resend(HttpServletRequest request, @RequestBody Map<String, Object> params) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
         String idStr = params.get("id") == null ? "" : params.get("id").toString();

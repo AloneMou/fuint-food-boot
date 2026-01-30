@@ -226,7 +226,11 @@ public class OpenOrderController extends BaseController {
                 .mapToInt(goods -> goods.getQuantity() != null ? goods.getQuantity() : 0)
                 .sum();
         respVO.setTotalQuantity(totalQuantity);
-
+        int waitTime = openApiOrderService.getStoreWaitTime(storeId);
+        Integer makeCount = openApiOrderService.getToMakeCount(merchantId, storeId, new Date(), 0);
+        Integer estimatedWaitTime = makeCount * waitTime;
+        respVO.setEstimatedWaitTime(estimatedWaitTime);
+        respVO.setQueueCount(makeCount);
         return CommonResult.success(respVO);
     }
 

@@ -2,12 +2,16 @@ package com.fuint.repository.mapper;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fuint.common.enums.OrderStatusEnum;
+import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.enums.TakeStatusEnum;
 import com.fuint.common.mybatis.query.LambdaQueryWrapperX;
+import com.fuint.common.mybatis.query.MPJLambdaWrapperX;
 import com.fuint.framework.pojo.PageResult;
 import com.fuint.openapi.v1.order.vo.OrderListReqVO;
 import com.fuint.repository.base.BaseMapperX;
 import com.fuint.repository.model.MtOrder;
+import com.fuint.repository.model.MtOrderGoods;
+import com.github.yulichang.query.MPJLambdaQueryWrapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.annotations.Param;
 import org.aspectj.weaver.ast.Or;
@@ -89,7 +93,10 @@ public interface MtOrderMapper extends BaseMapperX<MtOrder> {
      * @return 待制作的餐品数量
      */
     default Integer selectToMakeCount(Integer merchantId, Integer storeId, Date orderTime, Integer orderId) {
-        return selectCount(new LambdaQueryWrapperX<MtOrder>()
+        return selectJoinOne(Integer.class, new MPJLambdaWrapperX<MtOrder>()
+                .selectSum(MtOrderGoods::getNum)
+                .innerJoin(MtOrderGoods.class, MtOrderGoods::getOrderId, MtOrder::getId)
+                .eq(MtOrderGoods::getStatus, StatusEnum.ENABLED.getKey())
                 .eqIfPresent(MtOrder::getMerchantId, merchantId)
                 .eqIfPresent(MtOrder::getStoreId, storeId)
                 .inIfPresent(MtOrder::getStatus,

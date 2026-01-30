@@ -128,4 +128,12 @@ public interface OpenApiOrderService {
      * @return 订单信息
      */
     MtOrder getOrderById(Integer orderId);
+
+    /**
+     * 获取店铺待处理订单数
+     *
+     * @param storeId 店铺ID
+     * @return 待处理订单数
+     */
+    Integer getStoreWaitTime(Integer storeId);
 }
