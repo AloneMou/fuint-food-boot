@@ -18,11 +18,13 @@ import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtMerchant;
 import com.fuint.repository.model.MtStore;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiModelProperty;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
@@ -30,11 +32,11 @@ import java.util.Map;
 
 /**
  * 店铺管理类controller
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
-@Api(tags="管理端-店铺相关接口")
+@Api(tags = "管理端-店铺相关接口")
 @RestController
 @AllArgsConstructor
 @RequestMapping(value = "/backendApi/store")
@@ -52,7 +54,7 @@ public class BackendStoreController extends BaseController {
 
     /**
      * 系统设置服务接口
-     * */
+     */
     private SettingService settingService;
 
     /**
@@ -119,9 +121,9 @@ public class BackendStoreController extends BaseController {
 
     /**
      * 搜索店铺
-     * */
+     */
     @ApiOperation(value = "搜索店铺")
-    @RequestMapping(value = "/searchStore",  method = RequestMethod.GET)
+    @RequestMapping(value = "/searchStore", method = RequestMethod.GET)
     @CrossOrigin
     public ResponseObject search(HttpServletRequest request) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
@@ -228,6 +230,7 @@ public class BackendStoreController extends BaseController {
         String bankCardNo = params.get("bankCardNo") == null ? "" : CommonUtil.replaceXSS(params.get("bankCardNo").toString());
         String status = params.get("status") != null ? params.get("status").toString() : StatusEnum.ENABLED.getKey();
         String merchantId = params.get("merchantId").toString();
+        Integer estimatedWait = params.get("estimatedWait") == null ? 0 : Integer.parseInt(params.get("estimatedWait").toString());
 
         if ((StringUtils.isEmpty(latitude) || StringUtils.isEmpty(longitude)) && StringUtils.isNotEmpty(address)) {
             Map<String, Object> latAndLng = CommonUtil.getLatAndLngByAddress(address);
@@ -244,7 +247,7 @@ public class BackendStoreController extends BaseController {
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
             merchantId = accountInfo.getMerchantId().toString();
         }
-
+        storeInfo.setEstimatedWait(estimatedWait);
         storeInfo.setName(storeName);
         storeInfo.setLogo(logo);
         storeInfo.setContact(contact);

@@ -1365,9 +1365,10 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         MtOrder mtOrder = mtOrderMapper.selectById(orderId);
         UserOrderRespVO order = getOrderDetail(mtOrder, true, true);
         if (!order.getTakeStatus().equals(TakeStatusEnum.COMPLETED)) {
+            int waitTime = getStoreWaitTime(mtOrder.getStoreId());
             Integer makeCount = getToMakeCount(mtOrder.getMerchantId(), mtOrder.getStoreId(), mtOrder.getPayTime(), mtOrder.getId());
             order.setQueueCount(makeCount);
-            order.setEstimatedWaitTime(makeCount * 5);
+            order.setEstimatedWaitTime(makeCount * waitTime);
         }
         return order;
     }
@@ -1384,6 +1385,24 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
             throw exception(ORDER_NOT_FOUND);
         }
         return order;
+    }
+
+    @Override
+    public Integer getStoreWaitTime(Integer storeId) {
+        MtStore store = storeService.queryStoreById(storeId);
+        int waitTime = 5;
+        if (store != null && store.getEstimatedWait() != null) {
+            waitTime = store.getEstimatedWait();
+        } else if (store != null) {
+            MtMerchant merchant = merchantService.queryMerchantById(store.getMerchantId());
+            if (merchant != null && merchant.getEstimatedWait() != null) {
+                waitTime = merchant.getEstimatedWait();
+            }
+        }
+        if (waitTime <= 0) {
+            waitTime = 5;
+        }
+        return waitTime;
     }
 
     /**

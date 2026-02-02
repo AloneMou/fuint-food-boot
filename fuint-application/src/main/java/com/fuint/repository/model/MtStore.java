@@ -113,4 +113,6 @@ public class MtStore implements Serializable {
     @ApiModelProperty("最后操作人")
     private String operator;
 
+    @ApiModelProperty("预计等待时间")
+    private Integer estimatedWait;
 }

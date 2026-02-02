@@ -12,6 +12,7 @@ import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.pojo.SortablePageParam;
 import com.fuint.framework.pojo.SortingField;
 import com.fuint.repository.utils.MyBatisUtils;
+import com.github.yulichang.base.MPJBaseMapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.Collection;
@@ -22,7 +23,7 @@ import java.util.List;
  * <p>
  * 1. {@link BaseMapper} 为 MyBatis Plus 的基础接口，提供基础的 CRUD 能力
  */
-public interface BaseMapperX<T> extends BaseMapper<T> {
+public interface BaseMapperX<T> extends MPJBaseMapper<T> {
 
     default PageResult<T> selectPage(SortablePageParam pageParam, @Param("ew") Wrapper<T> queryWrapper) {
         return selectPage(pageParam, pageParam.getSortingFields(), queryWrapper);

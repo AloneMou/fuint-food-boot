@@ -213,9 +213,9 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
      */
     public void sendOrderReadyCallback(MtOrder order) {
         if (order == null) return;
-        if (TakeStatusEnum.READY.getKey().equals(order.getTakeStatus())) {
-            applicationEventPublisher.publishEvent(new OrderReadyEvent(this, order.getMerchantId(), order));
-        }
+//        if (TakeStatusEnum.READY.getKey().equals(order.getTakeStatus())) {
+//            applicationEventPublisher.publishEvent(new OrderReadyEvent(this, order.getMerchantId(), order));
+//        }
     }
 
     /**
@@ -410,12 +410,13 @@ public class EventCallbackService implements ApplicationEventPublisherAware, Dis
     private String getPathByEventType(String eventType) {
         switch (eventType) {
             case "ORDER_TAKE_STATUS_CHANGE":
+                return "/api/openapi/coffee/callback/order-take-status";
             case "ORDER_STATUS_CHANGE":
                 return "/api/openapi/coffee/callback/order-status";
             case "ORDER_READY":
                 return "/api/openapi/coffee/callback/order-ready";
             case "REFUND_STATUS_CHANGE":
-                return "/api/openapi/coffee/callback/pay-status";
+                return "/api/openapi/coffee/callback/refund-status";
             case "COUPON_EVENT":
                 return "/api/openapi/coffee/callback/coupon-event";
 //            case "INVOICE_RESULT":
