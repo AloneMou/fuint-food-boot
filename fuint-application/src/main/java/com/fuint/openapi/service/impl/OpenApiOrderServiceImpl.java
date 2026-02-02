@@ -1375,7 +1375,8 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
 
     @Override
     public Integer getToMakeCount(Integer merchantId, Integer storeId, Date orderTime, Integer orderId) {
-        return mtOrderMapper.selectToMakeCount(merchantId, storeId, orderTime, orderId);
+        Integer sum = mtOrderMapper.selectToMakeCount(merchantId, storeId, orderTime, orderId);
+        return sum == null ? 0 : sum;
     }
 
     @Override
