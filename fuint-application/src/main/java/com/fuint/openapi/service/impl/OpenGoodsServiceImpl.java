@@ -95,7 +95,6 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
         if (goodsLs == null || goodsLs.isEmpty()) {
             return new ArrayList<>();
         }
-
         List<MtGoodsCate> cateLs = mtGoodsCateMapper.selectList(new LambdaQueryWrapperX<>());
         List<MtStore> storeLs = storeMapper.selectList(new LambdaQueryWrapperX<>());
         Map<Integer, String> storeMap = convertMap(storeLs, MtStore::getId, MtStore::getName);
@@ -460,7 +459,7 @@ public class OpenGoodsServiceImpl implements OpenGoodsService {
         for (MtGoodsSku sku : skuList) {
             GoodsSkuRespVO skuVO = new GoodsSkuRespVO();
             BeanUtils.copyProperties(sku, skuVO);
-            sku.setLogo(isHttp(skuVO.getLogo(), imagePath));
+            skuVO.setLogo(isHttp(skuVO.getLogo(), imagePath));
             // 计算SKU动态价格
             BigDecimal dynamicPrice = calculateDynamicPrice(
                     goods.getPrice(),
