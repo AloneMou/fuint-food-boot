@@ -103,8 +103,8 @@ public interface MtOrderMapper extends BaseMapperX<MtOrder> {
                         OrderStatusEnum.PAID.getKey(), OrderStatusEnum.DELIVERY.getKey(),
                         OrderStatusEnum.DELIVERED.getKey(), OrderStatusEnum.RECEIVED.getKey())
                 .in(MtOrder::getTakeStatus, TakeStatusEnum.PROCESSING.getKey(), TakeStatusEnum.PENDING.getKey(), TakeStatusEnum.CONFIRMED.getKey())
-                .le(MtOrder::getPayTime, orderTime)
-                .ne(MtOrder::getId, orderId));
+                .le(orderTime != null, MtOrder::getPayTime, orderTime)
+                .ne(orderId != null, MtOrder::getId, orderId));
     }
 
 }

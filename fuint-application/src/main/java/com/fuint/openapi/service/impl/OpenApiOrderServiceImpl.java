@@ -1366,7 +1366,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         UserOrderRespVO order = getOrderDetail(mtOrder, true, true);
         if (!order.getTakeStatus().equals(TakeStatusEnum.COMPLETED)) {
             int waitTime = getStoreWaitTime(mtOrder.getStoreId());
-            Integer makeCount = getToMakeCount(mtOrder.getMerchantId(), mtOrder.getStoreId(), mtOrder.getPayTime(), mtOrder.getId());
+            Integer makeCount = getToMakeCount(mtOrder.getMerchantId(), mtOrder.getStoreId(), null, null);
             order.setQueueCount(makeCount);
             order.setEstimatedWaitTime(makeCount * waitTime);
         }
