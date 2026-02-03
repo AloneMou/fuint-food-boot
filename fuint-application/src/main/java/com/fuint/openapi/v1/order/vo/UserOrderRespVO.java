@@ -4,15 +4,13 @@ import cn.hutool.core.date.DatePattern;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fuint.common.dto.*;
+import com.fuint.common.dto.GoodsSpecValueDto;
+import com.fuint.common.dto.UserCouponDto;
 import com.fuint.common.enums.*;
-import com.fuint.repository.model.MtRefund;
-import com.fuint.repository.model.MtStaff;
-import com.fuint.repository.model.MtStore;
-import com.fuint.repository.model.MtTable;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
@@ -126,7 +124,7 @@ public class UserOrderRespVO {
     private String operator;
 
     @ApiModelProperty("订单商品列表")
-    private List<OrderGoodsDto> goods;
+    private List<OrderGoodsRespVO> goods;
 
     @ApiModelProperty("下单用户信息")
     private OrderUserRespVO userInfo;
@@ -362,4 +360,40 @@ public class UserOrderRespVO {
         @ApiModelProperty("是否默认地址")
         private String isDefault;
     }
+
+    @Data
+    public static class OrderGoodsRespVO implements Serializable {
+
+        @ApiModelProperty("自增ID")
+        private Integer id;
+
+        @ApiModelProperty("商品ID")
+        private Integer goodsId;
+
+        @ApiModelProperty("订单类型")
+        private String type;
+
+        @ApiModelProperty("商品名称")
+        private String name;
+
+        @ApiModelProperty("价格")
+        private BigDecimal price;
+
+        @ApiModelProperty("折扣")
+        private BigDecimal discount;
+
+        @ApiModelProperty("购买数量")
+        private Integer num;
+
+        @ApiModelProperty("图片")
+        private String image;
+
+        @ApiModelProperty("skuId")
+        private Integer skuId;
+
+        @ApiModelProperty("规格列表")
+        private List<GoodsSpecValueDto> specList;
+
+    }
+
 }

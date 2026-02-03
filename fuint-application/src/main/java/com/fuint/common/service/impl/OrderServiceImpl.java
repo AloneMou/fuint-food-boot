@@ -1367,7 +1367,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
 
         if (null != orderDto.getVerifyCode() && StringUtils.isNotEmpty(orderDto.getVerifyCode())) {
             if (orderDto.getVerifyCode().equals(mtOrder.getVerifyCode())) {
-                mtOrder.setStatus(OrderStatusEnum.DELIVERED.getKey());
+                mtOrder.setStatus(OrderStatusEnum.RECEIVED.getKey());
                 mtOrder.setVerifyCode("");
             } else {
                 throw new BusinessCheckException("核销码错误，请确认！");

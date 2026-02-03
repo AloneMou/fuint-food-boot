@@ -1,5 +1,6 @@
 package com.fuint.openapi.service.impl;
 
+import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
@@ -775,7 +776,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
 
         if (null != orderDto.getVerifyCode() && StringUtils.isNotEmpty(orderDto.getVerifyCode())) {
             if (orderDto.getVerifyCode().equals(mtOrder.getVerifyCode())) {
-                mtOrder.setStatus(OrderStatusEnum.DELIVERED.getKey());
+                mtOrder.setStatus(OrderStatusEnum.RECEIVED.getKey());
                 mtOrder.setVerifyCode("");
             } else {
                 throw new BusinessCheckException("核销码错误，请确认！");
@@ -1248,7 +1249,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
             }
 
             List<MtOrderGoods> orderGoodsList = orderGoodsMap.getOrDefault(mtOrder.getId(), new ArrayList<>());
-            List<OrderGoodsDto> goodsDtos = new ArrayList<>();
+            List<UserOrderRespVO.OrderGoodsRespVO> goodsDtos = new ArrayList<>();
 
             if (mtOrder.getType().equals(OrderTypeEnum.PRESTORE.getKey())) {
                 if (mtOrder.getCouponId() != null && userCouponMap.containsKey(mtOrder.getCouponId())) {
@@ -1260,13 +1261,13 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
                             for (String s : paramArr) {
                                 String[] item = s.split("_");
                                 if (Integer.parseInt(item[2]) > 0) {
-                                    OrderGoodsDto goodsDto = new OrderGoodsDto();
+                                    UserOrderRespVO.OrderGoodsRespVO goodsDto = new UserOrderRespVO.OrderGoodsRespVO();
                                     goodsDto.setId(coupon.getId());
                                     goodsDto.setType(OrderTypeEnum.PRESTORE.getKey());
                                     goodsDto.setName("预存￥" + item[0] + "到账￥" + item[1]);
                                     goodsDto.setNum(Integer.parseInt(item[2]));
-                                    goodsDto.setPrice(item[0]);
-                                    goodsDto.setDiscount("0");
+                                    goodsDto.setPrice(BigDecimal.valueOf(NumberUtil.parseNumber(item[0]).doubleValue()));
+                                    goodsDto.setDiscount(BigDecimal.ZERO);
                                     if (!coupon.getImage().contains(basePath)) {
                                         goodsDto.setImage(basePath + coupon.getImage());
                                     }
@@ -1280,7 +1281,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
                 for (MtOrderGoods orderGoods : orderGoodsList) {
                     MtGoods goodsInfo = goodsMap.get(orderGoods.getGoodsId());
                     if (goodsInfo != null) {
-                        OrderGoodsDto orderGoodsDto = new OrderGoodsDto();
+                        UserOrderRespVO.OrderGoodsRespVO orderGoodsDto = new UserOrderRespVO.OrderGoodsRespVO();
                         orderGoodsDto.setId(orderGoods.getId());
                         orderGoodsDto.setName(goodsInfo.getName());
                         if (StrUtil.isNotEmpty(goodsInfo.getLogo()) && !goodsInfo.getLogo().contains(basePath)) {
@@ -1291,8 +1292,8 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
                         orderGoodsDto.setType(OrderTypeEnum.GOODS.getKey());
                         orderGoodsDto.setNum(orderGoods.getNum());
                         orderGoodsDto.setSkuId(orderGoods.getSkuId());
-                        orderGoodsDto.setPrice(orderGoods.getPrice().toString());
-                        orderGoodsDto.setDiscount(orderGoods.getDiscount().toString());
+                        orderGoodsDto.setPrice(orderGoods.getPrice());
+                        orderGoodsDto.setDiscount(orderGoods.getDiscount());
                         orderGoodsDto.setGoodsId(orderGoods.getGoodsId());
 
                         if (orderGoods.getSkuId() > 0 && skuSpecMap.containsKey(orderGoods.getSkuId())) {
@@ -1502,7 +1503,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
             userInfo.setNo(user.getUserNo());
             order.setUserInfo(userInfo);
         }
-        List<OrderGoodsDto> goodsList = new ArrayList<>();
+        List<UserOrderRespVO.OrderGoodsRespVO> goodsList = new ArrayList<>();
         String baseImage = settingService.getUploadBasePath();
         // 储值卡的订单
         if (orderInfo.getType().equals(OrderTypeEnum.PRESTORE.getKey())) {
@@ -1511,13 +1512,13 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
             for (String s : paramArr) {
                 String[] item = s.split("_");
                 if (Integer.parseInt(item[2]) > 0) {
-                    OrderGoodsDto goodsDto = new OrderGoodsDto();
+                    UserOrderRespVO.OrderGoodsRespVO goodsDto = new UserOrderRespVO.OrderGoodsRespVO();
                     goodsDto.setId(coupon.getId());
                     goodsDto.setType(OrderTypeEnum.PRESTORE.getKey());
                     goodsDto.setName("预存￥" + item[0] + "到账￥" + item[1]);
                     goodsDto.setNum(Integer.parseInt(item[2]));
-                    goodsDto.setPrice(item[0]);
-                    goodsDto.setDiscount("0");
+                    goodsDto.setPrice(BigDecimal.valueOf(NumberUtil.parseNumber(item[0]).doubleValue()));
+                    goodsDto.setDiscount(BigDecimal.ZERO);
                     goodsDto.setImage(isHttp(coupon.getImage(), baseImage));
                     goodsList.add(goodsDto);
                 }
@@ -1532,7 +1533,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
             for (MtOrderGoods orderGoods : orderGoodsList) {
                 MtGoods goodsInfo = mtGoodsMapper.selectById(orderGoods.getGoodsId());
                 if (goodsInfo != null) {
-                    OrderGoodsDto orderGoodsDto = new OrderGoodsDto();
+                    UserOrderRespVO.OrderGoodsRespVO orderGoodsDto = new UserOrderRespVO.OrderGoodsRespVO();
                     orderGoodsDto.setId(orderGoods.getId());
                     orderGoodsDto.setName(goodsInfo.getName());
                     if (!goodsInfo.getLogo().contains(baseImage)) {
@@ -1541,8 +1542,8 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
                     orderGoodsDto.setType(OrderTypeEnum.GOODS.getKey());
                     orderGoodsDto.setNum(orderGoods.getNum());
                     orderGoodsDto.setSkuId(orderGoods.getSkuId());
-                    orderGoodsDto.setPrice(orderGoods.getPrice().toString());
-                    orderGoodsDto.setDiscount(orderGoods.getDiscount().toString());
+                    orderGoodsDto.setPrice(orderGoods.getPrice());
+                    orderGoodsDto.setDiscount(orderGoods.getDiscount());
                     orderGoodsDto.setGoodsId(orderGoods.getGoodsId());
                     if (orderGoods.getSkuId() > 0) {
                         List<GoodsSpecValueDto> specList = goodsService.getSpecListBySkuId(orderGoods.getSkuId());
