@@ -260,26 +260,24 @@ public class OpenOrderController extends BaseController {
                 eventCallbackService.sendCouponEventCallback(userCoupon, "USED", order.getOrderSn());
             }
         }
-        UserOrderRespVO userOrderRespVO = openApiOrderService.getUserOrderDetail(order.getId());
+        MtOrder oldOrder = orderService.getOrderInfo(order.getId());
         if (reqVO.getIsPay() != null && reqVO.getIsPay()) {
             // 已支付订单，发送支付成功回调
             openApiOrderService.setOrderPayed(order.getId(), order.getPayAmount());
             // 获取更新后的订单信息
             MtOrder updatedOrder = orderService.getOrderInfo(order.getId());
             eventCallbackService.sendOrderStatusCallback(updatedOrder, OrderStatusEnum.CREATED.getKey());
-            if (userOrderRespVO.getTakeStatus() != null) {
-                eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, userOrderRespVO.getTakeStatus().getKey());
-            }
+            eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, oldOrder.getTakeStatus());
         } else if (order.getPayAmount().compareTo(BigDecimal.ZERO) == 0) {
             // 未支付订单，自动支付
             openApiOrderService.setOrderPayed(order.getId(), order.getPayAmount());
             // 获取更新后的订单信息
             MtOrder updatedOrder = orderService.getOrderInfo(order.getId());
             eventCallbackService.sendOrderStatusCallback(updatedOrder, OrderStatusEnum.CREATED.getKey());
-            if (userOrderRespVO.getTakeStatus() != null) {
-                eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, userOrderRespVO.getTakeStatus().getKey());
-            }
+            eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, oldOrder.getTakeStatus());
         }
+        UserOrderRespVO userOrderRespVO = openApiOrderService.getUserOrderDetail(order.getId());
+
         // 返回订单信息
         return CommonResult.success(userOrderRespVO);
     }

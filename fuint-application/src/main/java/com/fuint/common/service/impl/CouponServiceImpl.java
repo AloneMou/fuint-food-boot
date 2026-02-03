@@ -602,6 +602,7 @@ public class CouponServiceImpl extends ServiceImpl<MtCouponMapper, MtCoupon> imp
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "发放卡券")
+    @CacheEvict(value = COUPON_INFO,allEntries = true)
     public void sendCoupon(Integer couponId, Integer userId, Integer num, Boolean sendMessage, String uuid, String operator) throws BusinessCheckException {
         MtCoupon couponInfo = queryCouponById(couponId);
         MtUser userInfo = memberService.queryMemberById(userId);
@@ -769,6 +770,7 @@ public class CouponServiceImpl extends ServiceImpl<MtCouponMapper, MtCoupon> imp
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "发放卡券")
+    @CacheEvict(value = COUPON_INFO,allEntries = true)
     public Boolean batchSendCoupon(Integer couponId, List<Integer> userIds, Integer num, String uuid, String operator) throws BusinessCheckException {
         if (userIds == null || userIds.size() < 1) {
             throw new BusinessCheckException("发放对象异常，卡券发放失败");
@@ -798,6 +800,7 @@ public class CouponServiceImpl extends ServiceImpl<MtCouponMapper, MtCoupon> imp
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "核销卡券")
+    @CacheEvict(value = COUPON_INFO,allEntries = true)
     public String useCoupon(Integer userCouponId, Integer userId, Integer storeId, Integer orderId, BigDecimal amount, String remark) throws BusinessCheckException {
         MtUserCoupon userCoupon = mtUserCouponMapper.selectById(userCouponId.intValue());
         MtOrder orderInfo = null;
@@ -1020,6 +1023,7 @@ public class CouponServiceImpl extends ServiceImpl<MtCouponMapper, MtCoupon> imp
      */
     @Override
     @OperationServiceLog(description = "删除会员卡券")
+    @CacheEvict(value = COUPON_INFO,allEntries = true)
     public void deleteUserCoupon(Integer id, String operator) throws BusinessCheckException {
         MtUserCoupon userCoupon = mtUserCouponMapper.selectById(id);
         if (null == userCoupon) {
@@ -1056,6 +1060,7 @@ public class CouponServiceImpl extends ServiceImpl<MtCouponMapper, MtCoupon> imp
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "撤销卡券核销")
+    @CacheEvict(value = COUPON_INFO,allEntries = true)
     public void rollbackUserCoupon(Integer id, Integer userCouponId, String operator) throws BusinessCheckException {
         MtConfirmLog mtConfirmLog = mtConfirmLogMapper.selectById(id);
         MtUserCoupon userCoupon = mtUserCouponMapper.selectById(userCouponId);
@@ -1141,6 +1146,7 @@ public class CouponServiceImpl extends ServiceImpl<MtCouponMapper, MtCoupon> imp
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "根据批次撤销卡券")
+    @CacheEvict(value = COUPON_INFO,allEntries = true)
     public void removeUserCoupon(Long id, String uuid, String operator) {
         Map<String, Object> searchParams = new HashMap<>();
         searchParams.put("uuid", uuid);

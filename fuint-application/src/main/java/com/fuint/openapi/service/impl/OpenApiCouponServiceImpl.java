@@ -37,6 +37,7 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -47,6 +48,7 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.fuint.common.enums.RedisKeyConstants.COUPON_INFO;
 import static com.fuint.framework.exception.enums.GlobalErrorCodeConstants.BAD_REQUEST;
 import static com.fuint.framework.exception.util.ServiceExceptionUtil.exception;
 import static com.fuint.openapi.enums.CouponErrorCodeConstants.*;
@@ -170,6 +172,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "OpenAPI创建优惠券")
+    @CacheEvict(value = COUPON_INFO, allEntries = true)
     public MtCoupon createCoupon(ReqCouponDto reqCouponDto) {
         logger.info("[OpenApiCouponService] 创建优惠券, 参数: {}", reqCouponDto);
 
@@ -201,6 +204,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "OpenAPI更新优惠券")
+    @CacheEvict(value = COUPON_INFO, allEntries = true)
     public void updateCoupon(ReqCouponDto reqCouponDto) {
         // 检查优惠券是否存在
         MtCoupon mtCoupon = mtCouponMapper.selectById(reqCouponDto.getId());
@@ -240,6 +244,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "OpenAPI删除优惠券")
+    @CacheEvict(value = COUPON_INFO,allEntries = true)
     public void deleteCoupon(Integer id, String operator) {
         MtCoupon coupon = queryCouponById(id);
         coupon.setStatus(StatusEnum.DISABLE.getKey());
@@ -254,6 +259,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "OpenAPI批量发放优惠券")
+    @CacheEvict(value = COUPON_INFO,allEntries = true)
     public void batchSendCoupon(Integer couponId, List<Integer> userIds, Integer num, String uuid, String operator) throws BusinessCheckException {
         RLock lock = redissonClient.getLock(COUPON_REVOKE_LOCK + couponId);
         if (!lock.tryLock()) {
@@ -289,6 +295,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "OpenAPI撤销优惠券")
+    @CacheEvict(value = COUPON_INFO,allEntries = true)
     public void revokeCoupon(Integer couponId, String uuid, String operator) throws BusinessCheckException {
         RLock lock = redissonClient.getLock(COUPON_REVOKE_LOCK + couponId);
         if (!lock.tryLock()) {
@@ -321,6 +328,7 @@ public class OpenApiCouponServiceImpl implements OpenApiCouponService {
     }
 
     @Override
+    @CacheEvict(value = COUPON_INFO,allEntries = true)
     public void revokeCoupon(Integer userCouponId) {
         RLock lock = redissonClient.getLock(USER_COUPON_REVOKE_LOCK + userCouponId);
         if (!lock.tryLock()) {
