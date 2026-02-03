@@ -314,6 +314,8 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         if (cartList == null || cartList.isEmpty()) {
             throw new ServiceException(GOODS_NOT_EMPTY);
         }
+        String imagePath = settingService.getUploadBasePath();
+
 
         boolean isUsePoint = (usePoint != null && usePoint > 0);
 
@@ -371,9 +373,40 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         // 3. 最终应付金额 = 实付金额 + 配送费
         BigDecimal payableAmount = payAmount.add(deliveryFee);
 
+        // 用户信息
+        UserOrderRespVO.OrderUserRespVO orderUser = new UserOrderRespVO.OrderUserRespVO();
+        BeanUtils.copyProperties(userInfo, orderUser);
+
+        MtStore storeInfo = storeService.getById(storeId);
+        UserOrderRespVO.OrderStoreRespVO store = new UserOrderRespVO.OrderStoreRespVO();
+        BeanUtils.copyProperties(storeInfo, store);
+        store.setLogo(isHttp(storeInfo.getLogo(), imagePath));
+        store.setQrCode(isHttp(storeInfo.getQrCode(), imagePath));
+
+
+        UserCouponDto couponInfo = null;
+        if (selectedCouponId != null && selectedCouponId > 0) {
+            MtUserCoupon mtUserCoupon = userCouponService.getUserCouponDetail(selectedCouponId);
+            if (mtUserCoupon != null) {
+                MtCoupon mtCoupon = couponService.queryCouponById(mtUserCoupon.getCouponId());
+                if (mtCoupon != null) {
+                    couponInfo = new UserCouponDto();
+                    couponInfo.setId(mtUserCoupon.getId());
+                    couponInfo.setCouponId(mtCoupon.getId());
+                    couponInfo.setName(mtCoupon.getName());
+                    couponInfo.setAmount(mtUserCoupon.getAmount());
+                    couponInfo.setBalance(mtUserCoupon.getBalance());
+                    couponInfo.setStatus(mtUserCoupon.getStatus());
+                    couponInfo.setType(mtCoupon.getType());
+                }
+            }
+        }
 
         // 构建返回结果
         Map<String, Object> result = new HashMap<>();
+        result.put("orderUser", orderUser);
+        result.put("orderStore", store);
+        result.put("couponInfo", couponInfo);
         result.put("totalAmount", totalPrice);
         result.put("discountAmount", couponAmount);
         result.put("pointAmount", usePointAmount);

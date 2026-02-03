@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fuint.common.dto.AccountInfo;
 import com.fuint.common.dto.ResCartDto;
+import com.fuint.common.dto.UserCouponDto;
 import com.fuint.common.enums.*;
 import com.fuint.common.service.*;
 import com.fuint.framework.annoation.OperationServiceLog;
@@ -194,36 +195,39 @@ public class OpenOrderController extends BaseController {
             }
         }
 
+
+
         // 构建响应VO，使用安全的方法获取值并设置默认值
         OrderPreCreateRespVO respVO = new OrderPreCreateRespVO();
-        respVO.setTotalAmount(getBigDecimalValue(preCreateResult.get("totalAmount")));
-        respVO.setDiscountAmount(getBigDecimalValue(preCreateResult.get("discountAmount")));
+        respVO.setAmount(getBigDecimalValue(preCreateResult.get("amount")));
+        respVO.setDiscount(getBigDecimalValue(preCreateResult.get("discountAmount")));
         respVO.setPointAmount(getBigDecimalValue(preCreateResult.get("pointAmount")));
-        respVO.setMemberDiscountAmount(getBigDecimalValue(preCreateResult.get("memberDiscountAmount")));
         respVO.setDeliveryFee(getBigDecimalValue(preCreateResult.get("deliveryFee")));
-        respVO.setPayableAmount(getBigDecimalValue(preCreateResult.get("payableAmount")));
+        respVO.setPayAmount(getBigDecimalValue(preCreateResult.get("payableAmount")));
         respVO.setUsePoint(getIntegerValue(preCreateResult.get("usePoint")));
         respVO.setAvailablePoint(getIntegerValue(preCreateResult.get("availablePoint")));
         respVO.setSelectedCouponId(getIntegerValue(preCreateResult.get("selectedCouponId")));
+        respVO.setCouponId(getIntegerValue(preCreateResult.get("selectedCouponId")));
         respVO.setCalculateTime(getDateValue(preCreateResult.get("calculateTime")));
         respVO.setOrderMode(orderMode);
         respVO.setStoreId(storeId);
+        respVO.setUserInfo((UserOrderRespVO.OrderUserRespVO) preCreateResult.get("orderUser"));
+        respVO.setStoreInfo((UserOrderRespVO.OrderStoreRespVO) preCreateResult.get("orderStore"));
+        respVO.setCouponInfo((UserCouponDto) preCreateResult.get("couponInfo"));
 
         // 转换优惠券列表
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> availableCouponsMap = (List<Map<String, Object>>) preCreateResult.get("availableCoupons");
         List<AvailableCouponVO> availableCoupons = convertAvailableCoupons(availableCouponsMap);
         respVO.setAvailableCoupons(availableCoupons);
-
         // 转换商品列表
         @SuppressWarnings("unchecked")
         List<ResCartDto> goodsListDto = (List<ResCartDto>) preCreateResult.get("goodsList");
-        List<OrderGoodsDetailVO> goodsList = convertGoodsList(goodsListDto, reqVO.getUserId(), merchantId);
-        respVO.setGoodsList(goodsList);
-
+        List<UserOrderRespVO.OrderGoodsRespVO> goodsList = convertGoodsList(goodsListDto, reqVO.getUserId(), merchantId);
+        respVO.setGoods(goodsList);
         // 计算商品总数量
         int totalQuantity = goodsList.stream()
-                .mapToInt(goods -> goods.getQuantity() != null ? goods.getQuantity() : 0)
+                .mapToInt(goods -> goods.getNum() != null ? goods.getNum() : 0)
                 .sum();
         respVO.setTotalQuantity(totalQuantity);
         int waitTime = openApiOrderService.getStoreWaitTime(storeId);
@@ -231,6 +235,8 @@ public class OpenOrderController extends BaseController {
         Integer estimatedWaitTime = makeCount * waitTime;
         respVO.setEstimatedWaitTime(estimatedWaitTime);
         respVO.setQueueCount(makeCount);
+
+
         return CommonResult.success(respVO);
     }
 
@@ -698,8 +704,8 @@ public class OpenOrderController extends BaseController {
     /**
      * 转换商品列表
      */
-    private List<OrderGoodsDetailVO> convertGoodsList(List<ResCartDto> goodsListDto, Integer userId, Integer merchantId) {
-        List<OrderGoodsDetailVO> goodsList = new ArrayList<>();
+    private List<UserOrderRespVO.OrderGoodsRespVO> convertGoodsList(List<ResCartDto> goodsListDto, Integer userId, Integer merchantId) {
+        List<UserOrderRespVO.OrderGoodsRespVO> goodsList = new ArrayList<>();
         if (goodsListDto == null || goodsListDto.isEmpty()) {
             return goodsList;
         }
@@ -707,45 +713,45 @@ public class OpenOrderController extends BaseController {
         String basePath = settingService.getUploadBasePath();
 
         for (ResCartDto cartDto : goodsListDto) {
-            OrderGoodsDetailVO goodsVO = new OrderGoodsDetailVO();
+            UserOrderRespVO.OrderGoodsRespVO goodsVO = new UserOrderRespVO.OrderGoodsRespVO();
             goodsVO.setGoodsId(cartDto.getGoodsId());
             goodsVO.setSkuId(cartDto.getSkuId() != null ? cartDto.getSkuId() : 0);
-            goodsVO.setQuantity(cartDto.getNum() != null ? cartDto.getNum() : 0);
+            goodsVO.setNum(cartDto.getNum() != null ? cartDto.getNum() : 0);
             goodsVO.setIsEffect(cartDto.getIsEffect() != null ? cartDto.getIsEffect() : true);
             goodsVO.setSpecList(cartDto.getSpecList());
 
             MtGoods goodsInfo = cartDto.getGoodsInfo();
             if (goodsInfo != null) {
-                goodsVO.setGoodsName(goodsInfo.getName());
+                goodsVO.setName(goodsInfo.getName());
                 goodsVO.setPrice(goodsInfo.getPrice() != null ? goodsInfo.getPrice() : BigDecimal.ZERO);
                 goodsVO.setLinePrice(goodsInfo.getLinePrice() != null ? goodsInfo.getLinePrice() : BigDecimal.ZERO);
 
                 // 处理商品图片
                 String logo = isHttp(goodsInfo.getLogo(), basePath);
-                goodsVO.setGoodsImage(logo);
+                goodsVO.setImage(logo);
 
                 // 计算小计（使用当前价格，已应用会员折扣）
-                BigDecimal subtotal = goodsVO.getPrice().multiply(new BigDecimal(goodsVO.getQuantity()));
+                BigDecimal subtotal = goodsVO.getPrice().multiply(new BigDecimal(goodsVO.getNum()));
                 goodsVO.setSubtotal(subtotal);
 
                 // 计算会员折扣金额（单个商品）
                 // 如果原价存在且大于当前价，说明有折扣
                 if (goodsVO.getLinePrice() != null && goodsVO.getLinePrice().compareTo(goodsVO.getPrice()) > 0) {
-                    BigDecimal originalSubtotal = goodsVO.getLinePrice().multiply(new BigDecimal(goodsVO.getQuantity()));
+                    BigDecimal originalSubtotal = goodsVO.getLinePrice().multiply(new BigDecimal(goodsVO.getNum()));
                     BigDecimal discountAmount = originalSubtotal.subtract(subtotal);
-                    goodsVO.setMemberDiscount(discountAmount.max(BigDecimal.ZERO));
+                    goodsVO.setDiscount(discountAmount.max(BigDecimal.ZERO));
                 } else {
                     // 如果会员折扣率小于1，说明有会员折扣，但商品可能没有原价
                     // 这种情况下，会员折扣会在总金额中体现，单个商品不单独计算
-                    goodsVO.setMemberDiscount(BigDecimal.ZERO);
+                    goodsVO.setDiscount(BigDecimal.ZERO);
                 }
             } else {
                 // 如果商品信息为空，设置默认值
-                goodsVO.setGoodsName("");
+                goodsVO.setName("");
                 goodsVO.setPrice(BigDecimal.ZERO);
                 goodsVO.setLinePrice(BigDecimal.ZERO);
                 goodsVO.setSubtotal(BigDecimal.ZERO);
-                goodsVO.setMemberDiscount(BigDecimal.ZERO);
+                goodsVO.setDiscount(BigDecimal.ZERO);
             }
 
             goodsList.add(goodsVO);

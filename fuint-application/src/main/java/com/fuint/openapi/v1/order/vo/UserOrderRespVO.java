@@ -379,14 +379,23 @@ public class UserOrderRespVO {
         @ApiModelProperty("价格")
         private BigDecimal price;
 
+        @ApiModelProperty("划线价格")
+        private BigDecimal linePrice;
+
         @ApiModelProperty("折扣")
         private BigDecimal discount;
 
         @ApiModelProperty("购买数量")
         private Integer num;
 
+        @ApiModelProperty("是否有效")
+        private Boolean isEffect;
+
         @ApiModelProperty("图片")
         private String image;
+
+        @ApiModelProperty("小计")
+        private BigDecimal subtotal;
 
         @ApiModelProperty("skuId")
         private Integer skuId;
