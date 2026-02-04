@@ -40,6 +40,7 @@ import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.util.*;
 
+import static com.fuint.framework.exception.enums.GlobalErrorCodeConstants.BAD_REQUEST;
 import static com.fuint.framework.util.string.StrUtils.isHttp;
 import static com.fuint.openapi.enums.OrderErrorCodeConstants.*;
 import static com.fuint.openapi.enums.RedisKeyConstants.CANCEL_ORDER;
@@ -127,7 +128,7 @@ public class OpenOrderController extends BaseController {
         Integer storeId = reqVO.getStoreId() != null ? reqVO.getStoreId() : 0;
         String orderMode = StringUtils.isNotEmpty(reqVO.getOrderMode()) ? reqVO.getOrderMode() : OrderModeEnum.ONESELF.getKey();
         String platform = StringUtils.isNotEmpty(reqVO.getPlatform()) ? reqVO.getPlatform() : "MP-WEIXIN";
-        Integer userCouponId = reqVO.getUserCouponId() != null ? reqVO.getUserCouponId() : 0;
+        Integer userCouponId = reqVO.getUserCouponId();
         Integer usePoint = reqVO.getUsePoint() != null ? reqVO.getUsePoint() : 0;
 
         // 系统配置检查：检查交易功能是否关闭
@@ -255,6 +256,11 @@ public class OpenOrderController extends BaseController {
     public CommonResult<UserOrderRespVO> createOrder(@Valid @RequestBody OrderCreateReqVO reqVO) throws BusinessCheckException {
         reqVO.setPayType(PayTypeEnum.OPEN_API.getKey());
         reqVO.setType(OrderTypeEnum.GOODS);
+        OrderModeEnum orderMode = OrderModeEnum.getOrderMode(reqVO.getOrderMode());
+        if (orderMode == null) {
+            return CommonResult.error(BAD_REQUEST.getCode(), "不支持的订单模式");
+        }
+        reqVO.setOrderMode(orderMode.getKey());
         MtOrder order = openApiOrderService.saveOrder(reqVO);
         // 发送订单创建回调
         eventCallbackService.sendOrderStatusCallback(order, null);

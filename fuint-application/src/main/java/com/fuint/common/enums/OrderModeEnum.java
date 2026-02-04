@@ -2,7 +2,8 @@ package com.fuint.common.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
+
+import java.util.Locale;
 
 /**
  * 订单模式
@@ -20,6 +21,7 @@ public enum OrderModeEnum {
 
     private final String key;
     private final String value;
+
     public static OrderModeEnum getEnum(String key) {
         for (OrderModeEnum item : OrderModeEnum.values()) {
             if (item.getKey().equals(key)) {
@@ -27,6 +29,13 @@ public enum OrderModeEnum {
             }
         }
         return null;
+    }
+
+    public static OrderModeEnum getOrderMode(String key) {
+        if (key != null) {
+            key = key.toLowerCase(Locale.ROOT);
+        }
+        return getEnum(key);
     }
 
 }

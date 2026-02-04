@@ -1696,6 +1696,9 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         if (userCouponId != null && userCouponId > 0) {
             return userCouponId;
         }
+        if (userCouponId == 0) {
+            return userCouponId;
+        }
 
         // 计算一次获取优惠券列表（不使用优惠券）
         Map<String, Object> cartData = calculateCartGoods(merchantId, userId, cartList, 0, isUsePoint, platform, orderMode);
@@ -1753,11 +1756,15 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
             if (CouponTypeEnum.PRESTORE.getKey().equals(coupon.getType())) {
                 couponInfo.put("balance", coupon.getAmount());
             }
-
-            if (max == null || coupon.getAmount().compareTo(max.getAmount()) > 0) {
-                max = coupon;
-                selectedCouponId = coupon.getUserCouponId();
+            if (selectedCouponId != null && selectedCouponId == 0) {
+                selectedCouponId = 0;
+            } else {
+                if (max == null || coupon.getAmount().compareTo(max.getAmount()) > 0) {
+                    max = coupon;
+                    selectedCouponId = coupon.getUserCouponId();
+                }
             }
+
             availableCoupons.add(couponInfo);
         }
         for (Map<String, Object> couponInfo : availableCoupons) {
