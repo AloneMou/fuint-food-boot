@@ -126,7 +126,14 @@ public class OpenOrderController extends BaseController {
         // 设置默认值
         Integer merchantId = reqVO.getMerchantId() != null ? reqVO.getMerchantId() : 1;
         Integer storeId = reqVO.getStoreId() != null ? reqVO.getStoreId() : 0;
-        String orderMode = StringUtils.isNotEmpty(reqVO.getOrderMode()) ? reqVO.getOrderMode() : OrderModeEnum.ONESELF.getKey();
+
+        OrderModeEnum orderModeEnum = OrderModeEnum.getOrderMode(reqVO.getOrderMode());
+        if (orderModeEnum == null) {
+            orderModeEnum = OrderModeEnum.ONESELF;
+        }
+        reqVO.setOrderMode(orderModeEnum.getKey());
+        String orderMode = orderModeEnum.getKey();
+
         String platform = StringUtils.isNotEmpty(reqVO.getPlatform()) ? reqVO.getPlatform() : "MP-WEIXIN";
         Integer userCouponId = reqVO.getUserCouponId();
         Integer usePoint = reqVO.getUsePoint() != null ? reqVO.getUsePoint() : 0;
@@ -195,7 +202,6 @@ public class OpenOrderController extends BaseController {
                 }
             }
         }
-
 
 
         // 构建响应VO，使用安全的方法获取值并设置默认值

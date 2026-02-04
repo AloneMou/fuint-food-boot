@@ -5,10 +5,12 @@ import com.fuint.common.enums.OrderStatusEnum;
 import com.fuint.common.enums.PayStatusEnum;
 import com.fuint.common.enums.TakeStatusEnum;
 import com.fuint.common.service.OrderService;
+import com.fuint.common.service.StoreService;
 import com.fuint.common.service.UserCouponService;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.repository.model.MtOrder;
+import com.fuint.repository.model.MtStoreSetting;
 import com.fuint.repository.model.MtUserCoupon;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -44,6 +46,9 @@ public class OrderCancelJob {
 
     @Autowired
     private UserCouponService userCouponService;
+
+    @Autowired
+    private StoreService storeService;
 
     @Autowired
     private EventCallbackService eventCallbackService;
@@ -91,6 +96,10 @@ public class OrderCancelJob {
                             reqDto.setId(mtOrder.getId());
                             reqDto.setStatus(OrderStatusEnum.PAID.getKey());
                             reqDto.setTakeStatus(TakeStatusEnum.PENDING.getKey());
+                            MtStoreSetting setting = storeService.getSettingByStoreId(mtOrder.getStoreId());
+                            if (setting != null && setting.getAutoAccept() == 1) {
+                                reqDto.setTakeStatus(TakeStatusEnum.CONFIRMED.getKey());
+                            }
                             orderService.updateOrder(reqDto);
                             orderService.setOrderPayed(mtOrder.getId(), null);
                             // 发送订单状态变更回调

@@ -498,6 +498,10 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         mtOrder.setDeliveryFee(BigDecimal.ZERO);
         mtOrder.setSettleStatus(SettleStatusEnum.WAIT.getKey());
         mtOrder.setTakeStatus(TakeStatusEnum.PENDING.getKey());
+        MtStoreSetting setting = storeService.getSettingByStoreId(mtOrder.getStoreId());
+        if (setting != null && setting.getAutoAccept() == 1) {
+            mtOrder.setTakeStatus(TakeStatusEnum.CONFIRMED.getKey());
+        }
         if (mtOrder.getId() == null || mtOrder.getId() <= 0) {
             mtOrder.setCreateTime(new Date());
         }
@@ -961,6 +965,10 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         reqDto.setStatus(OrderStatusEnum.PAID.getKey());
         reqDto.setPayStatus(PayStatusEnum.SUCCESS.getKey());
         reqDto.setTakeStatus(TakeStatusEnum.PENDING.getKey());
+        MtStoreSetting setting = storeService.getSettingByStoreId(mtOrder.getStoreId());
+        if (setting != null && setting.getAutoAccept() == 1) {
+            reqDto.setTakeStatus(TakeStatusEnum.CONFIRMED.getKey());
+        }
         if (payAmount != null) {
             reqDto.setPayAmount(payAmount);
         }
@@ -1696,7 +1704,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         if (userCouponId != null && userCouponId > 0) {
             return userCouponId;
         }
-        if (userCouponId == 0) {
+        if (userCouponId != null && userCouponId == 0) {
             return userCouponId;
         }
 

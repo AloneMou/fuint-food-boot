@@ -6,6 +6,7 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.repository.model.MtStore;
+import com.fuint.repository.model.MtStoreSetting;
 
 import java.util.Collection;
 import java.util.List;
@@ -113,4 +114,18 @@ public interface StoreService extends IService<MtStore> {
      * @return 店铺列表
      */
     List<MtStore> getStoreByIds(Collection<Integer> storeIds);
+
+    /**
+     * 门店ID
+     *
+     * @param storeId 门店ID
+     * @return 门店配置
+     */
+    MtStoreSetting getSettingByStoreId(Integer storeId);
+
+    /**
+     * 更新门店配置
+     * @param setting 配置
+     */
+    void updateSetting(MtStoreSetting setting);
 }

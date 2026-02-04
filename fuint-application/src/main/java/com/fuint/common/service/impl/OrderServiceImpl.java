@@ -1447,6 +1447,10 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         reqDto.setStatus(OrderStatusEnum.PAID.getKey());
         reqDto.setPayStatus(PayStatusEnum.SUCCESS.getKey());
         reqDto.setTakeStatus(TakeStatusEnum.PENDING.getKey());
+        MtStoreSetting setting = storeService.getSettingByStoreId(mtOrder.getStoreId());
+        if (setting != null && setting.getAutoAccept() == 1) {
+            reqDto.setTakeStatus(TakeStatusEnum.CONFIRMED.getKey());
+        }
         if (payAmount != null) {
             reqDto.setPayAmount(payAmount);
         }

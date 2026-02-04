@@ -18,7 +18,6 @@ import com.fuint.framework.web.ResponseObject;
 import com.fuint.repository.model.MtMerchant;
 import com.fuint.repository.model.MtStore;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -319,5 +318,17 @@ public class BackendStoreController extends BaseController {
         result.put("storeInfo", storeInfo);
 
         return getSuccessResult(result);
+    }
+
+    @ApiOperation(value = "获取店铺详情")
+    @RequestMapping(value = "/setting/{id}", method = RequestMethod.GET)
+    @CrossOrigin
+    public ResponseObject getStoreSetting(HttpServletRequest request, @PathVariable("id") Integer id) throws BusinessCheckException {
+        String token = request.getHeader("Access-Token");
+        AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
+        if (accountInfo == null) {
+            return getFailureResult(1001, "请先登录");
+        }
+        return getSuccessResult(storeService.getSettingByStoreId(id));
     }
 }

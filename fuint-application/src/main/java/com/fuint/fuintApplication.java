@@ -4,7 +4,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.tuckey.web.filters.urlrewrite.UrlRewriteFilter;
 
@@ -63,6 +62,8 @@ public class fuintApplication {
 
     public static final String REWRITE_FILTER_NAME = "rewriteFilter";
     public static final String REWRITE_FILTER_CONF_PATH = "urlRewrite.xml";
+
+
 
     public static void main(String[] args) {
         SpringApplication.run(fuintApplication.class, args);

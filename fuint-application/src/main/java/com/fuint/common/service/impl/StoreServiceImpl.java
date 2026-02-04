@@ -18,8 +18,10 @@ import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.repository.bean.StoreDistanceBean;
 import com.fuint.repository.mapper.MtMerchantMapper;
 import com.fuint.repository.mapper.MtStoreMapper;
+import com.fuint.repository.mapper.MtStoreSettingMapper;
 import com.fuint.repository.model.MtMerchant;
 import com.fuint.repository.model.MtStore;
+import com.fuint.repository.model.MtStoreSetting;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.AllArgsConstructor;
@@ -44,6 +46,8 @@ import java.util.*;
 public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implements StoreService {
 
     private MtStoreMapper mtStoreMapper;
+
+    private MtStoreSettingMapper storeSettingMapper;
 
     private MtMerchantMapper mtMerchantMapper;
 
@@ -281,13 +285,17 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
 
         StoreDto mtStoreDto = new StoreDto();
         BeanUtils.copyProperties(mtStore, mtStoreDto);
-
+        MtStoreSetting setting = this.getSettingByStoreId(mtStoreDto.getId());
+        if (setting == null) {
+            mtStoreDto.setAutoAccept(0);
+        } else {
+            mtStoreDto.setAutoAccept(setting.getAutoAccept());
+        }
         if (StringUtils.isEmpty(mtStore.getQrCode())) {
             String page = QrCodeEnum.STORE.getPage() + "?" + QrCodeEnum.STORE.getKey() + "Id = " + mtStore.getId();
             String qr = weixinService.createQrCode(mtStore.getMerchantId(), QrCodeEnum.STORE.getKey(), mtStore.getId(), page, 320);
             mtStoreDto.setQrCode(qr);
         }
-
         return mtStoreDto;
     }
 
@@ -420,5 +428,22 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
             return new ArrayList<>();
         }
         return mtStoreMapper.selectBatchIds(storeIds);
+    }
+
+    @Override
+    public MtStoreSetting getSettingByStoreId(Integer storeId) {
+        return storeSettingMapper.selectSettingByStoreId(storeId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateSetting(MtStoreSetting setting) {
+        MtStoreSetting storeSetting = storeSettingMapper.selectSettingByStoreId(setting.getStoreId());
+        if (storeSetting != null) {
+            setting.setId(storeSetting.getId());
+            storeSettingMapper.updateById(setting);
+        } else {
+            storeSettingMapper.insert(setting);
+        }
     }
 }

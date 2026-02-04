@@ -109,4 +109,7 @@ public class StoreDto implements Serializable {
 
     @ApiModelProperty("预计等待时间")
     private Integer estimatedWait;
+
+    @ApiModelProperty("自动接单")
+    private Integer autoAccept;
 }
