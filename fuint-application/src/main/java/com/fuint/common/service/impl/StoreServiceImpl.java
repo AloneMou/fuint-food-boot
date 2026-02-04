@@ -200,6 +200,12 @@ public class StoreServiceImpl extends ServiceImpl<MtStoreMapper, MtStore> implem
         mtStore.setQrCode(qr);
         mtStoreMapper.updateById(mtStore);
 
+        if (storeDto.getAutoAccept() != null) {
+            MtStoreSetting setting = new MtStoreSetting();
+            setting.setStoreId(mtStore.getId());
+            setting.setAutoAccept(storeDto.getAutoAccept());
+            updateSetting(setting);
+        }
         return mtStore;
     }
 

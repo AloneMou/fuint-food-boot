@@ -230,6 +230,7 @@ public class BackendStoreController extends BaseController {
         String status = params.get("status") != null ? params.get("status").toString() : StatusEnum.ENABLED.getKey();
         String merchantId = params.get("merchantId").toString();
         Integer estimatedWait = params.get("estimatedWait") == null ? 0 : Integer.parseInt(params.get("estimatedWait").toString());
+        Integer autoAccept = params.get("autoAccept") == null ? null : Integer.parseInt(params.get("autoAccept").toString());
 
         if ((StringUtils.isEmpty(latitude) || StringUtils.isEmpty(longitude)) && StringUtils.isNotEmpty(address)) {
             Map<String, Object> latAndLng = CommonUtil.getLatAndLngByAddress(address);
@@ -246,6 +247,7 @@ public class BackendStoreController extends BaseController {
         if (accountInfo.getMerchantId() != null && accountInfo.getMerchantId() > 0) {
             merchantId = accountInfo.getMerchantId().toString();
         }
+        storeInfo.setAutoAccept(autoAccept);
         storeInfo.setEstimatedWait(estimatedWait);
         storeInfo.setName(storeName);
         storeInfo.setLogo(logo);
