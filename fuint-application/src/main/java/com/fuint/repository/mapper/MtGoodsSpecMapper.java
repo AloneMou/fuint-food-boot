@@ -1,6 +1,7 @@
 package com.fuint.repository.mapper;
 
 import com.fuint.common.enums.StatusEnum;
+import com.fuint.common.mybatis.query.LambdaQueryWrapperX;
 import com.fuint.repository.base.BaseMapperX;
 import com.fuint.repository.model.MtGoodsSpec;
 import org.apache.ibatis.annotations.Param;
@@ -21,7 +22,10 @@ public interface MtGoodsSpecMapper extends BaseMapperX<MtGoodsSpec> {
 
 
     default List<MtGoodsSpec> selectByGoodsId(Integer goodsId) {
-        return selectList(MtGoodsSpec::getGoodsId, goodsId, MtGoodsSpec::getStatus, StatusEnum.ENABLED.getKey());
+        return selectList(new LambdaQueryWrapperX<MtGoodsSpec>()
+                .eqIfPresent(MtGoodsSpec::getGoodsId, goodsId)
+                .eq(MtGoodsSpec::getStatus, StatusEnum.ENABLED.getKey())
+        );
     }
 
     default void deleteByGoodsId(Integer goodsId) {
@@ -29,7 +33,9 @@ public interface MtGoodsSpecMapper extends BaseMapperX<MtGoodsSpec> {
     }
 
     default List<MtGoodsSpec> selectSpecLsByGoodsIds(List<Integer> goodsIds) {
-        return selectList(MtGoodsSpec::getGoodsId, goodsIds, MtGoodsSpec::getStatus, StatusEnum.ENABLED.getKey());
+        return selectList(new LambdaQueryWrapperX<MtGoodsSpec>()
+                .inIfPresent(MtGoodsSpec::getGoodsId, goodsIds)
+                .eq(MtGoodsSpec::getStatus, StatusEnum.ENABLED.getKey()));
     }
 
 }
