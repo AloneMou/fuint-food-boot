@@ -1,6 +1,6 @@
 package com.fuint.openapi.v1.member.coupon.vo;
 
-import com.fuint.framework.pojo.PageParams;
+import com.fuint.framework.pojo.SortablePageParam;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -17,7 +17,7 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @ApiModel(value = "用户优惠券列表查询请求VO")
-public class UserCouponPageReqVO extends PageParams {
+public class UserCouponPageReqVO extends SortablePageParam {
 
     @NotNull(message = "用户ID不能为空")
     @ApiModelProperty(value = "用户ID", required = true, example = "1")

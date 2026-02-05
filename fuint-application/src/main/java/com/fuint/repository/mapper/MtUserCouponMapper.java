@@ -1,5 +1,7 @@
 package com.fuint.repository.mapper;
 
+import cn.hutool.core.collection.CollUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.mybatis.query.LambdaQueryWrapperX;
 import com.fuint.framework.pojo.PageResult;
@@ -48,15 +50,18 @@ public interface MtUserCouponMapper extends BaseMapperX<MtUserCoupon> {
      * @return 分页结果
      */
     default PageResult<MtUserCoupon> selectUserCouponPage(UserCouponPageReqVO pageReqVO) {
-        return selectPage(pageReqVO, new LambdaQueryWrapperX<MtUserCoupon>()
+        LambdaQueryWrapper<MtUserCoupon> wrapper = new LambdaQueryWrapperX<MtUserCoupon>()
                 .eqIfPresent(MtUserCoupon::getUserId, pageReqVO.getUserId())
                 .eqIfPresent(MtUserCoupon::getStatus, pageReqVO.getStatus())
                 .eqIfPresent(MtUserCoupon::getType, pageReqVO.getCouponType())
                 .eqIfPresent(MtUserCoupon::getCouponId, pageReqVO.getCouponId())
                 .eqIfPresent(MtUserCoupon::getUuid, pageReqVO.getUuid())
-                .ne(MtUserCoupon::getStatus, StatusEnum.DISABLE.getKey())
-                .orderByDesc(MtUserCoupon::getCreateTime)
-                .orderByDesc(MtUserCoupon::getId)
-        );
+                .ne(MtUserCoupon::getStatus, StatusEnum.DISABLE.getKey());
+        if (CollUtil.isEmpty(pageReqVO.getSortingFields())) {
+            wrapper.orderByDesc(MtUserCoupon::getAmount)
+                    .orderByDesc(MtUserCoupon::getCreateTime)
+                    .orderByDesc(MtUserCoupon::getId);
+        }
+        return selectPage(pageReqVO, wrapper);
     }
 }
