@@ -2093,6 +2093,9 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         if (intersection.isEmpty()) {
             couponDto.setStatus(UserCouponStatusEnum.DISABLE.getKey());
         }
+        if (goodsIds.size()!=intersection.size()){
+            couponDto.setStatus(UserCouponStatusEnum.DISABLE.getKey());
+        }
     }
 
     /**

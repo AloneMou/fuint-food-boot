@@ -3,7 +3,6 @@ package com.fuint.repository.mapper;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.repository.base.BaseMapperX;
 import com.fuint.repository.model.MtGoodsSpec;
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -30,7 +29,7 @@ public interface MtGoodsSpecMapper extends BaseMapperX<MtGoodsSpec> {
     }
 
     default List<MtGoodsSpec> selectSpecLsByGoodsIds(List<Integer> goodsIds) {
-        return selectList(MtGoodsSpec::getGoodsId, goodsIds);
+        return selectList(MtGoodsSpec::getGoodsId, goodsIds, MtGoodsSpec::getStatus, StatusEnum.ENABLED.getKey());
     }
 
 }
