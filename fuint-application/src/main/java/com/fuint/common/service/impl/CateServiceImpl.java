@@ -11,6 +11,9 @@ import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.pojo.PageResult;
+import com.fuint.openapi.v1.goods.cate.vo.MtGoodsCatePageReqVO;
+import com.fuint.openapi.v1.goods.cate.vo.MtGoodsCateRespVO;
 import com.fuint.repository.mapper.MtGoodsCateMapper;
 import com.fuint.repository.mapper.MtGoodsMapper;
 import com.fuint.repository.model.MtGoods;
@@ -254,7 +257,11 @@ public class CateServiceImpl extends ServiceImpl<MtGoodsCateMapper, MtGoodsCate>
                     .eq(MtGoodsCate::getStoreId, storeId));
         }
         lambdaQueryWrapper.orderByAsc(MtGoodsCate::getSort);
-        List<MtGoodsCate> dataList = cateMapper.selectList(lambdaQueryWrapper);
-        return dataList;
+        return cateMapper.selectList(lambdaQueryWrapper);
+    }
+
+    @Override
+    public PageResult<MtGoodsCateRespVO> getCatePage(MtGoodsCatePageReqVO pageReqVO) {
+        return cateMapper.selectCateByPage(pageReqVO);
     }
 }

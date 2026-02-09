@@ -9,7 +9,7 @@ import java.util.Date;
 
 /**
  * 商品分类响应VO
- *
+ * <p>
  * Created by FSQ
  * CopyRight https://www.fuint.cn
  */
@@ -22,6 +22,9 @@ public class MtGoodsCateRespVO {
 
     @ApiModelProperty(value = "商户ID", example = "1")
     private Integer merchantId;
+
+    @ApiModelProperty(value = "商户名称", example = "总店")
+    private String merchantName;
 
     @ApiModelProperty(value = "店铺ID", example = "1")
     private Integer storeId;

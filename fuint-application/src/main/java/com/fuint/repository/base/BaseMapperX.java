@@ -7,12 +7,14 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
+import com.fuint.common.param.PageParam;
 import com.fuint.framework.pojo.PageParams;
 import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.pojo.SortablePageParam;
 import com.fuint.framework.pojo.SortingField;
 import com.fuint.repository.utils.MyBatisUtils;
 import com.github.yulichang.base.MPJBaseMapper;
+import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.Collection;
@@ -46,6 +48,20 @@ public interface BaseMapperX<T> extends MPJBaseMapper<T> {
         selectPage(mpPage, queryWrapper);
         // 转换返回
         return new PageResult<>(mpPage.getRecords(), mpPage.getTotal(), mpPage.getPages(), mpPage.getCurrent(), mpPage.getSize());
+    }
+
+    default <D> PageResult<D> selectJoinPage(PageParams pageParam, Class<D> clazz, MPJLambdaWrapper<T> lambdaWrapper) {
+        // 特殊：不分页，直接查询全部
+        if (PageParams.PAGE_SIZE_NONE.equals(pageParam.getPageSize())) {
+            List<D> list = selectJoinList(clazz, lambdaWrapper);
+            return new PageResult<>(list, (long) list.size());
+        }
+
+        // MyBatis Plus Join 查询
+        IPage<D> mpPage = MyBatisUtils.buildPage(pageParam);
+        mpPage = selectJoinPage(mpPage, clazz, lambdaWrapper);
+        // 转换返回
+        return new PageResult<>(mpPage.getRecords(), mpPage.getTotal());
     }
 
     default T selectOne(String field, Object value) {

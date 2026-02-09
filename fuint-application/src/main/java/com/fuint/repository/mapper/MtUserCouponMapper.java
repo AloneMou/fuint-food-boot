@@ -52,8 +52,8 @@ public interface MtUserCouponMapper extends BaseMapperX<MtUserCoupon> {
     default PageResult<MtUserCoupon> selectUserCouponPage(UserCouponPageReqVO pageReqVO) {
         LambdaQueryWrapper<MtUserCoupon> wrapper = new LambdaQueryWrapperX<MtUserCoupon>()
                 .eqIfPresent(MtUserCoupon::getUserId, pageReqVO.getUserId())
-                .eqIfPresent(MtUserCoupon::getStatus, pageReqVO.getStatus())
-                .eqIfPresent(MtUserCoupon::getType, pageReqVO.getCouponType())
+                .inIfPresent(MtUserCoupon::getStatus, pageReqVO.getStatus())
+                .inIfPresent(MtUserCoupon::getType, pageReqVO.getCouponType())
                 .eqIfPresent(MtUserCoupon::getCouponId, pageReqVO.getCouponId())
                 .eqIfPresent(MtUserCoupon::getUuid, pageReqVO.getUuid())
                 .ne(MtUserCoupon::getStatus, StatusEnum.DISABLE.getKey());

@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 /**
  * 用户优惠券列表查询请求VO
@@ -24,10 +25,10 @@ public class UserCouponPageReqVO extends SortablePageParam {
     private Integer userId;
 
     @ApiModelProperty(value = "优惠券状态（精确匹配）：A-未使用；B-已使用；C-已过期；D-已删除", example = "A")
-    private String status;
+    private List<String> status;
 
     @ApiModelProperty(value = "优惠券类型（精确匹配）：C-优惠券；P-储值卡；T-计次卡", example = "C")
-    private String couponType;
+    private List<String> couponType;
 
     @ApiModelProperty(value = "优惠券ID（精确匹配）", example = "1")
     private Integer couponId;

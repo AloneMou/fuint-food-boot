@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 
 import static com.fuint.framework.util.string.StrUtils.isHttp;
 import static com.fuint.openapi.enums.OrderErrorCodeConstants.GOODS_NOT_EMPTY;
+import static com.fuint.openapi.enums.OrderErrorCodeConstants.WRITE_OFF_CODE_ERROR;
 import static com.fuint.openapi.enums.UserErrorCodeConstants.USER_NOT_FOUND;
 
 /**
@@ -1326,7 +1327,6 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
     @Transactional(rollbackFor = Exception.class)
     @OperationServiceLog(description = "更新订单信息")
     public MtOrder updateOrder(OrderDto orderDto) throws BusinessCheckException {
-        logger.info("orderService.updateOrder orderDto = {}", JsonUtil.toJSONString(orderDto));
         MtOrder mtOrder = mtOrderMapper.selectById(orderDto.getId());
         if (null == mtOrder || OrderStatusEnum.DELETED.getKey().equals(mtOrder.getStatus())) {
             throw new BusinessCheckException("该订单状态异常");
@@ -1370,7 +1370,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
                 mtOrder.setStatus(OrderStatusEnum.RECEIVED.getKey());
                 mtOrder.setVerifyCode("");
             } else {
-                throw new BusinessCheckException("核销码错误，请确认！");
+                throw new ServiceException(WRITE_OFF_CODE_ERROR);
             }
         }
 

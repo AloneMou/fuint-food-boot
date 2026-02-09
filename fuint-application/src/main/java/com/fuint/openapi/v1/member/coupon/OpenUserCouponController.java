@@ -42,11 +42,11 @@ public class OpenUserCouponController extends BaseController {
      * @param pageReqVO 分页查询参数
      * @return 用户优惠券分页列表
      */
-    @GetMapping("/page")
+    @PostMapping("/page")
     @ApiOperation(value = "分页查询用户优惠券列表", notes = "支持按用户ID、状态、优惠券类型等条件分页查询，使用MyBatis Plus优化性能")
     @ApiSignature
     @RateLimiter(time = 60, count = 200, keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<PageResult<UserCouponRespVO>> pageUserCoupons(@Valid UserCouponPageReqVO pageReqVO) {
+    public CommonResult<PageResult<UserCouponRespVO>> pageUserCoupons(@RequestBody @Valid UserCouponPageReqVO pageReqVO) {
         try {
             // 调用Service层处理业务逻辑（使用MyBatis Plus分页，批量查询关联数据）
             PageResult<UserCouponRespVO> pageResult = openApiUserCouponService.queryUserCouponPage(pageReqVO);

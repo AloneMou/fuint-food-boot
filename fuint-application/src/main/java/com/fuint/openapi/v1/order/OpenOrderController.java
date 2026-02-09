@@ -6,17 +6,17 @@ import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.ClientIpRate
 import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.fuint.common.dto.AccountInfo;
-import com.fuint.common.dto.ResCartDto;
-import com.fuint.common.dto.UserCouponDto;
+import com.fuint.common.dto.*;
 import com.fuint.common.enums.*;
 import com.fuint.common.service.*;
+import com.fuint.common.util.TokenUtil;
 import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.util.object.BeanUtils;
 import com.fuint.framework.web.BaseController;
+import com.fuint.framework.web.ResponseObject;
 import com.fuint.openapi.service.EventCallbackService;
 import com.fuint.openapi.service.OpenApiOrderService;
 import com.fuint.openapi.v1.order.vo.*;
@@ -32,10 +32,12 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.util.*;
@@ -206,7 +208,7 @@ public class OpenOrderController extends BaseController {
 
         // 构建响应VO，使用安全的方法获取值并设置默认值
         OrderPreCreateRespVO respVO = new OrderPreCreateRespVO();
-        respVO.setAmount(getBigDecimalValue(preCreateResult.get("amount")));
+        respVO.setAmount(getBigDecimalValue(preCreateResult.get("totalAmount")));
         respVO.setDiscount(getBigDecimalValue(preCreateResult.get("discountAmount")));
         respVO.setPointAmount(getBigDecimalValue(preCreateResult.get("pointAmount")));
         respVO.setDeliveryFee(getBigDecimalValue(preCreateResult.get("deliveryFee")));
@@ -568,6 +570,51 @@ public class OpenOrderController extends BaseController {
             eventCallbackService.sendOrderReadyCallback(updatedOrder);
         }
 
+        return CommonResult.success(true);
+    }
+
+    @ApiOperation(value = "验证并核销订单")
+    @PostMapping(value = "/verify")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    @OperationServiceLog(description = "(OpenApi)核销订单")
+    public CommonResult<Boolean> verify(@RequestBody Map<String, Object> param) throws BusinessCheckException {
+        Integer orderId = param.get("orderId") == null ? 0 : Integer.parseInt(param.get("orderId").toString());
+        String remark = param.get("remark") == null ? "" : param.get("remark").toString();
+        String verifyCode = param.get("verifyCode") == null ? "" : param.get("verifyCode").toString();
+
+        AccountInfo accountInfo=new AccountInfo();
+        accountInfo.setAccountName("OPEN_API");
+        if (orderId < 0) {
+            return CommonResult.error(BAD_REQUEST.getCode(), "订单ID不能为空");
+        }
+        OrderDto orderDto = new OrderDto();
+        orderDto.setId(orderId);
+        orderDto.setOperator(accountInfo.getAccountName());
+        if (StringUtils.isNotEmpty(remark)) {
+            orderDto.setRemark(remark);
+        }
+        if (StringUtils.isNotEmpty(verifyCode)) {
+            orderDto.setVerifyCode(verifyCode);
+            orderDto.setTakeStatus(TakeStatusEnum.COMPLETED.getKey());
+        }
+
+        String oldStatus = "";
+        String oldTakeStatus = "";
+        UserOrderDto existOrder = orderService.getOrderById(orderId);
+        if (existOrder != null) {
+            oldStatus = existOrder.getStatus();
+            oldTakeStatus = existOrder.getTakeStatus();
+        }
+        orderService.updateOrder(orderDto);
+        // 发送订单状态变更回调
+        MtOrder updatedOrder = orderService.getOrderInfo(orderId);
+        if (updatedOrder != null && !updatedOrder.getStatus().equals(oldStatus)) {
+            eventCallbackService.sendOrderStatusCallback(updatedOrder, oldStatus);
+        }
+        if (updatedOrder != null && !updatedOrder.getTakeStatus().equals(oldTakeStatus)) {
+            eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, oldTakeStatus);
+        }
         return CommonResult.success(true);
     }
 

@@ -12,6 +12,7 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
 import com.fuint.framework.pojo.CommonResult;
+import com.fuint.framework.pojo.PageResult;
 import com.fuint.framework.util.object.BeanUtils;
 import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.v1.goods.cate.vo.*;
@@ -141,66 +142,11 @@ public class OpenCateController extends BaseController {
     }
 
     @ApiOperation(value = "分页查询商品分类列表", notes = "支持按名称、状态、店铺等条件分页查询")
-    @GetMapping(value = "/page")
+    @PostMapping(value = "/page")
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
-    public CommonResult<MtGoodsCatePageRespVO> getCatePage(@Valid MtGoodsCatePageReqVO pageReqVO) throws BusinessCheckException {
-
-        // 构建分页请求
-        PaginationRequest paginationRequest = new PaginationRequest();
-        paginationRequest.setCurrentPage(pageReqVO.getPage());
-        paginationRequest.setPageSize(pageReqVO.getPageSize());
-
-        // 构建查询参数
-        Map<String, Object> params = new HashMap<>();
-        if (StringUtils.isNotEmpty(pageReqVO.getName())) {
-            params.put("name", pageReqVO.getName());
-        }
-        if (StringUtils.isNotEmpty(pageReqVO.getStatus())) {
-            params.put("status", pageReqVO.getStatus());
-        }
-        if (pageReqVO.getStoreId() != null) {
-            params.put("storeId", pageReqVO.getStoreId().toString());
-        }
-        if (pageReqVO.getMerchantId() != null) {
-            params.put("merchantId", pageReqVO.getMerchantId().toString());
-        }
-
-        paginationRequest.setSearchParams(params);
-
-        // 执行查询
-        PaginationResponse<GoodsCateDto> paginationResponse = cateService.queryCateListByPagination(paginationRequest);
-
-        // 构建响应
-        MtGoodsCatePageRespVO respVO = new MtGoodsCatePageRespVO();
-
-        // 转换数据
-        List<MtGoodsCateRespVO> list = paginationResponse.getContent().stream()
-                .map(dto -> {
-                    MtGoodsCateRespVO vo = new MtGoodsCateRespVO();
-                    vo.setId(dto.getId());
-                    vo.setMerchantId(dto.getMerchantId());
-                    vo.setStoreId(dto.getStoreId());
-                    vo.setStoreName(dto.getStoreName());
-                    vo.setName(dto.getName());
-                    vo.setLogo(dto.getLogo());
-                    vo.setDescription(dto.getDescription());
-                    vo.setSort(dto.getSort());
-                    vo.setStatus(dto.getStatus());
-                    vo.setCreateTime(dto.getCreateTime());
-                    vo.setUpdateTime(dto.getUpdateTime());
-                    vo.setOperator(dto.getOperator());
-                    return vo;
-                })
-                .collect(Collectors.toList());
-
-        respVO.setList(list);
-        respVO.setTotal(paginationResponse.getTotalElements());
-        respVO.setTotalPages(paginationResponse.getTotalPages());
-        respVO.setCurrentPage(pageReqVO.getPage());
-        respVO.setPageSize(pageReqVO.getPageSize());
-
-        return CommonResult.success(respVO);
+    public CommonResult<PageResult<MtGoodsCateRespVO>> getCatePage(@RequestBody @Valid MtGoodsCatePageReqVO pageReqVO) throws BusinessCheckException {
+        return CommonResult.success(cateService.getCatePage(pageReqVO));
     }
 
     @ApiOperation(value = "获取所有启用的商品分类列表", notes = "获取所有状态为启用的商品分类，不分页")
