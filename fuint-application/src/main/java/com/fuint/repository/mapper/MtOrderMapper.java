@@ -1,5 +1,7 @@
 package com.fuint.repository.mapper;
 
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fuint.common.enums.OrderStatusEnum;
 import com.fuint.common.enums.StatusEnum;
@@ -12,6 +14,7 @@ import com.fuint.repository.base.BaseMapperX;
 import com.fuint.repository.model.MtOrder;
 import com.fuint.repository.model.MtOrderGoods;
 import com.github.yulichang.query.MPJLambdaQueryWrapper;
+import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.annotations.Param;
 import org.aspectj.weaver.ast.Or;
@@ -93,7 +96,7 @@ public interface MtOrderMapper extends BaseMapperX<MtOrder> {
      * @return 待制作的餐品数量
      */
     default Integer selectToMakeCount(Integer merchantId, Integer storeId, Date orderTime, Integer orderId) {
-        return selectJoinOne(Integer.class, new MPJLambdaWrapperX<MtOrder>()
+        MPJLambdaWrapper<MtOrder> wrapper = new MPJLambdaWrapperX<MtOrder>()
                 .selectSum(MtOrderGoods::getNum)
                 .innerJoin(MtOrderGoods.class, MtOrderGoods::getOrderId, MtOrder::getId)
                 .eq(MtOrderGoods::getStatus, StatusEnum.ENABLED.getKey())
@@ -104,7 +107,18 @@ public interface MtOrderMapper extends BaseMapperX<MtOrder> {
                         OrderStatusEnum.DELIVERED.getKey(), OrderStatusEnum.RECEIVED.getKey())
                 .in(MtOrder::getTakeStatus, TakeStatusEnum.PROCESSING.getKey(), TakeStatusEnum.PENDING.getKey(), TakeStatusEnum.CONFIRMED.getKey())
                 .le(orderTime != null, MtOrder::getPayTime, orderTime)
-                .ne(orderId != null, MtOrder::getId, orderId));
+                .ne(orderId != null, MtOrder::getId, orderId);
+
+        if (orderTime != null) {
+            Date startTime = DateUtil.parse(DateUtil.format(orderTime, DatePattern.NORM_DATE_PATTERN), DatePattern.NORM_DATE_PATTERN);
+            Date endTime = DateUtil.parse(DateUtil.format(orderTime, DatePattern.NORM_DATE_PATTERN) + " 23:59:59", DatePattern.NORM_DATETIME_PATTERN);
+            wrapper.between(MtOrder::getPayTime, startTime, endTime);
+        }else{
+            Date startTime = DateUtil.parse(DateUtil.format(new Date(), DatePattern.NORM_DATE_PATTERN), DatePattern.NORM_DATE_PATTERN);
+            Date endTime = DateUtil.parse(DateUtil.format(new Date(), DatePattern.NORM_DATE_PATTERN) + " 23:59:59", DatePattern.NORM_DATETIME_PATTERN);
+            wrapper.between(MtOrder::getPayTime, startTime, endTime);
+        }
+        return selectJoinOne(Integer.class, wrapper);
     }
 
 }

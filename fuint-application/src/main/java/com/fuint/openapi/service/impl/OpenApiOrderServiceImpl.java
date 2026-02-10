@@ -1408,7 +1408,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         UserOrderRespVO order = getOrderDetail(mtOrder, true, true);
         if (!order.getTakeStatus().equals(TakeStatusEnum.COMPLETED)) {
             int waitTime = getStoreWaitTime(mtOrder.getStoreId());
-            Integer makeCount = getToMakeCount(mtOrder.getMerchantId(), mtOrder.getStoreId(), null, null);
+            Integer makeCount = getToMakeCount(mtOrder.getMerchantId(), mtOrder.getStoreId(), order.getPayTime(), null);
             order.setQueueCount(makeCount);
             order.setEstimatedWaitTime(makeCount * waitTime);
         }
@@ -1433,7 +1433,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
     @Override
     public Integer getStoreWaitTime(Integer storeId) {
         MtStore store = storeService.queryStoreById(storeId);
-        int waitTime = 5;
+        int waitTime = 5 * 60;
         if (store != null && store.getEstimatedWait() != null) {
             waitTime = store.getEstimatedWait();
         } else if (store != null) {
@@ -1443,7 +1443,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
             }
         }
         if (waitTime <= 0) {
-            waitTime = 5;
+            waitTime = 5 * 60;
         }
         return waitTime;
     }
@@ -2093,7 +2093,7 @@ public class OpenApiOrderServiceImpl implements OpenApiOrderService {
         if (intersection.isEmpty()) {
             couponDto.setStatus(UserCouponStatusEnum.DISABLE.getKey());
         }
-        if (goodsIds.size()!=intersection.size()){
+        if (goodsIds.size() != intersection.size()) {
             couponDto.setStatus(UserCouponStatusEnum.DISABLE.getKey());
         }
     }

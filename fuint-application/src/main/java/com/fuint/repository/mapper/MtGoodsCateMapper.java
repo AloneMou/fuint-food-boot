@@ -30,7 +30,7 @@ public interface MtGoodsCateMapper extends BaseMapperX<MtGoodsCate> {
         wrapper.selectAs(MtMerchant::getName, MtGoodsCateRespVO::getMerchantName);
         wrapper.leftJoin(MtStore.class, MtStore::getId, MtGoodsCate::getStoreId);
         wrapper.leftJoin(MtMerchant.class, MtMerchant::getId, MtGoodsCate::getMerchantId);
-        wrapper.eq(MtGoodsCate::getStatus, StatusEnum.DISABLE.getKey());
+        wrapper.eq(MtGoodsCate::getStatus, StatusEnum.ENABLED.getKey());
         wrapper.and(pageReqVO.getStoreId() != null, ew -> ew
                 .eq(MtGoodsCate::getStoreId, pageReqVO.getStoreId())
                 .or()
