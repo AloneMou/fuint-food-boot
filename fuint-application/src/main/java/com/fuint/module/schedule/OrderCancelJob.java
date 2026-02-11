@@ -75,7 +75,7 @@ public class OrderCancelJob {
             Map<String, Object> param = new HashMap<>();
             param.put("status", OrderStatusEnum.CREATED.getKey());
             List<MtOrder> dataList = orderService.getOrderListByParams(param);
-            if (dataList.size() > 0) {
+            if (!dataList.isEmpty()) {
                 int dealNum = 0;
                 for (MtOrder mtOrder : dataList) {
                     Date overTime = new Date(mtOrder.getCreateTime().getTime() + (60000 * OVER_TIME));

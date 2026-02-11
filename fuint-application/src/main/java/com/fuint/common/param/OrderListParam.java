@@ -69,4 +69,6 @@ public class OrderListParam extends PageParam implements Serializable {
     @ApiModelProperty(value="结束时间", name="endTime")
     private String endTime;
 
+    @ApiModelProperty(value="接单状态", name="takeStatus")
+    private String takeStatus;
 }

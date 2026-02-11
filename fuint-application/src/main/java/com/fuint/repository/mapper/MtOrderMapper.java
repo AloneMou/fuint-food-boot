@@ -3,9 +3,7 @@ package com.fuint.repository.mapper;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.fuint.common.enums.OrderStatusEnum;
-import com.fuint.common.enums.StatusEnum;
-import com.fuint.common.enums.TakeStatusEnum;
+import com.fuint.common.enums.*;
 import com.fuint.common.mybatis.query.LambdaQueryWrapperX;
 import com.fuint.common.mybatis.query.MPJLambdaWrapperX;
 import com.fuint.framework.pojo.PageResult;
@@ -113,12 +111,24 @@ public interface MtOrderMapper extends BaseMapperX<MtOrder> {
             Date startTime = DateUtil.parse(DateUtil.format(orderTime, DatePattern.NORM_DATE_PATTERN), DatePattern.NORM_DATE_PATTERN);
             Date endTime = DateUtil.parse(DateUtil.format(orderTime, DatePattern.NORM_DATE_PATTERN) + " 23:59:59", DatePattern.NORM_DATETIME_PATTERN);
             wrapper.between(MtOrder::getPayTime, startTime, endTime);
-        }else{
+        } else {
             Date startTime = DateUtil.parse(DateUtil.format(new Date(), DatePattern.NORM_DATE_PATTERN), DatePattern.NORM_DATE_PATTERN);
             Date endTime = DateUtil.parse(DateUtil.format(new Date(), DatePattern.NORM_DATE_PATTERN) + " 23:59:59", DatePattern.NORM_DATETIME_PATTERN);
             wrapper.between(MtOrder::getPayTime, startTime, endTime);
         }
         return selectJoinOne(Integer.class, wrapper);
+    }
+
+    /**
+     * 查询待接单的订单
+     */
+    default List<MtOrder> selectToTakeOrderList(List<Integer> ids) {
+        return selectList(new LambdaQueryWrapperX<MtOrder>()
+                .in(MtOrder::getId, ids)
+                .eq(MtOrder::getTakeStatus, TakeStatusEnum.PENDING.getKey())
+                .eq(MtOrder::getPayStatus, PayStatusEnum.SUCCESS.getKey())
+                .eq(MtOrder::getOrderMode, OrderModeEnum.ONESELF.getKey())
+        );
     }
 
 }

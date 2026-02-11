@@ -44,6 +44,8 @@ import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.fuint.framework.util.collection.CollectionUtils.convertList;
+import static com.fuint.framework.util.collection.CollectionUtils.convertMap;
 import static com.fuint.framework.util.string.StrUtils.isHttp;
 import static com.fuint.openapi.enums.OrderErrorCodeConstants.GOODS_NOT_EMPTY;
 import static com.fuint.openapi.enums.OrderErrorCodeConstants.WRITE_OFF_CODE_ERROR;
@@ -221,7 +223,7 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         String storeIds = orderListParam.getStoreIds() == null ? "" : orderListParam.getStoreIds();
         String startTime = orderListParam.getStartTime() == null ? "" : orderListParam.getStartTime();
         String endTime = orderListParam.getEndTime() == null ? "" : orderListParam.getEndTime();
-
+        String takeStatus = orderListParam.getTakeStatus() == null ? "" : orderListParam.getTakeStatus();
         if (dataType.equals("toPay")) {
             status = OrderStatusEnum.CREATED.getKey(); // 待支付
         } else if (dataType.equals("paid")) {
@@ -297,11 +299,14 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         if (StringUtils.isNotEmpty(endTime)) {
             lambdaQueryWrapper.le(MtOrder::getCreateTime, endTime);
         }
+        if (StringUtils.isNotBlank(takeStatus)) {
+            lambdaQueryWrapper.eq(MtOrder::getTakeStatus, takeStatus);
+        }
         lambdaQueryWrapper.orderByDesc(MtOrder::getId);
         List<MtOrder> orderList = mtOrderMapper.selectList(lambdaQueryWrapper);
 
         List<UserOrderDto> dataList = new ArrayList<>();
-        if (orderList.size() > 0) {
+        if (!orderList.isEmpty()) {
             for (MtOrder order : orderList) {
                 UserOrderDto dto = getOrderDetail(order, false, false);
                 dataList.add(dto);
@@ -2465,5 +2470,24 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
         result.put("goodsList", cartData.get("list"));
         result.put("calculateTime", new Date());
         return result;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchConfirmed(List<Integer> orderIds) {
+        List<MtOrder> orderList = mtOrderMapper.selectToTakeOrderList(orderIds);
+        List<Integer> ids = convertList(orderList, MtOrder::getId);
+        for (MtOrder order : orderList) {
+            OrderDto orderDto = new OrderDto();
+            orderDto.setId(order.getId());
+            orderDto.setTakeStatus(TakeStatusEnum.PROCESSING.getKey());
+            this.updateOrder(orderDto);
+        }
+        List<MtOrder> newOrderLs = mtOrderMapper.selectBatchIds(ids);
+        Map<Integer, MtOrder> newOrderMap = convertMap(newOrderLs, MtOrder::getId);
+        for (MtOrder order : orderList) {
+            MtOrder newOrder = newOrderMap.getOrDefault(order.getId(), new MtOrder());
+            eventCallbackService.sendOrderTakeStatusCallback(newOrder, order.getTakeStatus());
+        }
     }
 }

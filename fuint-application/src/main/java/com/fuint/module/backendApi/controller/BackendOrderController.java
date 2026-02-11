@@ -26,11 +26,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Date;
+import java.util.*;
 
 /**
  * 订单管理controller
@@ -170,6 +166,16 @@ public class BackendOrderController extends BaseController {
             payTypeList.add(catchType);
         }
 
+        TakeStatusEnum[] takeStatusListEnum = TakeStatusEnum.values();
+        List<ParamDto> takeStatusList = new ArrayList<>();
+        for (TakeStatusEnum enumItem : takeStatusListEnum) {
+            ParamDto paramDto = new ParamDto();
+            paramDto.setKey(enumItem.getKey());
+            paramDto.setName(enumItem.getValue());
+            paramDto.setValue(enumItem.getKey());
+            takeStatusList.add(paramDto);
+        }
+
         Map<String, Object> result = new HashMap<>();
         result.put("typeList", typeList);
         result.put("statusList", statusList);
@@ -177,6 +183,7 @@ public class BackendOrderController extends BaseController {
         result.put("orderModeList", orderModeList);
         result.put("storeList", storeList);
         result.put("payTypeList", payTypeList);
+        result.put("takeStatusList", takeStatusList);
         result.put("paginationResponse", response);
 
         return getSuccessResult(result);
@@ -223,10 +230,21 @@ public class BackendOrderController extends BaseController {
             payStatusList.add(paramDto);
         }
 
+        TakeStatusEnum[] takeStatusListEnum = TakeStatusEnum.values();
+        List<ParamDto> takeStatusList = new ArrayList<>();
+        for (TakeStatusEnum enumItem : takeStatusListEnum) {
+            ParamDto paramDto = new ParamDto();
+            paramDto.setKey(enumItem.getKey());
+            paramDto.setName(enumItem.getValue());
+            paramDto.setValue(enumItem.getKey());
+            takeStatusList.add(paramDto);
+        }
+
         Map<String, Object> result = new HashMap<>();
         result.put("orderInfo", orderInfo);
         result.put("payTypeList", payTypeList);
         result.put("payStatusList", payStatusList);
+        result.put("takeStatusList", takeStatusList);
 
         return getSuccessResult(result);
     }
@@ -649,7 +667,7 @@ public class BackendOrderController extends BaseController {
     @RequestMapping(value = "/processing", method = RequestMethod.POST)
     @CrossOrigin
     @PreAuthorize("@pms.hasPermission('order:edit')")
-    public ResponseObject processing(HttpServletRequest request, @RequestBody Map<String, Object> param){
+    public ResponseObject processing(HttpServletRequest request, @RequestBody Map<String, Object> param) {
         String token = request.getHeader("Access-Token");
         int orderId = param.get("orderId") == null ? 0 : Integer.parseInt(param.get("orderId").toString());
         AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
@@ -676,6 +694,21 @@ public class BackendOrderController extends BaseController {
         orderService.updateOrder(orderDto);
         MtOrder newOrder = orderService.getOrderInfo(orderId);
         eventCallbackService.sendOrderTakeStatusCallback(newOrder, order.getTakeStatus());
+        return getSuccessResult(true);
+    }
+
+    @ApiOperation(value = "订单接单")
+    @RequestMapping(value = "/confirmed-batch", method = RequestMethod.POST)
+    @CrossOrigin
+    @PreAuthorize("@pms.hasPermission('order:edit')")
+    public ResponseObject confirmedBatchTake(HttpServletRequest request, @RequestBody Map<String, Object> param) throws BusinessCheckException {
+        String token = request.getHeader("Access-Token");
+        Integer[] orderIds = param.get("ids") == null ? new Integer[0] : (Integer[]) param.get("ids");
+        AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
+        if (accountInfo == null) {
+            return getFailureResult(1001, "请先登录");
+        }
+        orderService.batchConfirmed(Arrays.asList(orderIds));
         return getSuccessResult(true);
     }
 }
