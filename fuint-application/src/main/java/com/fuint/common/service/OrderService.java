@@ -281,4 +281,12 @@ public interface OrderService extends IService<MtOrder> {
      * @param orderIds 订单ID列表
      */
     void batchConfirmed(List<Integer> orderIds);
+
+    /**
+     * 根据核销码查询订单
+     *
+     * @param verifyCode 核销码
+     * @return 订单
+     */
+    MtOrder getByVerifyCode(String verifyCode,Integer merchantId);
 }

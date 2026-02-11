@@ -131,4 +131,13 @@ public interface MtOrderMapper extends BaseMapperX<MtOrder> {
         );
     }
 
+    default MtOrder selectByVerifyCode(String verifyCode,Integer merchantId){
+        return selectOne(new LambdaQueryWrapperX<MtOrder>()
+                .eq(MtOrder::getVerifyCode, verifyCode)
+                .eq(MtOrder::getOrderMode, OrderModeEnum.ONESELF.getKey())
+                .eqIfPresent(MtOrder::getMerchantId, merchantId)
+                .last("LIMIT 1")
+        );
+    }
+
 }

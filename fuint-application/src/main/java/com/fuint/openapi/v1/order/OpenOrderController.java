@@ -359,6 +359,9 @@ public class OpenOrderController extends BaseController {
         if (order == null) {
             return CommonResult.error(ORDER_NOT_FOUND);
         }
+        if (order.getStatus().equals(OrderStatusEnum.CREATED.getKey())){
+            return CommonResult.error(ORDER_NOT_WAIT_PAY);
+        }
         // 验证订单是否属于用户
         if (reqVO.getUserId() != null && !order.getUserId().equals(reqVO.getUserId())) {
             return CommonResult.error(ORDER_NOT_BELONG_TO_USER, reqVO.getUserId());

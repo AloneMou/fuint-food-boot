@@ -335,7 +335,7 @@ public class BackendOrderController extends BaseController {
     @ApiOperation(value = "修改订单")
     @RequestMapping(value = "/save", method = RequestMethod.POST)
     @CrossOrigin
-    @PreAuthorize("@pms.hasPermission('order:edit')")
+    @PreAuthorize("@pms.hasPermission('order:status')")
     public ResponseObject save(HttpServletRequest request, @RequestBody Map<String, Object> param) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
         Integer orderId = param.get("orderId") == null ? 0 : Integer.parseInt(param.get("orderId").toString());
@@ -397,7 +397,7 @@ public class BackendOrderController extends BaseController {
     @ApiOperation(value = "验证并核销订单")
     @RequestMapping(value = "/verify", method = RequestMethod.POST)
     @CrossOrigin
-    @PreAuthorize("@pms.hasPermission('cashier:confirmOrder')")
+    @PreAuthorize("@pms.hasPermissions('cashier:confirmOrder','order:confirmOrder')")
     public ResponseObject verify(HttpServletRequest request, @RequestBody Map<String, Object> param) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
         Integer orderId = param.get("orderId") == null ? 0 : Integer.parseInt(param.get("orderId").toString());
@@ -703,12 +703,148 @@ public class BackendOrderController extends BaseController {
     @PreAuthorize("@pms.hasPermission('order:edit')")
     public ResponseObject confirmedBatchTake(HttpServletRequest request, @RequestBody Map<String, Object> param) throws BusinessCheckException {
         String token = request.getHeader("Access-Token");
-        Integer[] orderIds = param.get("ids") == null ? new Integer[0] : (Integer[]) param.get("ids");
+        List<Integer> orderIds = param.get("ids") == null ? new ArrayList<>() : (List<Integer>) param.get("ids");
         AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
         if (accountInfo == null) {
             return getFailureResult(1001, "请先登录");
         }
-        orderService.batchConfirmed(Arrays.asList(orderIds));
+        orderService.batchConfirmed(orderIds);
         return getSuccessResult(true);
+    }
+
+
+    @ApiOperation(value = "验证并核销订单")
+    @RequestMapping(value = "/verify-code", method = RequestMethod.POST)
+    @CrossOrigin
+    @PreAuthorize("@pms.hasPermissions('cashier:confirmOrder','order:confirmOrder')")
+    public ResponseObject verifyOrder(HttpServletRequest request, @RequestBody Map<String, Object> param) throws BusinessCheckException {
+        String token = request.getHeader("Access-Token");
+//        Integer orderId = param.get("orderId") == null ? 0 : Integer.parseInt(param.get("orderId").toString());
+        String remark = param.get("remark") == null ? "" : param.get("remark").toString();
+        String verifyCode = param.get("verifyCode") == null ? "" : param.get("verifyCode").toString();
+
+        AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
+        if (accountInfo == null) {
+            return getFailureResult(1001, "请先登录");
+        }
+        TAccount account = accountService.getAccountInfoById(accountInfo.getId());
+        MtOrder order = orderService.getByVerifyCode(verifyCode, account.getMerchantId());
+        if (order == null) {
+            return getFailureResult(201, "未找到该订单");
+        }
+        Integer orderId = order.getId();
+//        if (orderId < 0) {
+//            return getFailureResult(201, "系统出错啦，订单ID不能为空");
+//        }
+
+        OrderDto orderDto = new OrderDto();
+        orderDto.setId(orderId);
+        orderDto.setOperator(accountInfo.getAccountName());
+        if (StringUtils.isNotEmpty(remark)) {
+            orderDto.setRemark(remark);
+        }
+        if (StringUtils.isNotEmpty(verifyCode)) {
+            orderDto.setVerifyCode(verifyCode);
+            orderDto.setTakeStatus(TakeStatusEnum.COMPLETED.getKey());
+        }
+
+        String oldStatus = "";
+        String oldTakeStatus = "";
+        UserOrderDto existOrder = orderService.getOrderById(orderId);
+        if (existOrder != null) {
+            oldStatus = existOrder.getStatus();
+            oldTakeStatus = existOrder.getTakeStatus();
+        }
+
+
+        orderService.updateOrder(orderDto);
+
+        // 发送订单状态变更回调
+        MtOrder updatedOrder = orderService.getOrderInfo(orderId);
+        if (updatedOrder != null && !updatedOrder.getStatus().equals(oldStatus)) {
+            eventCallbackService.sendOrderStatusCallback(updatedOrder, oldStatus);
+        }
+        if (updatedOrder != null && !updatedOrder.getTakeStatus().equals(oldTakeStatus)) {
+            eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, oldTakeStatus);
+        }
+        return getSuccessResult(true);
+    }
+
+    @ApiOperation(value = "手动核销订单")
+    @RequestMapping(value = "/verify-operation", method = RequestMethod.POST)
+    @CrossOrigin
+    @PreAuthorize("@pms.hasPermission('cashier:confirmOrder')")
+    public ResponseObject verifyOrderOperation(HttpServletRequest request, @RequestBody Map<String, Object> param) throws BusinessCheckException {
+        String token = request.getHeader("Access-Token");
+        Integer orderId = param.get("orderId") == null ? 0 : Integer.parseInt(param.get("orderId").toString());
+        String remark = param.get("remark") == null ? "" : param.get("remark").toString();
+//        String verifyCode = param.get("verifyCode") == null ? "" : param.get("verifyCode").toString();
+
+        AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
+        if (accountInfo == null) {
+            return getFailureResult(1001, "请先登录");
+        }
+//        MtOrder order = orderService.getByVerifyCode(verifyCode);
+//        if (order == null) {
+//            return getFailureResult(201, "未找到该订单");
+//        }
+//        Integer orderId = order.getId();
+        if (orderId < 0) {
+            return getFailureResult(201, "系统出错啦，订单ID不能为空");
+        }
+        MtOrder order = orderService.getOrderInfo(orderId);
+        OrderDto orderDto = new OrderDto();
+        orderDto.setId(orderId);
+        orderDto.setOperator(accountInfo.getAccountName());
+        if (StringUtils.isNotBlank(remark)) {
+            orderDto.setRemark(remark);
+        }
+        if (StringUtils.isNotBlank(order.getVerifyCode())) {
+            orderDto.setVerifyCode(order.getVerifyCode());
+            orderDto.setTakeStatus(TakeStatusEnum.COMPLETED.getKey());
+        }
+
+        String oldStatus = "";
+        String oldTakeStatus = "";
+        UserOrderDto existOrder = orderService.getOrderById(orderId);
+        if (existOrder != null) {
+            oldStatus = existOrder.getStatus();
+            oldTakeStatus = existOrder.getTakeStatus();
+        }
+
+
+        orderService.updateOrder(orderDto);
+
+        // 发送订单状态变更回调
+        MtOrder updatedOrder = orderService.getOrderInfo(orderId);
+        if (updatedOrder != null && !updatedOrder.getStatus().equals(oldStatus)) {
+            eventCallbackService.sendOrderStatusCallback(updatedOrder, oldStatus);
+        }
+        if (updatedOrder != null && !updatedOrder.getTakeStatus().equals(oldTakeStatus)) {
+            eventCallbackService.sendOrderTakeStatusCallback(updatedOrder, oldTakeStatus);
+        }
+        return getSuccessResult(true);
+    }
+
+
+    @ApiOperation(value = "通过核销码查询订单")
+    @RequestMapping(value = "/search-by-code", method = RequestMethod.GET)
+    @CrossOrigin
+    @PreAuthorize("@pms.hasPermissions('order:confirmOrder')")
+    public ResponseObject orderByVerifyCode(HttpServletRequest request, String verifyCode) throws BusinessCheckException {
+        String token = request.getHeader("Access-Token");
+        AccountInfo accountInfo = TokenUtil.getAccountInfoByToken(token);
+        if (accountInfo == null) {
+            return getFailureResult(1001, "请先登录");
+        }
+        TAccount account = accountService.getAccountInfoById(accountInfo.getId());
+        MtOrder order = orderService.getByVerifyCode(verifyCode, account.getMerchantId());
+        if (order == null) {
+            return getSuccessResult(null);
+        } else if (account.getMerchantId() != null && account.getMerchantId() > 0 && order.getMerchantId().equals(account.getMerchantId())) {
+            return getSuccessResult(order);
+        } else {
+            return getSuccessResult(order);
+        }
     }
 }

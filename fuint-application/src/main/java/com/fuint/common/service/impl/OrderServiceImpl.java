@@ -1,6 +1,8 @@
 package com.fuint.common.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.NumberUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -2475,7 +2477,13 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void batchConfirmed(List<Integer> orderIds) {
+        if (CollUtil.isEmpty(orderIds)) {
+            return;
+        }
         List<MtOrder> orderList = mtOrderMapper.selectToTakeOrderList(orderIds);
+        if (CollUtil.isEmpty(orderList)) {
+            return;
+        }
         List<Integer> ids = convertList(orderList, MtOrder::getId);
         for (MtOrder order : orderList) {
             OrderDto orderDto = new OrderDto();
@@ -2489,5 +2497,16 @@ public class OrderServiceImpl extends ServiceImpl<MtOrderMapper, MtOrder> implem
             MtOrder newOrder = newOrderMap.getOrDefault(order.getId(), new MtOrder());
             eventCallbackService.sendOrderTakeStatusCallback(newOrder, order.getTakeStatus());
         }
+    }
+
+    @Override
+    public MtOrder getByVerifyCode(String verifyCode, Integer merchantId) {
+        if (merchantId != null && merchantId <= 0) {
+            merchantId = null;
+        }
+        if (StrUtil.isBlank(verifyCode)) {
+            return null;
+        }
+        return mtOrderMapper.selectByVerifyCode(verifyCode, merchantId);
     }
 }

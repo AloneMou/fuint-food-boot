@@ -60,6 +60,18 @@ public class PermissionService {
         return hasPermissions(allPermission, permission);
     }
 
+    public boolean hasPermissions(String... permissions) {
+        if (permissions == null) {
+            return false;
+        }
+        for (String permission : permissions) {
+            if (hasPermission(permission)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * 判断是否包含权限
      *

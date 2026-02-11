@@ -58,4 +58,6 @@ public interface OrderErrorCodeConstants {
     ErrorCode USER_COUPON_ALREADY_USED = new ErrorCode(100_7_021, "用户优惠券已使用");
     //核销码错误，请确认！
     ErrorCode WRITE_OFF_CODE_ERROR = new ErrorCode(100_7_022, "核销码错误，请确认！");
+    //订单不是待支付状态，不支持该操作
+    ErrorCode ORDER_NOT_WAIT_PAY = new ErrorCode(100_7_023, "订单不是待支付状态，不支持该操作");
 }
