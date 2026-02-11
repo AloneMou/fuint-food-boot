@@ -17,6 +17,7 @@ import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.exception.ServiceException;
 import com.fuint.framework.pojo.CommonResult;
 import com.fuint.framework.pojo.PageResult;
+import com.fuint.framework.util.encrypt.PhoneUtils;
 import com.fuint.framework.web.BaseController;
 import com.fuint.openapi.enums.UserErrorCodeConstants;
 import com.fuint.openapi.service.OpenUserService;
@@ -27,9 +28,12 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -53,7 +57,6 @@ import static com.fuint.framework.util.object.BeanUtils.toBean;
 @Validated
 @Api(tags = "OpenApi-员工管理相关接口")
 @RestController
-@AllArgsConstructor
 @RequestMapping(value = "/api/v1/member/user")
 public class OpenUserController extends BaseController {
 
@@ -87,6 +90,9 @@ public class OpenUserController extends BaseController {
     @Resource(name = "userSyncExecutor")
     private ThreadPoolExecutor userSyncExecutor;
 
+    @Value(value = "${project.anke.secret-key}")
+    private String secretKey;
+
     /**
      * 单个员工数据同步
      *
@@ -100,6 +106,10 @@ public class OpenUserController extends BaseController {
     @OperationServiceLog(description = "(OpenApi)单个员工数据同步")
     public CommonResult<MtUserSyncRespVO> syncUser(@Valid @RequestBody MtUserSyncReqVO syncReqVO) {
         try {
+            String phone = syncReqVO.getMobile();
+            phone = PhoneUtils.decrypt(phone, secretKey);
+            phone = PhoneUtils.normalize(phone);
+            syncReqVO.setMobile(phone);
             List<String> mobileLs = convertList(Collections.singletonList(syncReqVO), MtUserSyncReqVO::getMobile);
             List<MtUser> existLs = openUserService.getUserLsByMobiles(mobileLs);
             Map<String, MtUser> existMap = convertMap(existLs, MtUser::getMobile);
@@ -125,12 +135,16 @@ public class OpenUserController extends BaseController {
     @OperationServiceLog(description = "(OpenApi)批量员工数据同步")
     public CommonResult<MtUserBatchSyncRespVO> batchSyncUser(@Valid @RequestBody MtUserBatchSyncReqVO batchSyncReqVO) {
         List<MtUserSyncReqVO> users = batchSyncReqVO.getUsers();
-        if (users == null || users.isEmpty()) {
+
+        if (users.isEmpty()) {
             return CommonResult.error(UserErrorCodeConstants.USER_BATCH_SYNC_EMPTY);
         }
-        if (users.size() > 100) {
-            return CommonResult.error(UserErrorCodeConstants.USER_BATCH_SYNC_EXCEED_LIMIT, 100);
-        }
+        users = users.stream().peek(user -> {
+            String phone = user.getMobile();
+            phone = PhoneUtils.decrypt(phone, secretKey);
+            phone = PhoneUtils.normalize(phone);
+            user.setMobile(phone);
+        }).collect(Collectors.toList());
         List<String> mobileLs = convertList(users, MtUserSyncReqVO::getMobile);
         List<MtUser> existLs = openUserService.getUserLsByMobiles(mobileLs);
         Map<String, MtUser> existMap = convertMap(existLs, MtUser::getMobile);
@@ -374,6 +388,8 @@ public class OpenUserController extends BaseController {
         BeanUtils.copyProperties(mtUser, respVO);
         // 隐藏手机号中间四位
         String phone = mtUser.getMobile();
+        phone = PhoneUtils.normalize(phone);
+        phone = PhoneUtils.encrypt(phone, secretKey);
         respVO.setMobile(phone);
         respVO.setGroupName(groupMap.getOrDefault(mtUser.getGroupId(), ""));
         if (NumberUtil.isInteger(mtUser.getGradeId())) {

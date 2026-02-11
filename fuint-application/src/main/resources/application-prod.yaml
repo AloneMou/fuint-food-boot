@@ -119,3 +119,6 @@ system:
 website:
   url: https://cyhy.aitecc.com/food/
 
+project:
+  anke:
+    secret-key: 8AtzNiEyOC/NPenP
