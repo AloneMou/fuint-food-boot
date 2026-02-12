@@ -241,11 +241,10 @@ public class OpenOrderController extends BaseController {
         respVO.setTotalQuantity(totalQuantity);
         int waitTime = openApiOrderService.getStoreWaitTime(storeId);
         Integer makeCount = openApiOrderService.getToMakeCount(merchantId, storeId, new Date(), 0);
+        makeCount += totalQuantity;
         Integer estimatedWaitTime = makeCount * waitTime;
         respVO.setEstimatedWaitTime(estimatedWaitTime);
         respVO.setQueueCount(makeCount);
-
-
         return CommonResult.success(respVO);
     }
 
@@ -359,7 +358,7 @@ public class OpenOrderController extends BaseController {
         if (order == null) {
             return CommonResult.error(ORDER_NOT_FOUND);
         }
-        if (order.getStatus().equals(OrderStatusEnum.CREATED.getKey())){
+        if (order.getStatus().equals(OrderStatusEnum.CREATED.getKey())) {
             return CommonResult.error(ORDER_NOT_WAIT_PAY);
         }
         // 验证订单是否属于用户
@@ -586,7 +585,7 @@ public class OpenOrderController extends BaseController {
         String remark = param.get("remark") == null ? "" : param.get("remark").toString();
         String verifyCode = param.get("verifyCode") == null ? "" : param.get("verifyCode").toString();
 
-        AccountInfo accountInfo=new AccountInfo();
+        AccountInfo accountInfo = new AccountInfo();
         accountInfo.setAccountName("OPEN_API");
         if (orderId < 0) {
             return CommonResult.error(BAD_REQUEST.getCode(), "订单ID不能为空");
