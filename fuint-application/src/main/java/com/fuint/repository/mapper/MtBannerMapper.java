@@ -23,6 +23,11 @@ public interface MtBannerMapper extends BaseMapperX<MtBanner> {
                 .eqIfPresent(MtBanner::getPosition, pageReqVO.getPosition())
                 .eqIfPresent(MtBanner::getStoreId, pageReqVO.getStoreId())
                 .eqIfPresent(MtBanner::getMerchantId, pageReqVO.getMerchantId())
+                .and(pageReqVO.getStoreId()!=null , wrapper -> wrapper
+                        .eq(MtBanner::getStoreId, pageReqVO.getStoreId())
+                        .or()
+                        .eq(MtBanner::getStoreId, 0)
+                )
                 .ne(MtBanner::getStatus, StatusEnum.DISABLE.getKey())
                 .orderByAsc(MtBanner::getSort)
                 .orderByDesc(MtBanner::getId)
