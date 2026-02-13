@@ -59,6 +59,22 @@ public class OpenBannerController extends BaseController {
         return CommonResult.success(result);
     }
 
+    @ApiOperation(value = "分页查询Banner列表")
+    @GetMapping(value = "/list")
+    @ApiSignature
+    @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
+    public CommonResult<List<BannerRespVO>> getBannerList(@Valid BannerPageReqVO pageReqVO) throws BusinessCheckException {
+        String imagePath = settingService.getUploadBasePath();
+        List<MtBanner> pageResult = bannerService.getBannerList(pageReqVO);
+        List<BannerRespVO> result=BeanUtils.toBean(pageResult,BannerRespVO.class);
+        List<BannerRespVO> list = result.stream().map(item -> {
+            BannerRespVO respVO = BeanUtils.toBean(item, BannerRespVO.class);
+            respVO.setImage(isHttp(item.getImage(), imagePath));
+            return respVO;
+        }).collect(Collectors.toList());
+        return CommonResult.success(list);
+    }
+
     @ApiOperation(value = "获取Banner详情")
     @GetMapping(value = "/detail/{id}")
     @ApiSignature

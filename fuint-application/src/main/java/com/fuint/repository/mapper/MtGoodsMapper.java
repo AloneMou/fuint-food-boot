@@ -13,6 +13,7 @@ import com.fuint.framework.pojo.PageResult;
 import com.fuint.repository.request.GoodsStatisticsReqVO;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -52,11 +53,7 @@ public interface MtGoodsMapper extends BaseMapperX<MtGoods> {
                         MtGoods::getStock, 0)
                 .lt(StrUtil.equals(YesOrNoEnum.YES.getKey(), pageReqVO.getHasStock()),
                         MtGoods::getStock, 1)
-                .and(ObjectUtil.isNotNull(pageReqVO.getStoreId()), ew -> ew
-                        .eq(MtGoods::getStoreId, pageReqVO.getStoreId())
-                        .or()
-                        .eq(MtGoods::getStoreId, 0)
-                )
+                .in(ObjectUtil.isNotNull(pageReqVO.getStoreId()), MtGoods::getStoreId, Arrays.asList(pageReqVO.getStoreId(), 0))
                 .orderByAsc(MtGoods::getSort)
                 .select(
                         MtGoods::getId,
@@ -87,11 +84,7 @@ public interface MtGoodsMapper extends BaseMapperX<MtGoods> {
                         MtGoods::getStock, 0)
                 .lt(StrUtil.equals(YesOrNoEnum.NO.getKey(), pageReqVO.getHasStock()),
                         MtGoods::getStock, 1)
-                .and(ObjectUtil.isNotNull(pageReqVO.getStoreId()), ew -> ew
-                        .eq(MtGoods::getStoreId, pageReqVO.getStoreId())
-                        .or()
-                        .eq(MtGoods::getStoreId, 0)
-                )
+                .in(ObjectUtil.isNotNull(pageReqVO.getStoreId()), MtGoods::getStoreId, Arrays.asList(pageReqVO.getStoreId(), 0))
                 .orderByAsc(MtGoods::getSort)
         );
     }

@@ -266,4 +266,9 @@ public class BannerServiceImpl extends ServiceImpl<MtBannerMapper, MtBanner> imp
     public PageResult<MtBanner> getBannerListByPage(BannerPageReqVO pageReqVO) {
         return  mtBannerMapper.selectBannerListByPage(pageReqVO);
     }
+
+    @Override
+    public List<MtBanner> getBannerList(BannerPageReqVO pageReqVO) {
+        return  mtBannerMapper.selectBannerList(pageReqVO);
+    }
 }

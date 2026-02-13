@@ -14,6 +14,8 @@ import com.fuint.repository.model.MtMerchant;
 import com.fuint.repository.model.MtStore;
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
 
+import java.util.Arrays;
+
 /**
  * 商品分类 Mapper 接口
  * <p>
@@ -24,18 +26,16 @@ public interface MtGoodsCateMapper extends BaseMapperX<MtGoodsCate> {
     // empty
 
     default PageResult<MtGoodsCateRespVO> selectCateByPage(MtGoodsCatePageReqVO pageReqVO) {
-        MPJLambdaWrapper<MtGoodsCate> wrapper = new MPJLambdaWrapper<MtGoodsCate>();
-        wrapper.selectAll(MtGoodsCate.class);
-        wrapper.selectAs(MtStore::getName, MtGoodsCateRespVO::getStoreName);
-        wrapper.selectAs(MtMerchant::getName, MtGoodsCateRespVO::getMerchantName);
-        wrapper.leftJoin(MtStore.class, MtStore::getId, MtGoodsCate::getStoreId);
-        wrapper.leftJoin(MtMerchant.class, MtMerchant::getId, MtGoodsCate::getMerchantId);
-        wrapper.ne(MtGoodsCate::getStatus, StatusEnum.DISABLE.getKey());
-        wrapper.and(pageReqVO.getStoreId() != null, ew -> ew
-                .eq(MtGoodsCate::getStoreId, pageReqVO.getStoreId())
-                .or()
-                .eq(MtGoodsCate::getStoreId, 0));
-        wrapper.eq(pageReqVO.getMerchantId() != null, MtGoodsCate::getMerchantId, pageReqVO.getMerchantId());
+        MPJLambdaWrapper<MtGoodsCate> wrapper = new MPJLambdaWrapper<MtGoodsCate>()
+                .selectAll(MtGoodsCate.class)
+                .selectAs(MtStore::getName, MtGoodsCateRespVO::getStoreName)
+                .selectAs(MtMerchant::getName, MtGoodsCateRespVO::getMerchantName)
+                .leftJoin(MtStore.class, MtStore::getId, MtGoodsCate::getStoreId)
+                .leftJoin(MtMerchant.class, MtMerchant::getId, MtGoodsCate::getMerchantId)
+                .ne(MtGoodsCate::getStatus, StatusEnum.DISABLE.getKey())
+                .eq(pageReqVO.getMerchantId() != null, MtGoodsCate::getMerchantId, pageReqVO.getMerchantId())
+                .in(pageReqVO.getStoreId() != null, MtGoodsCate::getStoreId,
+                        Arrays.asList(pageReqVO.getStoreId(), 0));
         if (CollUtil.isEmpty(pageReqVO.getSortingFields())) {
             wrapper.orderByAsc(MtGoodsCate::getSort);
         }

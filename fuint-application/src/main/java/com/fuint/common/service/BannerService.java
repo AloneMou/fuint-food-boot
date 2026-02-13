@@ -82,4 +82,12 @@ public interface BannerService extends IService<MtBanner> {
      * @return 轮播图列表
      */
     PageResult<MtBanner> getBannerListByPage(BannerPageReqVO pageReqVO);
+
+    /**
+     * 根据活动ID查询轮播图列表
+     *
+     * @param pageReqVO 请求参数
+     * @return 轮播图列表
+     */
+    List<MtBanner> getBannerList(BannerPageReqVO pageReqVO);
 }
