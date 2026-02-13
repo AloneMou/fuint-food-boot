@@ -9,6 +9,8 @@ import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
 import com.fuint.framework.pagination.PaginationRequest;
 import com.fuint.framework.pagination.PaginationResponse;
+import com.fuint.framework.pojo.PageResult;
+import com.fuint.openapi.v1.content.banner.vo.request.BannerPageReqVO;
 import com.fuint.repository.model.MtBanner;
 import com.fuint.common.dto.BannerDto;
 import com.fuint.common.service.BannerService;
@@ -258,5 +260,10 @@ public class BannerServiceImpl extends ServiceImpl<MtBannerMapper, MtBanner> imp
         }
 
         return dataList;
+    }
+
+    @Override
+    public PageResult<MtBanner> getBannerListByPage(BannerPageReqVO pageReqVO) {
+        return  mtBannerMapper.selectBannerListByPage(pageReqVO);
     }
 }

@@ -1,5 +1,6 @@
 package com.fuint.module.backendApi.controller;
 
+import cn.hutool.core.util.StrUtil;
 import com.fuint.common.dto.*;
 import com.fuint.common.enums.*;
 import com.fuint.common.param.OrderListParam;
@@ -730,7 +731,7 @@ public class BackendOrderController extends BaseController {
         TAccount account = accountService.getAccountInfoById(accountInfo.getId());
         MtOrder order = orderService.getByVerifyCode(verifyCode, account.getMerchantId());
         if (order == null) {
-            return getFailureResult(201, "未找到该订单");
+            return getFailureResult(201, StrUtil.format("未核销码为%s的订单", verifyCode));
         }
         Integer orderId = order.getId();
 //        if (orderId < 0) {

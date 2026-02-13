@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.signature.core.annotation.ApiSignature;
 import com.fuint.common.dto.GoodsCateDto;
 import com.fuint.common.enums.StatusEnum;
 import com.fuint.common.service.CateService;
+import com.fuint.common.service.SettingService;
 import com.fuint.common.service.StoreService;
 import com.fuint.framework.annoation.OperationServiceLog;
 import com.fuint.framework.exception.BusinessCheckException;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.fuint.framework.util.string.StrUtils.isHttp;
 import static com.fuint.openapi.enums.GoodsCateErrorCodeConstants.GOODS_CATE_NOT_FOUND;
 
 /**
@@ -51,6 +53,9 @@ public class OpenCateController extends BaseController {
 
     @Resource
     private StoreService storeService;
+
+    @Resource
+    private SettingService settingService;
 
 
     @ApiOperation(value = "创建商品分类", notes = "创建一个新的商品分类")
@@ -129,7 +134,7 @@ public class OpenCateController extends BaseController {
         }
 
         MtGoodsCateRespVO respVO = BeanUtils.toBean(mtCate, MtGoodsCateRespVO.class);
-
+        String imagePath = settingService.getUploadBasePath();
         // 设置店铺名称
         if (mtCate.getStoreId() != null && mtCate.getStoreId() > 0) {
             MtStore storeInfo = storeService.queryStoreById(mtCate.getStoreId());
@@ -137,6 +142,7 @@ public class OpenCateController extends BaseController {
                 respVO.setStoreName(storeInfo.getName());
             }
         }
+        respVO.setLogo(isHttp(mtCate.getLogo(), imagePath));
 
         return CommonResult.success(respVO);
     }
@@ -146,7 +152,14 @@ public class OpenCateController extends BaseController {
     @ApiSignature
     @RateLimiter(keyResolver = ClientIpRateLimiterKeyResolver.class)
     public CommonResult<PageResult<MtGoodsCateRespVO>> getCatePage(@RequestBody @Valid MtGoodsCatePageReqVO pageReqVO) throws BusinessCheckException {
-        return CommonResult.success(cateService.getCatePage(pageReqVO));
+        String imagePath = settingService.getUploadBasePath();
+        PageResult<MtGoodsCateRespVO> pageResult = cateService.getCatePage(pageReqVO);
+        List<MtGoodsCateRespVO> list = pageResult.getList().stream().peek(item -> {
+            MtGoodsCateRespVO respVO = BeanUtils.toBean(item, MtGoodsCateRespVO.class);
+            respVO.setLogo(isHttp(item.getLogo(), imagePath));
+        }).collect(Collectors.toList());
+        pageResult.setList(list);
+        return CommonResult.success(pageResult);
     }
 
     @ApiOperation(value = "获取所有启用的商品分类列表", notes = "获取所有状态为启用的商品分类，不分页")
