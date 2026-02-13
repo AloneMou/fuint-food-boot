@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -169,7 +170,7 @@ public class OpenCateController extends BaseController {
     public CommonResult<List<MtGoodsCateListRespVO>> getCateList(
             @ApiParam(value = "商户ID", example = "1") @RequestParam(required = false) Integer merchantId,
             @ApiParam(value = "店铺ID", example = "1") @RequestParam(required = false) Integer storeId) throws BusinessCheckException {
-
+        String imagePath = settingService.getUploadBasePath();
         Map<String, Object> params = new HashMap<>();
         params.put("status", StatusEnum.ENABLED.getKey());
         if (merchantId != null) {
@@ -182,7 +183,7 @@ public class OpenCateController extends BaseController {
         List<MtGoodsCate> cateList = cateService.queryCateListByParams(params);
 
         // 转换为响应VO
-        List<MtGoodsCateListRespVO> respList = new java.util.ArrayList<>();
+        List<MtGoodsCateListRespVO> respList = new ArrayList<>();
         for (MtGoodsCate cate : cateList) {
             MtGoodsCateListRespVO vo = BeanUtils.toBean(cate, MtGoodsCateListRespVO.class);
             // 设置店铺名称
@@ -192,6 +193,7 @@ public class OpenCateController extends BaseController {
                     vo.setStoreName(storeInfo.getName());
                 }
             }
+            vo.setLogo(isHttp(cate.getLogo(), imagePath));
             respList.add(vo);
         }
 
